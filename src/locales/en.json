@@ -1,0 +1,108 @@
+{
+  "brand": "PhilGo",
+  "nav": {
+    "home": "home",
+    "login": "log in",
+    "community": "Community",
+    "question": "question",
+    "experiences": "experiences",
+    "marketplace": "marketplace",
+    "businessDirectory": "Business Directory",
+    "travel": "travel",
+    "currencyExchange": "currency exchange",
+    "rentalCar": "rental car",
+    "massage": "massage",
+    "boardingHouse": "boarding house",
+    "immigrant": "immigrant",
+    "passport": "passport",
+    "realEstate": "real estate",
+    "ai": "AI",
+    "recruitment": "Recruitment",
+    "advertisement": "advertisement",
+    "chatting": "Chatting",
+    "search": "Search",
+    "expandMenu": "Expand menu"
+  },
+  "megaMenu": {
+    "close": "Close detailed menu",
+    "mainLinks": "Main",
+    "regionalForum": "Regional Forum",
+    "marketplace": "Members' Marketplace",
+    "businessDirectory": "Business Directory",
+    "account": "Account",
+    "etc": "Etc / Advertisement"
+  },
+  "common": {
+    "seeMore": "see more",
+    "more": "more",
+    "register": "register"
+  },
+  "search": {
+    "placeholder": "I will tell you everything about the Philippines."
+  },
+  "sidebar": {
+    "loginPrompt": "Please log in to use all features."
+  },
+  "home": {
+    "newsTabsHeading": "News",
+    "latestPosts": "Latest posts",
+    "popularPosts": "Popular Posts (Last 30 days)",
+    "businessDirectory": "Business Directory",
+    "recentlyUpdated": "Recently updated businesses",
+    "statistics": "Homepage Statistics",
+    "subscribers": "Subscribers",
+    "posts": "Posts",
+    "viewGoogleStats": "View Google statistics",
+    "views": "views",
+    "comments": "comments"
+  },
+  "widgets": {
+    "weather": "weather",
+    "exchange": "exchange",
+    "recentComments": "Recent Comments",
+    "recentPhotos": "Recent photos",
+    "emergencyContact": "Emergency contact",
+    "calculator": "calculator"
+  },
+  "menuPage": {
+    "breadcrumbHome": "home",
+    "breadcrumbMenu": "menu",
+    "title": "menu",
+    "description": "I will show you the full menu."
+  },
+  "menuSections": {
+    "community": "COMMUNITY",
+    "advertising": "ADVERTISING SERVICES",
+    "myInformation": "MY INFORMATION",
+    "help": "HELP",
+    "accountManagement": "ACCOUNT MANAGEMENT",
+    "utility": "UTILITY"
+  },
+  "footer": {
+    "copyright": "© 2018~2026 PhilGo.Com",
+    "globalSite": "Global Site",
+    "advertisement": "ADVERTISEMENT",
+    "link": "LINK",
+    "policy": "POLICY",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "privacy policy",
+    "childSafety": "Child safety standards"
+  },
+  "list": {
+    "author": "author",
+    "date": "date",
+    "views": "views",
+    "comments": "comments",
+    "sequentialNote": "items load sequentially here",
+    "prev": "Prev",
+    "next": "Next"
+  },
+  "emergency": {
+    "embassy": "Embassy",
+    "police": "Police / Emergency",
+    "hospital": "Hospital / Emergency",
+    "koreanAssociation": "Korean Association",
+    "consularCallCenter": "Consular Call Center",
+    "24h": "24h"
+  }
+}
