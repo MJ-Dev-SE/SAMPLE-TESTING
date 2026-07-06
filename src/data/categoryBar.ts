@@ -184,6 +184,7 @@ export const topBarLeft: NavLink[] = [
   { label: { en: 'Q&A', ko: '질문답변' }, href: '/post/list?post_id=qna' },
   { label: { en: 'Community', ko: '커뮤니티' }, href: '/post/list?post_id=freetalk' },
   { label: { en: 'Chat', ko: '채팅' }, href: '/chat' },
+  { label: { en: 'Home', ko: '홈' }, href: '/' },
 ]
 
 export const topBarRight: NavLink[] = [
