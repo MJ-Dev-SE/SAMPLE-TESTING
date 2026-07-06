@@ -7,6 +7,10 @@ import PostList from './routes/PostList'
 import PostView from './routes/PostView'
 import Company from './routes/Company'
 import Chat from './routes/Chat'
+import Login from './routes/Login'
+import Register from './routes/Register'
+import Profile from './routes/Profile'
+import PostWrite from './routes/PostWrite'
 import Placeholder from './routes/Placeholder'
 
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */
@@ -21,6 +25,7 @@ function PageRoutes() {
       <Route path="post/latest" element={<PostList />} />
       <Route path="post/region" element={<PostList />} />
       <Route path="post/view" element={<PostView />} />
+      <Route path="post/write" element={<PostWrite />} />
       <Route path="post/comments" element={<Placeholder title={{ en: 'Recent Comments', ko: '최근 댓글' }} icon="fa-comment-dots" />} />
 
       {/* Business directory */}
@@ -37,8 +42,9 @@ function PageRoutes() {
       <Route path="today" element={<Placeholder title={{ en: 'Today', ko: '오늘' }} icon="fa-calendar-day" />} />
 
       {/* Account */}
-      <Route path="user/login" element={<Placeholder title={{ en: 'log in', ko: '로그인' }} icon="fa-right-to-bracket" />} />
-      <Route path="user/profile" element={<Placeholder title={{ en: 'Edit Profile', ko: '프로필 수정' }} icon="fa-user-pen" />} />
+      <Route path="user/login" element={<Login />} />
+      <Route path="user/register" element={<Register />} />
+      <Route path="user/profile" element={<Profile />} />
       <Route path="user/settings" element={<Placeholder title={{ en: 'setting', ko: '설정' }} icon="fa-gear" />} />
       <Route path="point/history" element={<Placeholder title={{ en: 'Point history', ko: '포인트 내역' }} icon="fa-clock-rotate-left" />} />
 
