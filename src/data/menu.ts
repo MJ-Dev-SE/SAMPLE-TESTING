@@ -1,0 +1,238 @@
+import type { MenuSectionData } from '../types'
+
+// DATA SLOT: menuSections = [{header, icon, items:[{icon, iconColor, title, desc, href}]}]
+// English text = values captured via translation; Korean = known where available else [KO: ...].
+export const menuSections: MenuSectionData[] = [
+  {
+    header: { en: 'COMMUNITY', ko: '[KO: COMMUNITY]' },
+    icon: 'fa-users',
+    items: [
+      {
+        icon: 'fa-comments',
+        iconColor: 'blue',
+        href: '/chat',
+        title: { en: 'Chatting', ko: '채팅' },
+        desc: { en: 'Join the real-time chat room', ko: '[KO: Join the real-time chat room]' },
+      },
+      {
+        icon: 'fa-store',
+        iconColor: 'green',
+        href: '/company',
+        title: { en: 'Business Directory', ko: '업소록' },
+        desc: { en: 'Check business information', ko: '[KO: Check business information]' },
+      },
+      {
+        icon: 'fa-star',
+        iconColor: 'indigo',
+        href: '/bookmark',
+        title: { en: 'Favorites', ko: '즐겨찾기' },
+        desc: { en: 'View Favorites List', ko: '[KO: View Favorites List]' },
+      },
+      {
+        icon: 'fa-clock',
+        iconColor: 'pink',
+        href: '/post/latest',
+        title: { en: 'Recent Posts', ko: '최근 글' },
+        desc: { en: 'List of recent posts on the entire board', ko: '[KO: List of recent posts on the entire board]' },
+      },
+      {
+        icon: 'fa-fire',
+        iconColor: 'purple',
+        href: '/post/popular',
+        title: { en: 'Popular Posts', ko: '인기 글' },
+        desc: { en: 'View popular posts', ko: '[KO: View popular posts]' },
+      },
+      {
+        icon: 'fa-image',
+        iconColor: 'teal',
+        href: '/photo/latest',
+        title: { en: 'Recent photos', ko: '최근 사진' },
+        desc: { en: 'View recently uploaded photos', ko: '[KO: View recently uploaded photos]' },
+      },
+      {
+        icon: 'fa-comment-dots',
+        iconColor: 'blue',
+        href: '/post/comments',
+        title: { en: 'Recent Comments', ko: '최근 댓글' },
+        desc: { en: 'View all recent comments', ko: '[KO: View all recent comments]' },
+      },
+    ],
+  },
+  {
+    header: { en: 'ADVERTISING SERVICES', ko: '[KO: ADVERTISING SERVICES]' },
+    icon: 'fa-bullhorn',
+    items: [
+      {
+        icon: 'fa-rectangle-ad',
+        iconColor: 'blue',
+        href: '/adv/banner',
+        title: { en: 'Banner ads', ko: '배너 광고' },
+        desc: { en: 'Banner Ad Registration', ko: '[KO: Banner Ad Registration]' },
+      },
+      {
+        icon: 'fa-coins',
+        iconColor: 'green',
+        href: '/adv/point',
+        title: { en: 'Point advertisements', ko: '포인트 광고' },
+        desc: { en: 'Register ads with points', ko: '[KO: Register ads with points]' },
+      },
+      {
+        icon: 'fa-list-check',
+        iconColor: 'indigo',
+        href: '/help/point-guideline',
+        title: { en: 'Point Guide by Board', ko: '게시판별 포인트 안내' },
+        desc: { en: 'Check points by board', ko: '[KO: Check points by board]' },
+      },
+      {
+        icon: 'fa-spa',
+        iconColor: 'pink',
+        href: '/adv/massage',
+        title: { en: 'Massage advertisement', ko: '마사지 광고' },
+        desc: { en: 'Massage advertisement registration', ko: '[KO: Massage advertisement registration]' },
+      },
+    ],
+  },
+  {
+    header: { en: 'MY INFORMATION', ko: '[KO: MY INFORMATION]' },
+    icon: 'fa-user-circle',
+    items: [
+      {
+        icon: 'fa-user-pen',
+        iconColor: 'blue',
+        href: '/user/profile',
+        title: { en: 'Edit Profile', ko: '프로필 수정' },
+        desc: { en: 'Edit profile information', ko: '[KO: Edit profile information]' },
+      },
+      {
+        icon: 'fa-id-card',
+        iconColor: 'green',
+        href: '/user/public-profile',
+        title: { en: 'Public Profile', ko: '공개 프로필' },
+        desc: { en: 'My public profile', ko: '[KO: My public profile]' },
+      },
+      {
+        icon: 'fa-clock-rotate-left',
+        iconColor: 'indigo',
+        href: '/point/history',
+        title: { en: 'View point history', ko: '포인트 내역' },
+        desc: { en: 'Check my points history', ko: '[KO: Check my points history]' },
+      },
+      {
+        icon: 'fa-user-slash',
+        iconColor: 'pink',
+        href: '/user/blocked',
+        title: { en: 'blocked users', ko: '차단 사용자' },
+        desc: { en: 'Manage Block List', ko: '[KO: Manage Block List]' },
+      },
+      {
+        icon: 'fa-gear',
+        iconColor: 'purple',
+        href: '/user/settings',
+        title: { en: 'setting', ko: '설정' },
+        desc: { en: 'Change environment settings', ko: '[KO: Change environment settings]' },
+      },
+      {
+        icon: 'fa-user-gear',
+        iconColor: 'teal',
+        href: '/page/help/account_removal',
+        title: { en: 'Account management request', ko: '계정 관리 요청' },
+        desc: { en: 'Request account management to the administrator', ko: '[KO: Request account management to the administrator]' },
+      },
+    ],
+  },
+  {
+    header: { en: 'HELP', ko: '[KO: HELP]' },
+    icon: 'fa-circle-question',
+    items: [
+      {
+        icon: 'fa-book-open',
+        iconColor: 'blue',
+        href: '/help/guideline',
+        title: { en: 'User Guide', ko: '이용안내' },
+        desc: { en: 'Site Usage Guide', ko: '[KO: Site Usage Guide]' },
+      },
+      {
+        icon: 'fa-file-contract',
+        iconColor: 'green',
+        href: '/help/terms',
+        title: { en: 'Terms of Use', ko: '이용약관' },
+        desc: { en: 'Terms of Service', ko: '[KO: Terms of Service]' },
+      },
+      {
+        icon: 'fa-user-shield',
+        iconColor: 'indigo',
+        href: '/help/privacy',
+        title: { en: 'privacy policy', ko: '개인정보처리방침' },
+        desc: { en: 'privacy policy', ko: '개인정보처리방침' },
+      },
+      {
+        icon: 'fa-child-reaching',
+        iconColor: 'pink',
+        href: '/help/safety',
+        title: { en: 'Child safety standards', ko: '아동 안전 기준' },
+        desc: { en: 'CSAE/CSAM Prevention and Response Policy', ko: '[KO: CSAE/CSAM Prevention and Response Policy]' },
+      },
+      {
+        icon: 'fa-gift',
+        iconColor: 'purple',
+        href: '/help/point-event',
+        title: { en: 'Point Event', ko: '포인트 이벤트' },
+        desc: { en: 'Check point event dates', ko: '[KO: Check point event dates]' },
+      },
+      {
+        icon: 'fa-headset',
+        iconColor: 'teal',
+        href: '/chat/index',
+        title: { en: 'Operator Inquiry', ko: '운영자 문의' },
+        desc: { en: '1:1 Chat Inquiry with Operator', ko: '[KO: 1:1 Chat Inquiry with Operator]' },
+      },
+    ],
+  },
+  {
+    header: { en: 'ACCOUNT MANAGEMENT', ko: '[KO: ACCOUNT MANAGEMENT]' },
+    icon: 'fa-user-cog',
+    items: [
+      {
+        icon: 'fa-right-to-bracket',
+        iconColor: 'blue',
+        href: '/user/login',
+        title: { en: 'log in', ko: '로그인' },
+        desc: { en: 'Please log in.', ko: '[KO: Please log in.]' },
+      },
+    ],
+  },
+  {
+    header: { en: 'UTILITY', ko: '[KO: UTILITY]' },
+    icon: 'fa-toolbox',
+    items: [
+      {
+        icon: 'fa-magnifying-glass',
+        iconColor: 'blue',
+        href: '/post/search',
+        title: { en: 'search', ko: '검색' },
+        desc: { en: 'Search posts', ko: '[KO: Search posts]' },
+      },
+      {
+        icon: 'fa-cloud-sun',
+        iconColor: 'green',
+        href: '/weather',
+        title: { en: 'weather', ko: '날씨' },
+        desc: { en: 'Check local weather', ko: '[KO: Check local weather]' },
+      },
+      {
+        icon: 'fa-calculator',
+        iconColor: 'indigo',
+        href: '/currency',
+        title: { en: 'Exchange rate calculator', ko: '환율 계산기' },
+        desc: { en: 'Check real-time exchange rates', ko: '[KO: Check real-time exchange rates]' },
+      },
+      {
+        icon: 'fa-robot',
+        iconColor: 'purple',
+        href: '/ai',
+        title: { en: 'AI chatbot', ko: 'AI 챗봇' },
+        desc: { en: 'AI assistant specializing in the Philippines', ko: '[KO: AI assistant specializing in the Philippines]' },
+      },
+    ],
+  },
+]
