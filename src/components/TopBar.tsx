@@ -5,9 +5,10 @@ import { useAuth } from '../lib/auth'
 import LanguageSwitcher from './LanguageSwitcher'
 
 /** Sister deployment (the PhilGo community portal). Set VITE_SISTER_SITE_URL on
- *  Vercel; falls back to the local dev port of the HOMEPAGE project. */
+ *  Vercel to show the toggle; until then it only appears in local dev (port 5175). */
 const SISTER_SITE_URL =
-  (import.meta.env.VITE_SISTER_SITE_URL as string | undefined) ?? 'http://localhost:5175'
+  (import.meta.env.VITE_SISTER_SITE_URL as string | undefined) ??
+  (import.meta.env.DEV ? 'http://localhost:5175' : undefined)
 
 /** Thin top utility bar: left links · sister-site toggle · right links · EN/KO switch. */
 export default function TopBar() {
@@ -36,14 +37,16 @@ export default function TopBar() {
           className="flex items-center gap-3 sm:gap-m min-w-0 overflow-x-auto no-scrollbar whitespace-nowrap"
           aria-label="Top utility right"
         >
-          {/* Toggle back to the PhilGo community portal */}
-          <a
-            href={SISTER_SITE_URL}
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-neutral-90 bg-neutral-97 px-2.5 py-0.5 text-[12px] font-semibold text-[#5b6068] hover:border-accent-blue"
-          >
-            <i className="fa-solid fa-globe text-[#f15a24]" aria-hidden="true" />
-            PhilGo
-          </a>
+          {/* Toggle back to the PhilGo community portal (hidden until configured) */}
+          {SISTER_SITE_URL && (
+            <a
+              href={SISTER_SITE_URL}
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-neutral-90 bg-neutral-97 px-2.5 py-0.5 text-[12px] font-semibold text-[#5b6068] hover:border-accent-blue"
+            >
+              <i className="fa-solid fa-globe text-[#f15a24]" aria-hidden="true" />
+              PhilGo
+            </a>
+          )}
           {user && name && (
             <Link
               to="/user/profile"
