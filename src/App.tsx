@@ -10,11 +10,11 @@ import Chat from './routes/Chat'
 import Login from './routes/Login'
 import Register from './routes/Register'
 import Profile from './routes/Profile'
-import Settings from './routes/Settings'
 import PostWrite from './routes/PostWrite'
 import PhotoView from './routes/PhotoView'
 import BusinessRegister from './routes/BusinessRegister'
 import Placeholder from './routes/Placeholder'
+import AdminPage from './admin/AdminPage'
 
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */
 function PageRoutes() {
@@ -52,7 +52,11 @@ function PageRoutes() {
       <Route path="user/login" element={<Login />} />
       <Route path="user/register" element={<Register />} />
       <Route path="user/profile" element={<Profile />} />
-      <Route path="user/settings" element={<Settings />} />
+      {/* Settings merged into Profile — one account hub; the old URL still works */}
+      <Route path="user/settings" element={<Profile />} />
+
+      {/* Admin DBMS — CRUD over all content tables; admins only (see supabase/admin.sql) */}
+      <Route path="admin" element={<AdminPage />} />
       <Route path="point/history" element={<Placeholder title={{ en: 'Point history', ko: '포인트 내역' }} icon="fa-clock-rotate-left" />} />
 
       {/* Advertising */}

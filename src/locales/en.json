@@ -38,7 +38,25 @@
     "register": "register"
   },
   "search": {
-    "placeholder": "I will tell you everything about the Philippines."
+    "placeholder": "I will tell you everything about the Philippines.",
+    "noResults": "No results found."
+  },
+  "admin": {
+    "title": "Data Manager (DBMS)",
+    "subtitle": "Admin-only. Every dataset below is labelled with the exact part of the site where it is used.",
+    "usedIn": "Where this data is used",
+    "placement": "Shown at",
+    "newRecord": "New record",
+    "editRecord": "Edit record",
+    "save": "Save",
+    "saved": "Saved!",
+    "deleted": "Record deleted.",
+    "deleteConfirmTitle": "Delete this record?",
+    "deleteConfirmText": "This cannot be undone. It will disappear from the site section where it is shown.",
+    "empty": "No records yet.",
+    "enabled": "Enabled",
+    "badJsonTitle": "Invalid JSON",
+    "badJsonText": "Please fix the JSON syntax before saving."
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
@@ -117,7 +135,13 @@
     "addPhotos": "Add photos",
     "photosHint": "Log in to attach photos. Guests can post text only.",
     "photosMemberHint": "JPG or PNG. You can attach more than one.",
-    "removePhoto": "Remove"
+    "removePhoto": "Remove",
+    "prevPhoto": "Previous photo",
+    "nextPhoto": "Next photo",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete this post?",
+    "deleteConfirmText": "This cannot be undone. Its comments will be deleted too.",
+    "deleted": "Post deleted."
   },
   "profile": {
     "title": "My profile",

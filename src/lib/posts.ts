@@ -60,8 +60,8 @@ const AUTHOR_SELECT = 'author:profiles(username, display_name, avatar_url)'
 // UI code keeps using the plain ids (freetalk, qna, …); the mapping lives here.
 // -----------------------------------------------------------------------------
 const BOARD_PREFIX = 'resort-'
-const toDbBoard = (boardId: string) => BOARD_PREFIX + boardId
-const fromDbBoard = (boardId: string) =>
+export const toDbBoard = (boardId: string) => BOARD_PREFIX + boardId
+export const fromDbBoard = (boardId: string) =>
   boardId.startsWith(BOARD_PREFIX) ? boardId.slice(BOARD_PREFIX.length) : boardId
 const stripPost = <T extends { board_id: string }>(row: T): T => ({
   ...row,
@@ -160,6 +160,15 @@ export async function createPost(p: NewPost): Promise<DbPost> {
   const { data, error } = await supabase.from('posts').insert(row).select().single()
   if (error) throw error
   return stripPost(data as unknown as DbPost)
+}
+
+/**
+ * Delete a post. RLS ("members delete own posts") only lets the authoring member
+ * through — for anyone else this deletes 0 rows. Comments cascade in the DB.
+ */
+export async function deletePost(id: string): Promise<void> {
+  const { error } = await supabase.from('posts').delete().eq('id', id)
+  if (error) throw error
 }
 
 interface NewComment {

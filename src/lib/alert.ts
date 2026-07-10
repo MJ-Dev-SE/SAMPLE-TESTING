@@ -28,6 +28,26 @@ export function errText(err: unknown): string {
   return msg ? `${msg}${code}` : JSON.stringify(e)
 }
 
+/** Danger confirm dialog — resolves true only if the user confirms. */
+export const alertConfirm = async (
+  title: string,
+  text: string,
+  confirmText: string,
+  cancelText: string,
+): Promise<boolean> =>
+  (
+    await Swal.fire({
+      icon: 'warning',
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: accent,
+    })
+  ).isConfirmed
+
 /** Small top-right toast that auto-dismisses (used after login/sign-up). */
 export const toast = (title: string, icon: 'success' | 'info' = 'success') =>
   Swal.fire({

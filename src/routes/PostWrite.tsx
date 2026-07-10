@@ -8,6 +8,8 @@ import { useLocalized } from '../lib/useLocalized'
 import { createPost } from '../lib/posts'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
+import { usePhotoPicker } from '../lib/usePhotoPicker'
+import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
 
 /**
  * Compose page (/post/write?post_id=…&category=…).
@@ -24,7 +26,7 @@ export default function PostWrite() {
   const [boardId, setBoardId] = useState(params.get('post_id') || 'freetalk')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
-  const [files, setFiles] = useState<File[]>([])
+  const { picks, addFiles, removeAt } = usePhotoPicker()
   const [busy, setBusy] = useState(false)
 
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
@@ -37,8 +39,8 @@ export default function PostWrite() {
     try {
       // Members may attach photos; upload them to Storage first.
       let images: string[] = []
-      if (user && files.length > 0) {
-        const paths = await Promise.all(files.map((f) => uploadToMedia(`posts/${user.id}`, f)))
+      if (user && picks.length > 0) {
+        const paths = await Promise.all(picks.map((p) => uploadToMedia(`posts/${user.id}`, p.file)))
         images = paths.map(publicUrl)
       }
       const created = await createPost({
@@ -138,15 +140,13 @@ export default function PostWrite() {
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                onChange={addFiles}
                 className="text-sm"
               />
               <span className="text-xs text-subtlest">{t('post.photosMemberHint')}</span>
-              {files.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {files.map((f, i) => (
-                    <img key={i} src={URL.createObjectURL(f)} alt="" className="w-16 h-16 object-cover rounded-m border border-neutral-90" />
-                  ))}
+              {picks.length > 0 && (
+                <div className="mt-2">
+                  <PhotoPickerThumbs picks={picks} onRemove={removeAt} />
                 </div>
               )}
             </>

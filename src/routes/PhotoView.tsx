@@ -22,6 +22,9 @@ import {
 import { uploadToMedia } from '../lib/media'
 import { avatar } from '../lib/placeholder'
 import { alertError, errText, toast } from '../lib/alert'
+import { usePhotoPicker } from '../lib/usePhotoPicker'
+import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
+import ImageCarousel from '../components/ImageCarousel'
 import type { PhotoRec } from '../types'
 
 const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
@@ -76,7 +79,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const [posts, setPosts] = useState<DbPost[]>([])
   const [showForm, setShowForm] = useState(false)
   const [pBody, setPBody] = useState('')
-  const [pFiles, setPFiles] = useState<File[]>([])
+  const { picks, addFiles, removeAt, reset } = usePhotoPicker()
   const [pBusy, setPBusy] = useState(false)
 
   useEffect(() => {
@@ -92,13 +95,13 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const submitPost = async (e: FormEvent) => {
     e.preventDefault()
     const text = pBody.trim()
-    if (!text && pFiles.length === 0) return
+    if (!text && picks.length === 0) return
     setPBusy(true)
     try {
       // Members may attach photos; guests are text-only (Storage upload needs auth).
       let images: string[] = []
-      if (user && pFiles.length > 0) {
-        const paths = await Promise.all(pFiles.map((f) => uploadToMedia(`posts/${user.id}`, f)))
+      if (user && picks.length > 0) {
+        const paths = await Promise.all(picks.map((p) => uploadToMedia(`posts/${user.id}`, p.file)))
         images = paths
       }
       const title = text ? text.split('\n')[0].slice(0, 80) : L(photo?.title ?? { en: 'Photo', ko: '사진' })
@@ -120,7 +123,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
       }
       setPosts((prev) => [optimistic, ...prev])
       setPBody('')
-      setPFiles([])
+      reset()
       setShowForm(false)
       toast(t('post.created'))
     } catch (err) {
@@ -214,7 +217,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
               className="p-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue resize-y"
             />
             {user ? (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center gap-3">
                 <label className="inline-flex items-center gap-1.5 text-xs text-link cursor-pointer hover:underline">
                   <i className="fa-solid fa-image" />
                   {t('post.addPhotos')}
@@ -222,20 +225,18 @@ function PhotoPage({ photoId }: { photoId: string }) {
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => setPFiles(Array.from(e.target.files ?? []))}
+                    onChange={addFiles}
                     className="hidden"
                   />
                 </label>
-                {pFiles.map((f, i) => (
-                  <img key={i} src={URL.createObjectURL(f)} alt="" className="w-12 h-12 object-cover rounded-m border border-neutral-90" />
-                ))}
+                <PhotoPickerThumbs picks={picks} onRemove={removeAt} thumbClass="w-14 h-14" />
               </div>
             ) : (
               <span className="text-xs text-subtlest">{t('post.photosHint')}</span>
             )}
             <button
               type="submit"
-              disabled={pBusy || (!pBody.trim() && pFiles.length === 0)}
+              disabled={pBusy || (!pBody.trim() && picks.length === 0)}
               className="self-end h-9 px-4 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4] disabled:opacity-60"
             >
               {pBusy ? t('auth.working') : t('post.submit')}
@@ -261,10 +262,8 @@ function PhotoPage({ photoId }: { photoId: string }) {
                 </div>
                 {p.body && <p className="text-sm text-body whitespace-pre-wrap">{p.body}</p>}
                 {p.images.length > 0 && (
-                  <div className="mt-2 flex flex-col gap-2">
-                    {p.images.map((src, i) => (
-                      <SmartImage key={i} src={src} alt="" className="w-full rounded-m border border-neutral-90" />
-                    ))}
+                  <div className="mt-2">
+                    <ImageCarousel images={p.images} />
                   </div>
                 )}
               </li>

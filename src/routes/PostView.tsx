@@ -1,14 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
-import SmartImage from '../components/SmartImage'
+import ImageCarousel from '../components/ImageCarousel'
 import {
   authorName,
   createComment,
+  deletePost,
   formatDate,
   getPost,
   isGuest,
@@ -16,7 +17,7 @@ import {
   type DbComment,
   type DbPost,
 } from '../lib/posts'
-import { alertError, errText, toast } from '../lib/alert'
+import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 
 /** Post view (/post/view?id=<uuid>&post_id=<board>). All posts are Supabase-backed. */
 export default function PostView() {
@@ -30,6 +31,7 @@ export default function PostView() {
 function RealPostView({ id, boardId }: { id: string; boardId: string }) {
   const { t } = useTranslation()
   const L = useLocalized()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
 
@@ -69,6 +71,28 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
   }
 
   const images = post?.images ?? []
+  // RLS only allows the authoring member to delete; show the button to them alone.
+  const canDelete = !!user && !!post && post.author_id === user.id
+
+  const removePost = async () => {
+    const ok = await alertConfirm(
+      t('post.deleteConfirmTitle'),
+      t('post.deleteConfirmText'),
+      t('post.delete'),
+      t('post.cancel'),
+    )
+    if (!ok) return
+    setBusy(true)
+    try {
+      await deletePost(id)
+      toast(t('post.deleted'))
+      navigate(`/post/list?post_id=${boardId}`, { replace: true })
+    } catch (err) {
+      alertError(t('auth.errorTitle'), errText(err))
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <Layout>
@@ -80,7 +104,20 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
 
       <article className="border border-neutral-90 rounded-l overflow-hidden">
         <header className="p-l border-b border-neutral-90">
-          <h1 className="text-lg font-bold text-text-normal">{post?.title ?? '…'}</h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-lg font-bold text-text-normal min-w-0">{post?.title ?? '…'}</h1>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={removePost}
+                disabled={busy}
+                className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold text-accent-pink border border-accent-pink/40 rounded-m hover:bg-accent-pink hover:text-white disabled:opacity-60"
+              >
+                <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                {t('post.delete')}
+              </button>
+            )}
+          </div>
           {post && (
             <div className="mt-2 flex items-center gap-l text-xs text-subtlest tabular-nums">
               <span className="inline-flex items-center gap-1 not-italic">
@@ -99,10 +136,8 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
           {post?.body || (images.length === 0 && <span className="text-subtlest">—</span>)}
         </div>
         {images.length > 0 && (
-          <div className="px-l pb-l flex flex-col gap-3">
-            {images.map((src, i) => (
-              <SmartImage key={i} src={src} alt="" className="w-full rounded-m border border-neutral-90" />
-            ))}
+          <div className="px-l pb-l">
+            <ImageCarousel images={images} />
           </div>
         )}
       </article>
