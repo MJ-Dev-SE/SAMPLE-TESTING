@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import Layout from '../components/Layout'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
@@ -11,8 +10,9 @@ import { useIsAdmin } from './useIsAdmin'
 import RecordForm from './RecordForm'
 
 /**
- * /admin — the DBMS: admin-only CRUD over every content table, with each
- * dataset (and row) labelled with WHERE it is used in the site.
+ * /admin — the DBMS. A STANDALONE console, deliberately not part of the website:
+ * no site Layout/theme, its own dark full-width shell, and no link anywhere in
+ * the public UI — reachable only by typing the URL (guarded by RLS + redirect).
  */
 export default function AdminPage() {
   const { t } = useTranslation()
@@ -22,41 +22,60 @@ export default function AdminPage() {
   const [active, setActive] = useState<TableDef>(ADMIN_TABLES[0])
 
   if (loading || (user && isAdmin === null)) {
-    return <Layout><p className="text-sm text-muted">…</p></Layout>
+    return (
+      <div className="min-h-screen bg-slate-950 grid place-items-center text-slate-500 text-sm">
+        <span><i className="fa-solid fa-spinner fa-spin mr-2" />…</span>
+      </div>
+    )
   }
   if (!user) return <Navigate to="/user/login" replace />
   if (!isAdmin) return <Navigate to="/" replace /> // hindi admin — walang makikita dito
 
   return (
-    <Layout>
-      <h1 className="text-xl font-bold text-text-normal mb-s">
-        <i className="fa-solid fa-database mr-2 text-accent-blue" />
-        {t('admin.title')}
-      </h1>
-      <p className="text-xs text-subtlest mb-m">{t('admin.subtitle')}</p>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
+      {/* Console top bar — its own chrome, hindi ang site header */}
+      <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-10">
+        <div className="max-w-[1400px] mx-auto px-4 h-14 flex items-center justify-between gap-3">
+          <span className="font-bold text-[15px] whitespace-nowrap">
+            <i className="fa-solid fa-database text-emerald-400 mr-2" aria-hidden="true" />
+            {t('admin.title')}
+          </span>
+          <div className="flex items-center gap-4 min-w-0 text-sm">
+            <span className="text-slate-500 text-xs truncate hidden sm:inline">{user.email}</span>
+            <Link to="/" className="shrink-0 text-emerald-400 hover:text-emerald-300 whitespace-nowrap">
+              <i className="fa-solid fa-arrow-up-right-from-square mr-1.5" aria-hidden="true" />
+              {t('admin.backToSite')}
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      {/* Table tabs */}
-      <div className="flex flex-wrap gap-2 mb-m">
-        {ADMIN_TABLES.map((d) => (
-          <button
-            key={d.table}
-            type="button"
-            onClick={() => setActive(d)}
-            className={`inline-flex items-center gap-1.5 h-9 px-3 text-sm rounded-m border ${
-              active.table === d.table
-                ? 'bg-accent-blue text-white border-accent-blue font-semibold'
-                : 'border-neutral-90 text-text-normal hover:bg-neutral-97'
-            }`}
-          >
-            <i className={`fa-solid ${d.icon}`} aria-hidden="true" />
-            {L(d.title)}
-          </button>
-        ))}
-      </div>
+      <main className="max-w-[1400px] mx-auto px-4 py-6">
+        <p className="text-xs text-slate-500 mb-4">{t('admin.subtitle')}</p>
 
-      {/* key remounts the panel per table so its state resets */}
-      <TablePanel key={active.table} def={active} userId={user.id} />
-    </Layout>
+        {/* Table tabs */}
+        <div className="flex flex-wrap gap-2 mb-5">
+          {ADMIN_TABLES.map((d) => (
+            <button
+              key={d.table}
+              type="button"
+              onClick={() => setActive(d)}
+              className={`inline-flex items-center gap-1.5 h-9 px-3 text-sm rounded border ${
+                active.table === d.table
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-500 font-semibold'
+                  : 'border-slate-700 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <i className={`fa-solid ${d.icon}`} aria-hidden="true" />
+              {L(d.title)}
+            </button>
+          ))}
+        </div>
+
+        {/* key remounts the panel per table so its state resets */}
+        <TablePanel key={active.table} def={active} userId={user.id} />
+      </main>
+    </div>
   )
 }
 
@@ -138,20 +157,20 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
   return (
     <section>
       {/* WHERE THIS DATA IS USED — the point of the DBMS */}
-      <div className="border border-accent-blue/30 bg-chip-blue/30 rounded-m px-m py-2.5 text-[13px] text-body mb-m">
-        <i className="fa-solid fa-location-dot mr-2 text-accent-blue" aria-hidden="true" />
+      <div className="border border-emerald-500/30 bg-emerald-500/10 rounded px-4 py-2.5 text-[13px] text-slate-200 mb-4">
+        <i className="fa-solid fa-location-dot mr-2 text-emerald-400" aria-hidden="true" />
         <span className="font-semibold">{t('admin.usedIn')}:</span> {L(def.usedIn)}
       </div>
 
-      <div className="flex items-center justify-between gap-3 mb-s">
-        <h2 className="text-sm font-semibold text-text-normal">
-          {L(def.title)} ({rows.length})
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold text-slate-100">
+          {L(def.title)} <span className="text-slate-500">({rows.length})</span>
         </h2>
         {def.canCreate && (
           <button
             type="button"
             onClick={() => setEditing('new')}
-            className="inline-flex items-center gap-1.5 h-9 px-3 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4]"
+            className="inline-flex items-center gap-1.5 h-9 px-3 bg-emerald-500 text-slate-950 text-sm font-semibold rounded hover:bg-emerald-400"
           >
             <i className="fa-solid fa-plus" aria-hidden="true" />
             {t('admin.newRecord')}
@@ -171,39 +190,39 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
       )}
 
       {loading ? (
-        <p className="text-sm text-subtlest">…</p>
+        <p className="text-sm text-slate-500">…</p>
       ) : rows.length === 0 ? (
-        <p className="border border-dashed border-neutral-90 rounded-l p-l text-sm text-subtlest text-center">
+        <p className="border border-dashed border-slate-700 rounded p-6 text-sm text-slate-500 text-center">
           {t('admin.empty')}
         </p>
       ) : (
-        <div className="border border-neutral-90 rounded-l overflow-x-auto">
+        <div className="border border-slate-800 rounded-lg overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-neutral-97 text-left text-xs text-muted">
+              <tr className="bg-slate-900 text-left text-xs text-slate-400">
                 {def.listCols.map((c) => (
-                  <th key={c} className="px-3 py-2 font-semibold whitespace-nowrap">{c}</th>
+                  <th key={c} className="px-3 py-2.5 font-semibold whitespace-nowrap">{c}</th>
                 ))}
-                {def.placement && <th className="px-3 py-2 font-semibold whitespace-nowrap">{t('admin.placement')}</th>}
-                <th className="px-3 py-2" />
+                {def.placement && <th className="px-3 py-2.5 font-semibold whitespace-nowrap">{t('admin.placement')}</th>}
+                <th className="px-3 py-2.5" />
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.id} className="border-t border-neutral-90 align-top hover:bg-neutral-97">
+                <tr key={row.id} className="border-t border-slate-800 align-top hover:bg-slate-900/60">
                   {def.listCols.map((c) => (
-                    <td key={c} className="px-3 py-2 text-body max-w-[260px] truncate">{cell(row, c)}</td>
+                    <td key={c} className="px-3 py-2.5 text-slate-200 max-w-[260px] truncate">{cell(row, c)}</td>
                   ))}
                   {def.placement && (
-                    <td className="px-3 py-2 text-xs text-subtlest max-w-[260px]">{def.placement(row)}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-500 max-w-[280px]">{def.placement(row)}</td>
                   )}
-                  <td className="px-3 py-2 whitespace-nowrap text-right">
+                  <td className="px-3 py-2.5 whitespace-nowrap text-right">
                     <button
                       type="button"
                       aria-label={t('admin.editRecord')}
                       title={t('admin.editRecord')}
                       onClick={() => setEditing(row)}
-                      className="h-7 w-7 rounded-m text-muted hover:text-white hover:bg-accent-blue mr-1"
+                      className="h-7 w-7 rounded text-slate-400 hover:text-slate-950 hover:bg-emerald-400 mr-1"
                     >
                       <i className="fa-solid fa-pen" aria-hidden="true" />
                     </button>
@@ -213,7 +232,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                       title={t('post.delete')}
                       disabled={busy}
                       onClick={() => remove(row)}
-                      className="h-7 w-7 rounded-m text-muted hover:text-white hover:bg-accent-pink disabled:opacity-50"
+                      className="h-7 w-7 rounded text-slate-400 hover:text-white hover:bg-rose-500 disabled:opacity-50"
                     >
                       <i className="fa-solid fa-trash-can" aria-hidden="true" />
                     </button>

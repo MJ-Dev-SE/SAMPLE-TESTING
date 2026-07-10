@@ -9,7 +9,6 @@ import { supabase } from '../lib/supabase'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { deletePost, formatDate, listUserComments, listUserPosts, type DbComment, type DbPost } from '../lib/posts'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
-import { useIsAdmin } from '../admin/useIsAdmin'
 
 /**
  * Profile page (/user/profile, also served at /user/settings) — ONE place for
@@ -20,7 +19,6 @@ export default function Profile() {
   const { t } = useTranslation()
   const L = useLocalized()
   const { user, profile, loading, updateAvatar } = useAuth()
-  const isAdmin = useIsAdmin()
 
   // --- settings: avatar upload ---
   const [file, setFile] = useState<File | null>(null)
@@ -132,15 +130,6 @@ export default function Profile() {
           <h1 className="text-xl font-bold text-text-normal truncate">{name}</h1>
           <p className="text-xs text-subtlest truncate">{user.email}</p>
         </div>
-        {isAdmin && (
-          <Link
-            to="/admin"
-            className="shrink-0 inline-flex items-center gap-1.5 h-9 px-3 border border-neutral-90 text-sm text-text-normal rounded-m hover:bg-neutral-97"
-          >
-            <i className="fa-solid fa-database text-accent-blue" aria-hidden="true" />
-            {t('admin.title')}
-          </Link>
-        )}
       </div>
 
       {/* Settings — avatar + password, same page as the history (one profile hub) */}
