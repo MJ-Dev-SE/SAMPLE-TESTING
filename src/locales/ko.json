@@ -112,7 +112,12 @@
     "commentAdded": "댓글이 등록되었습니다!",
     "noComments": "아직 댓글이 없습니다. 첫 댓글을 남겨보세요!",
     "guestBadge": "게스트",
-    "loginToInteract": "로그인하면 본인 이름으로, 아니면 게스트로 작성할 수 있습니다."
+    "loginToInteract": "로그인하면 본인 이름으로, 아니면 게스트로 작성할 수 있습니다.",
+    "boardLabel": "게시판",
+    "addPhotos": "사진 추가",
+    "photosHint": "사진을 첨부하려면 로그인하세요. 게스트는 텍스트만 작성할 수 있습니다.",
+    "photosMemberHint": "JPG 또는 PNG. 여러 장 첨부할 수 있습니다.",
+    "removePhoto": "삭제"
   },
   "profile": {
     "title": "내 프로필",
@@ -121,7 +126,8 @@
     "noPosts": "아직 작성한 글이 없습니다.",
     "noComments": "아직 작성한 댓글이 없습니다.",
     "postedIn": "위치:",
-    "guestActivityNote": "게스트 활동은 기록되지 않습니다 — 로그인하면 기록이 남습니다."
+    "guestActivityNote": "게스트 활동은 기록되지 않습니다 — 로그인하면 기록이 남습니다.",
+    "settings": "프로필 설정"
   },
   "home": {
     "newsTabsHeading": "뉴스",
@@ -142,7 +148,44 @@
     "recentComments": "최근 댓글",
     "recentPhotos": "최근 사진",
     "emergencyContact": "비상 연락처",
-    "calculator": "계산기"
+    "calculator": "계산기",
+    "travelInfo": "여행 정보"
+  },
+  "settings": {
+    "title": "프로필 설정",
+    "photoSection": "프로필 사진",
+    "photoHint": "JPG 또는 PNG를 업로드하세요. 게시글과 댓글 옆에 표시됩니다.",
+    "choosePhoto": "사진 선택",
+    "uploadPhoto": "사진 업로드",
+    "photoUpdated": "프로필 사진이 변경되었습니다!",
+    "passwordSection": "비밀번호 변경",
+    "newPassword": "새 비밀번호",
+    "confirmNewPassword": "새 비밀번호 확인",
+    "updatePassword": "비밀번호 변경",
+    "passwordUpdated": "비밀번호가 변경되었습니다!",
+    "back": "프로필로 돌아가기"
+  },
+  "business": {
+    "registerTitle": "업소 등록",
+    "memberOnly": "업소를 등록하려면 로그인하세요.",
+    "name": "업소명",
+    "namePlaceholder": "예: 스마일투어",
+    "category": "카테고리",
+    "location": "위치",
+    "locationPlaceholder": "예: 앙헬레스, 마닐라",
+    "excerpt": "간단한 설명",
+    "excerptPlaceholder": "업소록 카드에 표시되는 한 줄 설명",
+    "description": "상세 설명",
+    "descriptionPlaceholder": "고객에게 업소를 소개해 주세요…",
+    "thumbnail": "로고 / 사진",
+    "submit": "업소 등록",
+    "created": "업소가 등록되었습니다!",
+    "emptyName": "업소명을 입력해 주세요."
+  },
+  "company": {
+    "empty": "아직 등록된 업소가 없습니다.",
+    "registerCta": "업소 등록하기",
+    "allCategories": "전체"
   },
   "menuPage": {
     "breadcrumbHome": "홈",
@@ -159,7 +202,7 @@
     "utility": "유틸리티"
   },
   "footer": {
-    "copyright": "© 2018~2026 PhilGo.Com",
+    "copyright": "© 2026 ManilaTour.Com",
     "globalSite": "글로벌 사이트",
     "advertisement": "광고",
     "link": "링크",

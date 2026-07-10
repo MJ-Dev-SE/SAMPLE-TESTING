@@ -10,8 +10,10 @@ import Chat from './routes/Chat'
 import Login from './routes/Login'
 import Register from './routes/Register'
 import Profile from './routes/Profile'
+import Settings from './routes/Settings'
 import PostWrite from './routes/PostWrite'
 import PhotoView from './routes/PhotoView'
+import BusinessRegister from './routes/BusinessRegister'
 import Placeholder from './routes/Placeholder'
 
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */
@@ -34,6 +36,7 @@ function PageRoutes() {
 
       {/* Business directory */}
       <Route path="company" element={<Company />} />
+      <Route path="company/register" element={<BusinessRegister />} />
       <Route path="company/view" element={<Placeholder title={{ en: 'Business', ko: '업소' }} icon="fa-store" />} />
       <Route path="real_estate/list.php" element={<Placeholder title={{ en: 'Real Estate', ko: '부동산' }} icon="fa-building" />} />
 
@@ -49,7 +52,7 @@ function PageRoutes() {
       <Route path="user/login" element={<Login />} />
       <Route path="user/register" element={<Register />} />
       <Route path="user/profile" element={<Profile />} />
-      <Route path="user/settings" element={<Placeholder title={{ en: 'setting', ko: '설정' }} icon="fa-gear" />} />
+      <Route path="user/settings" element={<Settings />} />
       <Route path="point/history" element={<Placeholder title={{ en: 'Point history', ko: '포인트 내역' }} icon="fa-clock-rotate-left" />} />
 
       {/* Advertising */}

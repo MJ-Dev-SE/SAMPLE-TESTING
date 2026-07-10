@@ -1,11 +1,27 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { recentPhotos } from '../data/photos'
+import { listPhotos } from '../lib/content'
+import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
+import type { PhotoRec } from '../types'
 
 export default function RecentPhotos() {
   const { t } = useTranslation()
   const L = useLocalized()
+  const [photos, setPhotos] = useState<PhotoRec[]>([])
+
+  useEffect(() => {
+    let alive = true
+    listPhotos('recent')
+      .then((p) => alive && setPhotos(p))
+      .catch(() => alive && setPhotos([]))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  if (photos.length === 0) return null
 
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">
@@ -13,17 +29,18 @@ export default function RecentPhotos() {
         <h3 className="text-sm font-semibold text-text-normal">{t('widgets.recentPhotos')}</h3>
       </div>
       <div className="grid grid-cols-3 gap-1 p-1">
-        {recentPhotos.map((p) => (
+        {photos.map((p) => (
           <Link
-            key={p.id}
-            to={`/photo/view?id=${p.id}`}
-            className="block aspect-square overflow-hidden rounded-m"
+            key={p.slug}
+            to={`/photo/view?id=${p.slug}`}
+            className="block rounded-m overflow-hidden group"
             aria-label={L(p.title)}
           >
-            <img
+            <SmartImage
               src={p.src}
               alt={L(p.title)}
-              className="w-full h-full object-cover hover:scale-105 transition-transform"
+              cover
+              className="aspect-square group-hover:scale-105 transition-transform"
             />
           </Link>
         ))}

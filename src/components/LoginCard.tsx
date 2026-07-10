@@ -21,14 +21,25 @@ export default function LoginCard() {
       {user ? (
         /* Logged-in state */
         <div className="p-m flex flex-col items-center gap-3">
-          <span className="w-14 h-14 rounded-full bg-chip-blue grid place-items-center text-accent-blue">
-            <i className="fa-solid fa-user text-2xl" />
-          </span>
+          {profile?.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
+          ) : (
+            <span className="w-14 h-14 rounded-full bg-chip-blue grid place-items-center text-accent-blue">
+              <i className="fa-solid fa-user text-2xl" />
+            </span>
+          )}
           <p className="text-xs text-muted text-center">
             {t('auth.loggedInAs')}
             <br />
             <span className="text-sm font-semibold text-text-normal break-all">{name}</span>
           </p>
+          <Link
+            to="/user/settings"
+            className="w-full text-center bg-accent-blue text-white text-sm font-semibold py-2 rounded-m hover:bg-[#005bc4]"
+          >
+            <i className="fa-solid fa-gear mr-2" />
+            {t('profile.settings')}
+          </Link>
           <button
             type="button"
             onClick={signOut}

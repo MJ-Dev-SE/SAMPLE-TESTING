@@ -1,12 +1,23 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { popularPosts } from '../data/home'
-import { useLocalized } from '../lib/useLocalized'
+import { formatDate, listPopularPosts, type DbPost } from '../lib/posts'
 
-/** Popular Posts (Last 30 days): ranked list = rank + title + views + comments + date. */
+/** Popular Posts (Last 30 days): ranked by views, from the `popular_posts` Supabase view. */
 export default function PopularList() {
   const { t } = useTranslation()
-  const L = useLocalized()
+  const [posts, setPosts] = useState<DbPost[]>([])
+
+  useEffect(() => {
+    let alive = true
+    listPopularPosts()
+      .then((p) => alive && setPosts(p))
+      .catch(() => alive && setPosts([]))
+    return () => {
+      alive = false
+    }
+  }, [])
+
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">
       <div className="bg-neutral-95 px-s py-2">
@@ -15,25 +26,35 @@ export default function PopularList() {
           {t('home.popularPosts')}
         </h3>
       </div>
-      <ol>
-        {popularPosts.map((p) => (
-          <li key={p.rank} className="border-t border-neutral-90 first:border-t-0">
-            <Link to={p.href} className="flex items-center gap-s px-s py-2 text-sm hover:bg-neutral-97">
-              <span
-                className={`w-6 shrink-0 text-center font-bold tabular-nums ${
-                  p.rank <= 3 ? 'text-accent-pink' : 'text-muted'
-                }`}
-              >
-                {p.rank}
-              </span>
-              <span className="flex-1 min-w-0 text-body truncate">{L(p.title)}</span>
-              <span className="shrink-0 text-xs text-subtlest tabular-nums hidden sm:inline">
-                {p.views} / {p.comments} / {p.date}
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
+      {posts.length === 0 ? (
+        <p className="px-s py-3 text-xs text-subtlest text-center">{t('post.noComments')}</p>
+      ) : (
+        <ol>
+          {posts.map((p, i) => {
+            const rank = i + 1
+            return (
+              <li key={p.id} className="border-t border-neutral-90 first:border-t-0">
+                <Link
+                  to={`/post/view?id=${p.id}&post_id=${p.board_id}`}
+                  className="flex items-center gap-s px-s py-2 text-sm hover:bg-neutral-97"
+                >
+                  <span
+                    className={`w-6 shrink-0 text-center font-bold tabular-nums ${
+                      rank <= 3 ? 'text-accent-pink' : 'text-muted'
+                    }`}
+                  >
+                    {rank}
+                  </span>
+                  <span className="flex-1 min-w-0 text-body truncate">{p.title}</span>
+                  <span className="shrink-0 text-xs text-subtlest tabular-nums hidden sm:inline">
+                    {p.views} / {p.comment_total ?? 0} / {formatDate(p.created_at)}
+                  </span>
+                </Link>
+              </li>
+            )
+          })}
+        </ol>
+      )}
     </section>
   )
 }

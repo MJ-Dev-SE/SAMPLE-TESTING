@@ -18,9 +18,13 @@ export interface DbPost {
   guest_name: string | null
   views: number
   created_at: string
+  /** Public Storage URLs/paths of attached photos ([] = text-only post). */
+  images: string[]
   author?: AuthorLite | null
   /** PostgREST embedded aggregate: [{ count }]. */
   comment_count?: { count: number }[]
+  /** Total comments — present on rows from the `popular_posts` view. */
+  comment_total?: number
 }
 
 export interface DbComment {
@@ -32,6 +36,8 @@ export interface DbComment {
   body: string
   created_at: string
   author?: AuthorLite | null
+  /** Parent post (embedded for the "recent comments" widget). */
+  post?: { id: string; title: string; board_id: string } | null
 }
 
 /** Display name for a post/comment: member username → guest name → "Guest". */
@@ -62,15 +68,50 @@ const stripPost = <T extends { board_id: string }>(row: T): T => ({
   board_id: fromDbBoard(row.board_id),
 })
 
-/** Newest-first posts for one board, with author + comment count. */
-export async function listPosts(boardId: string): Promise<DbPost[]> {
-  const { data, error } = await supabase
+/**
+ * Newest-first posts for one board, with author + comment count.
+ * Optional `limit`, and optional `category` to narrow to one sub-category
+ * (used by the resort category pages, which group posts by the photo/theme slug).
+ */
+export async function listPosts(boardId: string, limit?: number, category?: string): Promise<DbPost[]> {
+  let q = supabase
     .from('posts')
     .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count)`)
     .eq('board_id', toDbBoard(boardId))
     .order('created_at', { ascending: false })
+  if (category) q = q.eq('category', category)
+  if (limit) q = q.limit(limit)
+  const { data, error } = await q
   if (error) throw error
   return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+}
+
+/**
+ * Popular posts (last 30 days), ranked by views — from the `popular_posts` view.
+ * The view already filters to this site's boards and excludes photo anchors.
+ */
+export async function listPopularPosts(): Promise<DbPost[]> {
+  const { data, error } = await supabase
+    .from('popular_posts')
+    .select(`*, ${AUTHOR_SELECT}`)
+  if (error) throw error
+  return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+}
+
+/** Newest comments across all boards, with author + parent post — for the sidebar widget. */
+export async function listRecentComments(limit = 8): Promise<DbComment[]> {
+  const { data, error } = await supabase
+    .from('comments')
+    .select(`*, ${AUTHOR_SELECT}, post:posts(id, title, board_id)`)
+    .not('body', 'eq', '')
+    .order('created_at', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return ((data ?? []) as unknown as DbComment[]).map((c) => {
+    const stripped = stripPost(c)
+    if (stripped.post) stripped.post = { ...stripped.post, board_id: fromDbBoard(stripped.post.board_id) }
+    return stripped
+  })
 }
 
 /** A single post by id (for /post/view?id=…). */
@@ -102,6 +143,8 @@ interface NewPost {
   body: string
   /** Logged-in user's id, or null for a guest post. */
   authorId: string | null
+  /** Attached photo paths/URLs (members only; guests stay text-only). */
+  images?: string[]
 }
 
 export async function createPost(p: NewPost): Promise<DbPost> {
@@ -112,6 +155,7 @@ export async function createPost(p: NewPost): Promise<DbPost> {
     body: p.body,
     author_id: p.authorId,
     guest_name: p.authorId ? null : randomGuestName(),
+    images: p.images ?? [],
   }
   const { data, error } = await supabase.from('posts').insert(row).select().single()
   if (error) throw error
@@ -205,4 +249,17 @@ export function formatDate(iso: string): string {
   const d = new Date(iso)
   const p = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}.${p(d.getMonth() + 1)}.${p(d.getDate())}`
+}
+
+/** ISO timestamp → coarse relative age ("just now", "3h", "2d"). Locale-agnostic. */
+export function timeAgo(iso: string): string {
+  const secs = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000)
+  if (secs < 60) return 'just now'
+  const mins = Math.floor(secs / 60)
+  if (mins < 60) return `${mins}m`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h`
+  const days = Math.floor(hrs / 24)
+  if (days < 30) return `${days}d`
+  return formatDate(iso)
 }

@@ -15,7 +15,7 @@ export const footerGroups: FooterGroup[] = [
     links: [
       { label: { en: 'Business Directory', ko: '업소록' }, href: '/company' },
       { label: { en: 'User Guide', ko: '이용안내' }, href: '/help/guideline' },
-      { label: { en: 'About Philgo', ko: '필고 소개' }, href: '/help/about' },
+      { label: { en: 'About ManilaTour', ko: '필고 소개' }, href: '/help/about' },
       { label: { en: 'Operator Inquiry', ko: '운영자 문의' }, href: '/chat/index' },
     ],
   },

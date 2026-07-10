@@ -112,7 +112,12 @@
     "commentAdded": "Comment added!",
     "noComments": "No comments yet. Be the first!",
     "guestBadge": "guest",
-    "loginToInteract": "Log in to post as yourself, or continue as a guest."
+    "loginToInteract": "Log in to post as yourself, or continue as a guest.",
+    "boardLabel": "Board",
+    "addPhotos": "Add photos",
+    "photosHint": "Log in to attach photos. Guests can post text only.",
+    "photosMemberHint": "JPG or PNG. You can attach more than one.",
+    "removePhoto": "Remove"
   },
   "profile": {
     "title": "My profile",
@@ -121,7 +126,8 @@
     "noPosts": "You haven't posted yet.",
     "noComments": "You haven't commented yet.",
     "postedIn": "in",
-    "guestActivityNote": "Guest activity isn't tracked — log in to keep a history."
+    "guestActivityNote": "Guest activity isn't tracked — log in to keep a history.",
+    "settings": "Profile settings"
   },
   "home": {
     "newsTabsHeading": "News",
@@ -142,7 +148,44 @@
     "recentComments": "Recent Comments",
     "recentPhotos": "Recent photos",
     "emergencyContact": "Emergency contact",
-    "calculator": "calculator"
+    "calculator": "calculator",
+    "travelInfo": "Travel Information"
+  },
+  "settings": {
+    "title": "Profile settings",
+    "photoSection": "Profile photo",
+    "photoHint": "Upload a JPG or PNG. Shown next to your posts and comments.",
+    "choosePhoto": "Choose photo",
+    "uploadPhoto": "Upload photo",
+    "photoUpdated": "Profile photo updated!",
+    "passwordSection": "Change password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "updatePassword": "Update password",
+    "passwordUpdated": "Password updated!",
+    "back": "Back to profile"
+  },
+  "business": {
+    "registerTitle": "Register your business",
+    "memberOnly": "Please log in to register a business listing.",
+    "name": "Business name",
+    "namePlaceholder": "e.g. Smile Tour",
+    "category": "Category",
+    "location": "Location",
+    "locationPlaceholder": "e.g. Angeles, Manila",
+    "excerpt": "Short description",
+    "excerptPlaceholder": "One line shown on the directory card",
+    "description": "Full description",
+    "descriptionPlaceholder": "Tell customers about your business…",
+    "thumbnail": "Logo / photo",
+    "submit": "Register business",
+    "created": "Business registered!",
+    "emptyName": "Please enter a business name."
+  },
+  "company": {
+    "empty": "No businesses listed yet.",
+    "registerCta": "Register your business",
+    "allCategories": "All"
   },
   "menuPage": {
     "breadcrumbHome": "home",
@@ -159,7 +202,7 @@
     "utility": "UTILITY"
   },
   "footer": {
-    "copyright": "© 2018~2026 PhilGo.Com",
+    "copyright": "© 2026 ManilaTour.Com",
     "globalSite": "Global Site",
     "advertisement": "ADVERTISEMENT",
     "link": "LINK",

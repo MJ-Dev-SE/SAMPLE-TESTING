@@ -51,6 +51,36 @@ Configured in `tailwind.config.ts` and mirrored as CSS variables in `src/styles/
 
 `/` (home) · `/menu` · `/post/list` · `/company` · `/chat` · plus `/en/*` and `/ko/*` locale wrappers.
 
+## Backend & content (Supabase)
+
+Dynamic content and media are stored in Supabase (Postgres + Storage), not in code.
+Structural chrome (nav, mega-menu, footer, category bar, menu page, emergency numbers)
+stays in `src/data/*` as layout config.
+
+**One-time setup / migration** (Supabase dashboard):
+
+1. Apply the auth schema (if not already): run `supabase/schema.sql` in the SQL Editor.
+2. Apply the content schema: run `supabase/content.sql`. This creates the `businesses`,
+   `photos`, `ads`, `news_items`, `travel_info` tables + RLS, the `popular_posts` view,
+   `posts.images`, and the public `media` storage bucket.
+3. Seed today's content + upload the resort images into Storage. From the project root:
+
+   ```powershell
+   $env:SUPABASE_URL="https://YOUR-PROJECT.supabase.co"
+   $env:SUPABASE_SERVICE_ROLE_KEY="<service-role key from Project Settings → API>"
+   node scripts/seed.mjs
+   ```
+
+   The **service-role key is only used by this local script** and is never shipped to the
+   browser (the app uses the anon key from `.env.local`). Media paths are stored relative
+   to the `media` bucket and resolved by `src/lib/media.ts`.
+
+**Live data:** Weather (Open-Meteo) and exchange rates (open.er-api.com) are fetched
+client-side from free, no-key public APIs and cached in `localStorage`.
+
+**What comes from where:** posts/comments/businesses/profiles + uploaded images → Supabase;
+weather/FX → live APIs; nav/menu/footer labels → `src/data/*`.
+
 ## Notes
 
 - Banner/photo/avatar images are inline SVG placeholders (no external asset downloads).

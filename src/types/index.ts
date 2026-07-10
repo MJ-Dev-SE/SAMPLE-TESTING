@@ -169,6 +169,61 @@ export interface Language {
   href: string
 }
 
+/* ---- Supabase content records (jsonb localized fields → Localized) ---- */
+
+/** public.photos row — banner row, recent-photos grid, /photo/view. */
+export interface PhotoRec {
+  slug: string
+  /** Storage-relative path (or absolute URL); resolve with lib/media.publicUrl. */
+  src: string
+  section: 'banner' | 'recent'
+  tag: Localized
+  title: Localized
+  description: Localized
+  details: Localized[]
+}
+
+/** public.businesses row — Business Directory + recently-updated widget. */
+export interface BusinessRec {
+  id: string
+  name: string
+  category: string | null
+  location: string | null
+  excerpt: Localized
+  description: Localized
+  thumb_url: string | null
+  updated_at: string
+}
+
+/** public.ads row — ad cards + wing banners. */
+export interface AdRec {
+  id: string
+  slot: 'mid' | 'wing-left' | 'wing-right' | 'top'
+  image_url: string
+  href: string
+  alt: string
+}
+
+/** public.news_items row — homepage News tabs. */
+export interface NewsItemRec {
+  tab: string
+  kind: 'featured' | 'headline'
+  title: Localized
+  thumb_url: string | null
+  href: string
+  comment_count: number
+  sort: number
+}
+
+/** public.travel_info row — Travel Information card. */
+export interface TravelInfo {
+  id: string
+  title: Localized
+  blurb: Localized
+  icon: string
+  href: string
+}
+
 /* ---- Generic list / board page ---- */
 export interface ListItem {
   title: Localized

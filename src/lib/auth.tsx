@@ -24,6 +24,8 @@ interface AuthState {
   /** Redirect to Google's consent screen; returns to the app already logged in. */
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  /** Persist a new avatar URL on the user's profile and update context. */
+  updateAvatar: (avatarUrl: string) => Promise<void>
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined)
@@ -123,6 +125,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const updateAvatar: AuthState['updateAvatar'] = async (avatarUrl) => {
+    const uid = session?.user?.id
+    if (!uid) throw new Error('Not signed in')
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('id', uid)
+      .select('id, username, display_name, avatar_url')
+      .single()
+    if (error) throw error
+    setProfile(data as Profile)
+  }
+
   return (
     <AuthContext.Provider
       value={{
@@ -134,6 +149,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithGoogle,
         signOut,
+        updateAvatar,
       }}
     >
       {children}

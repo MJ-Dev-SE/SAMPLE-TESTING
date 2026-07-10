@@ -2,21 +2,27 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
-import { allPhotos, findPhoto } from '../data/photos'
+import { listAllPhotos } from '../lib/content'
+import SmartImage from '../components/SmartImage'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import {
   authorName,
   createComment,
+  createPost,
   formatDate,
   getOrCreatePhotoPost,
   getPhotoPost,
   isGuest,
   listComments,
+  listPosts,
   type DbComment,
   type DbPost,
 } from '../lib/posts'
+import { uploadToMedia } from '../lib/media'
+import { avatar } from '../lib/placeholder'
 import { alertError, errText, toast } from '../lib/alert'
+import type { PhotoRec } from '../types'
 
 const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
 
@@ -28,26 +34,101 @@ const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
 export default function PhotoView() {
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
-  const photo = findPhoto(id)
   // Remount per photo so state (comments, composer) resets when navigating ‹ ›.
-  return photo ? <PhotoPage key={id} photoId={id} /> : <Navigate to="/" replace />
+  return <PhotoPage key={id} photoId={id} />
 }
 
 function PhotoPage({ photoId }: { photoId: string }) {
   const { t } = useTranslation()
   const L = useLocalized()
-  const { user } = useAuth()
-  const photo = findPhoto(photoId)!
+  const { user, profile } = useAuth()
 
-  const idx = allPhotos.findIndex((p) => p.id === photoId)
-  const prev = allPhotos[(idx - 1 + allPhotos.length) % allPhotos.length]
-  const next = allPhotos[(idx + 1) % allPhotos.length]
+  const [all, setAll] = useState<PhotoRec[]>([])
+  const [notFound, setNotFound] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    listAllPhotos()
+      .then((rows) => {
+        if (!alive) return
+        setAll(rows)
+        if (rows.length > 0 && !rows.some((p) => p.slug === photoId)) setNotFound(true)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [photoId])
+
+  const idx = all.findIndex((p) => p.slug === photoId)
+  const photo = idx >= 0 ? all[idx] : null
+  const prev = all.length ? all[(idx - 1 + all.length) % all.length] : null
+  const next = all.length ? all[(idx + 1) % all.length] : null
 
   // Comments hang off a hidden anchor post (created on first comment).
   const [anchor, setAnchor] = useState<DbPost | null>(null)
   const [comments, setComments] = useState<DbComment[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+
+  // User posts submitted under THIS category (resort_community board, category = slug).
+  // Composed INLINE on this page — no navigation away.
+  const [posts, setPosts] = useState<DbPost[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [pBody, setPBody] = useState('')
+  const [pFiles, setPFiles] = useState<File[]>([])
+  const [pBusy, setPBusy] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    listPosts('resort_community', undefined, photoId)
+      .then((p) => alive && setPosts(p))
+      .catch(() => alive && setPosts([]))
+    return () => {
+      alive = false
+    }
+  }, [photoId])
+
+  const submitPost = async (e: FormEvent) => {
+    e.preventDefault()
+    const text = pBody.trim()
+    if (!text && pFiles.length === 0) return
+    setPBusy(true)
+    try {
+      // Members may attach photos; guests are text-only (Storage upload needs auth).
+      let images: string[] = []
+      if (user && pFiles.length > 0) {
+        const paths = await Promise.all(pFiles.map((f) => uploadToMedia(`posts/${user.id}`, f)))
+        images = paths
+      }
+      const title = text ? text.split('\n')[0].slice(0, 80) : L(photo?.title ?? { en: 'Photo', ko: '사진' })
+      const created = await createPost({
+        boardId: 'resort_community',
+        category: photoId,
+        title,
+        body: text,
+        authorId: user?.id ?? null,
+        images,
+      })
+      // Attach the author locally so the new row shows the poster's name immediately
+      // (the insert doesn't embed the profile join).
+      const optimistic: DbPost = {
+        ...created,
+        author: profile
+          ? { username: profile.username, display_name: profile.display_name, avatar_url: profile.avatar_url }
+          : null,
+      }
+      setPosts((prev) => [optimistic, ...prev])
+      setPBody('')
+      setPFiles([])
+      setShowForm(false)
+      toast(t('post.created'))
+    } catch (err) {
+      alertError(t('auth.errorTitle'), errText(err))
+    } finally {
+      setPBusy(false)
+    }
+  }
 
   useEffect(() => {
     let alive = true
@@ -69,7 +150,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
     if (!body.trim()) return
     setBusy(true)
     try {
-      const post = anchor ?? (await getOrCreatePhotoPost(photoId, photo.title.en))
+      const post = anchor ?? (await getOrCreatePhotoPost(photoId, photo?.title.en ?? photoId))
       setAnchor(post)
       const created = await createComment({
         postId: post.id,
@@ -87,6 +168,9 @@ function PhotoPage({ photoId }: { photoId: string }) {
     }
   }
 
+  if (notFound) return <Navigate to="/" replace />
+  if (!photo) return <Layout><p className="text-sm text-muted">…</p></Layout>
+
   return (
     <Layout>
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
@@ -94,6 +178,100 @@ function PhotoPage({ photoId }: { photoId: string }) {
         <span className="mx-1 text-subtlest">›</span>
         <span className="text-text-muted">{L(PHOTOS_CRUMB)}</span>
       </nav>
+
+      {/* UPPER-PART posting area for THIS category — button first, then the inline form */}
+      <section className="mb-l">
+        <div className="flex items-center justify-between gap-3 mb-s">
+          <h2 className="text-sm font-semibold text-text-normal min-w-0 truncate">
+            <i className="fa-solid fa-pen-to-square mr-2 text-accent-blue" />
+            {L(photo.title)} ({posts.length})
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="shrink-0 inline-flex items-center gap-1.5 h-9 px-4 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4]"
+          >
+            <i className={`fa-solid ${showForm ? 'fa-xmark' : 'fa-pen'}`} aria-hidden="true" />
+            {showForm ? t('post.cancel') : t('post.write')}
+          </button>
+        </div>
+
+        {/* Inline composer — smooth expand/collapse via the grid-rows trick */}
+        <div
+          className={`grid transition-all duration-300 ease-out ${
+            showForm ? 'grid-rows-[1fr] opacity-100 mb-m' : 'grid-rows-[0fr] opacity-0'
+          }`}
+          aria-hidden={!showForm}
+        >
+          <div className="overflow-hidden">
+            <form onSubmit={submitPost} className="border border-neutral-90 rounded-l p-m flex flex-col gap-2">
+              {!user && <p className="text-xs text-subtlest">{t('post.guestNote')}</p>}
+              <textarea
+                rows={3}
+                value={pBody}
+              onChange={(e) => setPBody(e.target.value)}
+              placeholder={t('post.bodyPlaceholder')}
+              className="p-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue resize-y"
+            />
+            {user ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex items-center gap-1.5 text-xs text-link cursor-pointer hover:underline">
+                  <i className="fa-solid fa-image" />
+                  {t('post.addPhotos')}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => setPFiles(Array.from(e.target.files ?? []))}
+                    className="hidden"
+                  />
+                </label>
+                {pFiles.map((f, i) => (
+                  <img key={i} src={URL.createObjectURL(f)} alt="" className="w-12 h-12 object-cover rounded-m border border-neutral-90" />
+                ))}
+              </div>
+            ) : (
+              <span className="text-xs text-subtlest">{t('post.photosHint')}</span>
+            )}
+            <button
+              type="submit"
+              disabled={pBusy || (!pBody.trim() && pFiles.length === 0)}
+              className="self-end h-9 px-4 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4] disabled:opacity-60"
+            >
+              {pBusy ? t('auth.working') : t('post.submit')}
+            </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Inline feed of posts for this category */}
+        {posts.length > 0 && (
+          <ul className="flex flex-col gap-m">
+            {posts.map((p) => (
+              <li key={p.id} className="border border-neutral-90 rounded-l p-m">
+                <div className="flex items-center gap-2 text-xs mb-1">
+                  <img src={p.author?.avatar_url || avatar(authorName(p))} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  <span className="font-medium text-text-normal inline-flex items-center gap-1">
+                    {authorName(p)}
+                    {isGuest(p) && (
+                      <span className="text-[10px] uppercase bg-neutral-95 rounded px-1">{t('post.guestBadge')}</span>
+                    )}
+                  </span>
+                  <span className="text-subtlest">{formatDate(p.created_at)}</span>
+                </div>
+                {p.body && <p className="text-sm text-body whitespace-pre-wrap">{p.body}</p>}
+                {p.images.length > 0 && (
+                  <div className="mt-2 flex flex-col gap-2">
+                    {p.images.map((src, i) => (
+                      <SmartImage key={i} src={src} alt="" className="w-full rounded-m border border-neutral-90" />
+                    ))}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <article className="border border-neutral-90 rounded-l overflow-hidden">
         {/* Title header, philgo post style */}
@@ -103,7 +281,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
               {L(photo.tag)}
             </span>
             <span className="text-[11px] text-subtlest tabular-nums">
-              {idx + 1} / {allPhotos.length}
+              {idx + 1} / {all.length}
             </span>
           </div>
           <h1 className="mt-1 text-lg font-bold text-text-normal">{L(photo.title)}</h1>
@@ -117,13 +295,13 @@ function PhotoPage({ photoId }: { photoId: string }) {
 
         {/* The pic, centered in the middle column */}
         <div className="flex justify-center bg-neutral-97 p-s">
-          <img src={photo.src} alt={L(photo.title)} className="max-w-full h-auto rounded-m" />
+          <SmartImage src={photo.src} alt={L(photo.title)} className="w-full max-w-3xl rounded-m" />
         </div>
 
         {/* Dense caption / info */}
         <div className="p-l border-t border-neutral-90">
           <p className="text-sm text-body leading-relaxed">{L(photo.description)}</p>
-          {photo.details && (
+          {photo.details && photo.details.length > 0 && (
             <ul className="mt-3 space-y-1.5 border-t border-neutral-95 pt-3">
               {photo.details.map((d, i) => (
                 <li key={i} className="flex gap-2 text-[13px] leading-snug text-text-normal">
@@ -136,16 +314,18 @@ function PhotoPage({ photoId }: { photoId: string }) {
         </div>
 
         {/* Prev / next photo */}
-        <div className="flex items-center justify-between border-t border-neutral-90 bg-neutral-97 px-m py-2 text-[13px]">
-          <Link to={`/photo/view?id=${prev.id}`} className="text-link hover:underline">
-            <i className="fa-solid fa-chevron-left mr-1" />
-            {L(prev.title)}
-          </Link>
-          <Link to={`/photo/view?id=${next.id}`} className="text-link hover:underline text-right">
-            {L(next.title)}
-            <i className="fa-solid fa-chevron-right ml-1" />
-          </Link>
-        </div>
+        {prev && next && (
+          <div className="flex items-center justify-between border-t border-neutral-90 bg-neutral-97 px-m py-2 text-[13px]">
+            <Link to={`/photo/view?id=${prev.slug}`} className="text-link hover:underline">
+              <i className="fa-solid fa-chevron-left mr-1" />
+              {L(prev.title)}
+            </Link>
+            <Link to={`/photo/view?id=${next.slug}`} className="text-link hover:underline text-right">
+              {L(next.title)}
+              <i className="fa-solid fa-chevron-right ml-1" />
+            </Link>
+          </div>
+        )}
       </article>
 
       {/* Comments — same real (Supabase) thread as board posts */}

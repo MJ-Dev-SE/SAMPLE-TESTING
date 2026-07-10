@@ -6,11 +6,12 @@ import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { createPost } from '../lib/posts'
+import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 
 /**
  * Compose page (/post/write?post_id=…&category=…).
- * Anyone can post: logged-in members post under their username; guests get a random name.
+ * Anyone can post to ANY board (board picker). Members may attach photos; guests are text-only.
  */
 export default function PostWrite() {
   const { t } = useTranslation()
@@ -19,27 +20,34 @@ export default function PostWrite() {
   const [params] = useSearchParams()
   const { user, profile } = useAuth()
 
-  const boardId = params.get('post_id') || 'freetalk'
   const category = params.get('category')
-  const boardTitle = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
-
+  const [boardId, setBoardId] = useState(params.get('post_id') || 'freetalk')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [files, setFiles] = useState<File[]>([])
   const [busy, setBusy] = useState(false)
 
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
+  const boardOptions = Object.entries(boardTitles)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return alertError(t('post.emptyTitle'))
     setBusy(true)
     try {
+      // Members may attach photos; upload them to Storage first.
+      let images: string[] = []
+      if (user && files.length > 0) {
+        const paths = await Promise.all(files.map((f) => uploadToMedia(`posts/${user.id}`, f)))
+        images = paths.map(publicUrl)
+      }
       const created = await createPost({
         boardId,
         category,
         title: title.trim(),
         body: body.trim(),
         authorId: user?.id ?? null,
+        images,
       })
       toast(t('post.created'))
       navigate(`/post/view?id=${created.id}&post_id=${boardId}`)
@@ -55,7 +63,7 @@ export default function PostWrite() {
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>
-        <Link to={`/post/list?post_id=${boardId}`} className="text-link">{L(boardTitle)}</Link>
+        <Link to={`/post/list?post_id=${boardId}`} className="text-link">{L(boardTitles[boardId] ?? { en: 'Board', ko: '게시판' })}</Link>
         <span className="mx-1 text-subtlest">›</span>
         <span className="text-muted">{t('post.newPost')}</span>
       </nav>
@@ -78,6 +86,20 @@ export default function PostWrite() {
       </div>
 
       <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m">
+        {/* Board / category picker — post under any board, not just Community */}
+        <label className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-text-normal">{t('post.boardLabel')}</span>
+          <select
+            value={boardId}
+            onChange={(e) => setBoardId(e.target.value)}
+            className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
+          >
+            {boardOptions.map(([id, label]) => (
+              <option key={id} value={id}>{L(label)}</option>
+            ))}
+          </select>
+        </label>
+
         {category && (
           <p className="text-xs text-muted">
             {t('post.categoryLabel')}: <span className="font-medium text-text-normal">{category}</span>
@@ -106,6 +128,32 @@ export default function PostWrite() {
             className="p-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue resize-y"
           />
         </label>
+
+        {/* Photos — members only (Storage upload needs auth); text-only stays valid */}
+        <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-text-normal">{t('post.addPhotos')}</span>
+          {user ? (
+            <>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                className="text-sm"
+              />
+              <span className="text-xs text-subtlest">{t('post.photosMemberHint')}</span>
+              {files.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {files.map((f, i) => (
+                    <img key={i} src={URL.createObjectURL(f)} alt="" className="w-16 h-16 object-cover rounded-m border border-neutral-90" />
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <span className="text-xs text-subtlest">{t('post.photosHint')}</span>
+          )}
+        </div>
 
         <div className="flex items-center gap-3">
           <button
