@@ -34,7 +34,10 @@ export default function AdminPage() {
       )
     }
     if (!user) return <Navigate to="/user/login" replace />
-    if (!isAdmin) return <Navigate to="/" replace /> // hindi admin — walang makikita dito
+    // Hindi admin: instead of a silent bounce, SAY which session was checked so a
+    // legit admin can see exactly which account/uid to seed. (Their own email/uid
+    // only — nothing leaks, and RLS stays the real lock on every write.)
+    if (!isAdmin) return <NotAuthorized email={user.email ?? '(no email)'} uid={user.id} />
   }
 
   return (
@@ -81,6 +84,45 @@ export default function AdminPage() {
         {/* key remounts the panel per table so its state resets */}
         <TablePanel key={active.table} def={active} userId={user?.id ?? ''} />
       </main>
+    </div>
+  )
+}
+
+/** Shown to a logged-in NON-admin at /admin: which session was checked + the exact fix. */
+function NotAuthorized({ email, uid }: { email: string; uid: string }) {
+  const { t } = useTranslation()
+  const sql = `insert into public.admins (user_id) values ('${uid}')\non conflict (user_id) do nothing;`
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 grid place-items-center px-4">
+      <div className="max-w-[560px] w-full border border-rose-500/40 bg-slate-900 rounded-lg p-6">
+        <h1 className="text-lg font-bold mb-1">
+          <i className="fa-solid fa-lock text-rose-400 mr-2" aria-hidden="true" />
+          {t('admin.forbiddenTitle')}
+        </h1>
+        <p className="text-sm text-slate-400 mb-4">
+          {t('admin.forbiddenLoggedInAs')}{' '}
+          <span className="text-slate-100 font-semibold">{email}</span>
+          <br />
+          <span className="text-xs font-mono text-slate-500">uid: {uid}</span>
+        </p>
+        <p className="text-sm text-slate-300 mb-2">{t('admin.forbiddenHint')}</p>
+        <pre className="bg-slate-950 border border-slate-700 rounded p-3 text-xs text-emerald-300 overflow-x-auto whitespace-pre-wrap mb-4">
+          {sql}
+        </pre>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="h-9 px-4 bg-emerald-500 text-slate-950 text-sm font-semibold rounded hover:bg-emerald-400"
+          >
+            <i className="fa-solid fa-rotate-right mr-1.5" aria-hidden="true" />
+            {t('admin.recheck')}
+          </button>
+          <Link to="/" className="text-sm text-slate-400 hover:text-slate-200">
+            {t('admin.backToSite')}
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

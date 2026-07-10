@@ -23,7 +23,10 @@ export function useIsAdmin(): boolean | null {
       .select('user_id')
       .eq('user_id', user.id)
       .maybeSingle()
-      .then(({ data, error }) => alive && setAdmin(!!data && !error))
+      .then(
+        ({ data, error }) => alive && setAdmin(!!data && !error),
+        () => alive && setAdmin(false), // network failure → treat as not admin, never hang
+      )
     return () => {
       alive = false
     }

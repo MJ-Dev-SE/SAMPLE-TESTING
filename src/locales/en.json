@@ -57,7 +57,11 @@
     "empty": "No records yet.",
     "enabled": "Enabled",
     "badJsonTitle": "Invalid JSON",
-    "badJsonText": "Please fix the JSON syntax before saving."
+    "badJsonText": "Please fix the JSON syntax before saving.",
+    "forbiddenTitle": "This account is not an admin",
+    "forbiddenLoggedInAs": "Logged in as:",
+    "forbiddenHint": "To grant this account access, run this in Supabase Dashboard → SQL Editor, then click Recheck:",
+    "recheck": "Recheck"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
