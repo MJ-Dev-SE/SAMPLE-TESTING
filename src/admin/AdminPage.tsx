@@ -14,6 +14,10 @@ import RecordForm from './RecordForm'
  * no site Layout/theme, its own dark full-width shell, and no link anywhere in
  * the public UI — reachable only by typing the URL (guarded by RLS + redirect).
  */
+// Emergency escape hatch: set to `true` ONLY to preview the console without the
+// admin guard (e.g. before supabase/admin.sql has run). Never ship it as `true`.
+const PREVIEW_OPEN = false
+
 export default function AdminPage() {
   const { t } = useTranslation()
   const L = useLocalized()
@@ -21,15 +25,17 @@ export default function AdminPage() {
   const isAdmin = useIsAdmin()
   const [active, setActive] = useState<TableDef>(ADMIN_TABLES[0])
 
-  if (loading || (user && isAdmin === null)) {
-    return (
-      <div className="min-h-screen bg-slate-950 grid place-items-center text-slate-500 text-sm">
-        <span><i className="fa-solid fa-spinner fa-spin mr-2" />…</span>
-      </div>
-    )
+  if (!PREVIEW_OPEN) {
+    if (loading || (user && isAdmin === null)) {
+      return (
+        <div className="min-h-screen bg-slate-950 grid place-items-center text-slate-500 text-sm">
+          <span><i className="fa-solid fa-spinner fa-spin mr-2" />…</span>
+        </div>
+      )
+    }
+    if (!user) return <Navigate to="/user/login" replace />
+    if (!isAdmin) return <Navigate to="/" replace /> // hindi admin — walang makikita dito
   }
-  if (!user) return <Navigate to="/user/login" replace />
-  if (!isAdmin) return <Navigate to="/" replace /> // hindi admin — walang makikita dito
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -41,7 +47,7 @@ export default function AdminPage() {
             {t('admin.title')}
           </span>
           <div className="flex items-center gap-4 min-w-0 text-sm">
-            <span className="text-slate-500 text-xs truncate hidden sm:inline">{user.email}</span>
+            <span className="text-slate-500 text-xs truncate hidden sm:inline">{user?.email ?? 'preview'}</span>
             <Link to="/" className="shrink-0 text-emerald-400 hover:text-emerald-300 whitespace-nowrap">
               <i className="fa-solid fa-arrow-up-right-from-square mr-1.5" aria-hidden="true" />
               {t('admin.backToSite')}
@@ -73,7 +79,7 @@ export default function AdminPage() {
         </div>
 
         {/* key remounts the panel per table so its state resets */}
-        <TablePanel key={active.table} def={active} userId={user.id} />
+        <TablePanel key={active.table} def={active} userId={user?.id ?? ''} />
       </main>
     </div>
   )
