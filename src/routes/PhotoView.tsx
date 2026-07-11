@@ -5,11 +5,13 @@ import Layout from '../components/Layout'
 import { listAllPhotos } from '../lib/content'
 import SmartImage from '../components/SmartImage'
 import { useAuth } from '../lib/auth'
+import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
 import {
   authorName,
   createComment,
   createPost,
+  deletePost,
   formatDate,
   getOrCreatePhotoPost,
   getPhotoPost,
@@ -21,7 +23,7 @@ import {
 } from '../lib/posts'
 import { uploadToMedia } from '../lib/media'
 import { avatar } from '../lib/placeholder'
-import { alertError, errText, toast } from '../lib/alert'
+import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
 import ImageCarousel from '../components/ImageCarousel'
@@ -47,6 +49,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const { t } = useTranslation()
   const L = useLocalized()
   const { user, profile } = useAuth()
+  const isAdmin = useIsAdmin()
 
   const [all, setAll] = useState<PhotoRec[]>([])
   const [notFound, setNotFound] = useState(false)
@@ -93,6 +96,24 @@ function PhotoPage({ photoId }: { photoId: string }) {
       alive = false
     }
   }, [photoId])
+
+  // Delete a post from the inline category feed — the authoring member or an admin.
+  const removeFeedPost = async (p: DbPost) => {
+    const ok = await alertConfirm(
+      t('post.deleteConfirmTitle'),
+      t('post.deleteConfirmText'),
+      t('post.delete'),
+      t('post.cancel'),
+    )
+    if (!ok) return
+    try {
+      await deletePost(p.id)
+      setPosts((prev) => prev.filter((x) => x.id !== p.id))
+      toast(t('post.deleted'))
+    } catch (err) {
+      alertError(t('auth.errorTitle'), errText(err))
+    }
+  }
 
   const submitPost = async (e: FormEvent) => {
     e.preventDefault()
@@ -262,6 +283,16 @@ function PhotoPage({ photoId }: { photoId: string }) {
                     )}
                   </span>
                   <span className="text-subtlest">{formatDate(p.created_at)}</span>
+                  {(isAdmin === true || (!!user && p.author_id === user.id)) && (
+                    <button
+                      type="button"
+                      onClick={() => removeFeedPost(p)}
+                      className="ml-auto shrink-0 text-subtlest hover:text-accent-pink"
+                      aria-label={t('post.delete')}
+                    >
+                      <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
+                    </button>
+                  )}
                 </div>
                 {p.body && <p className="text-sm text-body whitespace-pre-wrap">{p.body}</p>}
                 {p.images.length > 0 && (
@@ -345,6 +376,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
               <CommentItem
                 key={c.id}
                 comment={c}
+                isAdmin={isAdmin === true}
                 onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
               />
             ))

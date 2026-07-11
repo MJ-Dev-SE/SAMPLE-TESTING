@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
+import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
 import ImageCarousel from '../components/ImageCarousel'
 import CommentItem from '../components/CommentItem'
@@ -35,6 +36,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
   const L = useLocalized()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const isAdmin = useIsAdmin()
   const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
 
   const [post, setPost] = useState<DbPost | null>(null)
@@ -74,8 +76,9 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
   }
 
   const images = post?.images ?? []
-  // RLS only allows the authoring member to delete; show the button to them alone.
-  const canDelete = !!user && !!post && post.author_id === user.id
+  // The authoring member (RLS "members delete own posts") OR an admin (RLS "admins
+  // manage posts" — covers guest/anyone's posts) may delete this post.
+  const canDelete = (!!user && !!post && post.author_id === user.id) || (!!post && isAdmin === true)
 
   const removePost = async () => {
     const ok = await alertConfirm(
@@ -160,6 +163,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
               <CommentItem
                 key={c.id}
                 comment={c}
+                isAdmin={isAdmin === true}
                 onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
               />
             ))

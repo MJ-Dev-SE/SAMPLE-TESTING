@@ -6,22 +6,29 @@ import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 
 /**
  * One comment row, with a Delete button when the current visitor is allowed to
- * remove it: the authoring member (RLS-enforced), or the guest browser that
- * created it (matched via a secret token stored in localStorage — see
- * lib/guestTokens.ts + delete_guest_comment() in supabase/content.sql).
+ * remove it:
+ *   • an ADMIN (isAdmin prop) — may delete ANY comment (RLS "admins manage comments"),
+ *   • the authoring MEMBER (RLS "members delete own comments"),
+ *   • the GUEST browser that created it (secret token in localStorage → the
+ *     delete_guest_comment() RPC; see lib/guestTokens.ts + supabase/content.sql).
+ * `isAdmin` is passed in (computed once by the parent) so a long thread doesn't fire
+ * one admin-status query per comment.
  */
 export default function CommentItem({
   comment,
   onDeleted,
+  isAdmin = false,
 }: {
   comment: DbComment
   onDeleted: (id: string) => void
+  isAdmin?: boolean
 }) {
   const { t } = useTranslation()
   const { user } = useAuth()
 
+  const ownedByMember = !!user && comment.author_id === user.id
   const guestToken = isGuest(comment) ? getGuestCommentToken(comment.id) : null
-  const canDelete = (!!user && comment.author_id === user.id) || !!guestToken
+  const canDelete = ownedByMember || isAdmin || !!guestToken
 
   const remove = async () => {
     const ok = await alertConfirm(
@@ -32,11 +39,13 @@ export default function CommentItem({
     )
     if (!ok) return
     try {
-      if (guestToken) {
+      // Admins & the authoring member delete straight through RLS; a guest uses the
+      // token RPC (their only path, since they have no auth.uid()).
+      if (ownedByMember || isAdmin) {
+        await deleteComment(comment.id)
+      } else if (guestToken) {
         const removed = await deleteGuestComment(comment.id, guestToken)
         if (removed) clearGuestCommentToken(comment.id)
-      } else {
-        await deleteComment(comment.id)
       }
       onDeleted(comment.id)
       toast(t('post.commentDeleted'))
@@ -63,6 +72,7 @@ export default function CommentItem({
             onClick={remove}
             className="shrink-0 text-subtlest hover:text-accent-pink"
             aria-label={t('post.delete')}
+            title={isAdmin && !ownedByMember && !guestToken ? t('post.delete') : undefined}
           >
             <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
           </button>
