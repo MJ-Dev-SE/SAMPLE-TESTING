@@ -71,7 +71,17 @@
     "accountCreated": "가입일",
     "neverLoggedIn": "로그인 기록 없음",
     "adminBadge": "관리자",
-    "refresh": "새로고침"
+    "refresh": "새로고침",
+    "navData": "데이터",
+    "navSystem": "시스템",
+    "kpiRecords": "레코드",
+    "kpiNewest": "최신 항목",
+    "kpiMode": "권한",
+    "kpiFullCrud": "전체 관리",
+    "kpiModerate": "중재 전용",
+    "kpiAccounts": "계정 수",
+    "kpiAdmins": "관리자 수",
+    "kpiLatest": "최근 로그인"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."

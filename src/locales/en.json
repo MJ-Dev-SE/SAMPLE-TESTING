@@ -71,7 +71,17 @@
     "accountCreated": "Account created",
     "neverLoggedIn": "Never signed in",
     "adminBadge": "admin",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "navData": "Data",
+    "navSystem": "System",
+    "kpiRecords": "Records",
+    "kpiNewest": "Newest entry",
+    "kpiMode": "Access",
+    "kpiFullCrud": "Full CRUD",
+    "kpiModerate": "Moderate only",
+    "kpiAccounts": "Accounts",
+    "kpiAdmins": "Admins",
+    "kpiLatest": "Latest sign-in"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
