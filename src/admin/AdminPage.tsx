@@ -14,9 +14,9 @@ const AUDIT_ICON = 'fa-clock-rotate-left'
 
 /**
  * /admin — the DBMS. A STANDALONE console, deliberately not part of the website.
- * Styled after the "Flux" dashboard (flux.dashboardpack.com): lavender-white page,
- * frosted header, purple→blue gradient hero with glassmorphism KPI cards, white
- * 18px-rounded content cards with soft purple-tinted shadows, pill-shaped controls.
+ * Flux dashboard layout (flux.dashboardpack.com) in a warm beige palette:
+ * frosted header, gold→bronze gradient hero with glassmorphism KPI cards, white
+ * 18px-rounded content cards with soft warm-tinted shadows, pill-shaped controls.
  * Reachable only by typing the URL (guarded by RLS + redirect).
  */
 // Emergency escape hatch: set to `true` ONLY to preview the console without the
@@ -24,26 +24,26 @@ const AUDIT_ICON = 'fa-clock-rotate-left'
 const PREVIEW_OPEN = false
 
 // ---- Flux design tokens (class fragments; Tailwind JIT scans these strings) ----
-const INK = 'text-[oklch(0.13_0.02_285)]'
-const MUTED = 'text-[oklch(0.5_0.02_285)]'
+const INK = 'text-[#3f382f]'
+const MUTED = 'text-[#8a8072]'
 const CARD =
-  'bg-white rounded-[18px] border border-[oklch(0.93_0.01_285)] shadow-[0_1px_3px_0_oklch(0.55_0.15_285/0.06),0_8px_24px_0_oklch(0.55_0.15_285/0.08)] transition-shadow duration-200 hover:shadow-[0_2px_6px_0_oklch(0.55_0.15_285/0.09),0_16px_36px_0_oklch(0.55_0.15_285/0.12)]'
+  'bg-white rounded-[18px] border border-[#e7ddca] shadow-[0_1px_3px_0_rgba(107,90,60,0.07),0_8px_24px_0_rgba(107,90,60,0.09)] transition-shadow duration-200 hover:shadow-[0_2px_6px_0_rgba(107,90,60,0.11),0_16px_36px_0_rgba(107,90,60,0.14)]'
 const HERO =
-  'relative overflow-hidden rounded-[22px] p-8 text-white bg-gradient-to-br from-[oklch(0.55_0.25_285)] via-[oklch(0.55_0.25_285)]/90 to-[oklch(0.6_0.2_230)]'
+  'relative overflow-hidden rounded-[22px] p-8 text-white bg-gradient-to-br from-[#a98c5a] via-[#a98c5a]/90 to-[#6b5a3c]'
 const PRIMARY_BTN =
-  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] bg-gradient-to-r from-[oklch(0.55_0.25_285)] to-[oklch(0.6_0.2_230)] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60'
+  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] bg-gradient-to-r from-[#a98c5a] to-[#6b5a3c] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60'
 const GHOST_BTN =
-  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] border border-[oklch(0.93_0.01_285)] bg-white text-xs font-medium text-[oklch(0.5_0.02_285)] hover:text-[oklch(0.55_0.25_285)] hover:bg-[oklch(0.96_0.02_285)] transition-colors disabled:opacity-60'
+  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] border border-[#e7ddca] bg-white text-xs font-medium text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors disabled:opacity-60'
 const BADGE =
-  'inline-flex items-center rounded-xl bg-[oklch(0.55_0.25_285)]/10 px-1.5 py-0.5 text-[10px] font-medium text-[oklch(0.55_0.25_285)]'
-const AVATAR = 'bg-gradient-to-br from-[oklch(0.55_0.25_285)] to-[oklch(0.6_0.2_230)]'
+  'inline-flex items-center rounded-xl bg-[#a98c5a]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#a98c5a]'
+const AVATAR = 'bg-gradient-to-br from-[#a98c5a] to-[#6b5a3c]'
 
-/** Sidebar nav item — 36px pill, active = lavender bg + primary text (Flux spec). */
+/** Sidebar nav item — 36px pill, active = beige bg + gold text (Flux spec, beige palette). */
 const navCls = (activeTab: boolean) =>
   `w-full flex items-center gap-3 h-9 px-3 rounded-[18px] text-sm font-medium transition-colors ${
     activeTab
-      ? 'bg-[oklch(0.96_0.02_285)] text-[oklch(0.55_0.25_285)]'
-      : 'text-[oklch(0.5_0.02_285)] hover:bg-[oklch(0.96_0.02_285)]/60 hover:text-[oklch(0.13_0.02_285)]'
+      ? 'bg-[#efe7d5] text-[#a98c5a]'
+      : 'text-[#8a8072] hover:bg-[#efe7d5]/60 hover:text-[#3f382f]'
   }`
 
 const shortDate = (iso: string | null | undefined): string =>
@@ -61,8 +61,8 @@ export default function AdminPage() {
   if (!PREVIEW_OPEN) {
     if (loading || (user && isAdmin === null)) {
       return (
-        <div className={`min-h-screen bg-[oklch(0.985_0.005_285)] grid place-items-center text-sm ${MUTED}`}>
-          <span><i className="fa-solid fa-spinner fa-spin mr-2 text-[oklch(0.55_0.25_285)]" />…</span>
+        <div className={`min-h-screen bg-[#f5efe4] grid place-items-center text-sm ${MUTED}`}>
+          <span><i className="fa-solid fa-spinner fa-spin mr-2 text-[#a98c5a]" />…</span>
         </div>
       )
     }
@@ -74,15 +74,15 @@ export default function AdminPage() {
   const initials = email.replace(/[^a-zA-Z0-9]/g, '').slice(0, 2).toUpperCase() || 'AD'
 
   return (
-    <div className={`min-h-screen bg-[oklch(0.985_0.005_285)] ${INK} flex [font-family:Inter,ui-sans-serif,system-ui,sans-serif]`}>
+    <div className={`min-h-screen bg-[#f5efe4] ${INK} flex [font-family:Inter,ui-sans-serif,system-ui,sans-serif]`}>
       {/* SIDEBAR — collapsible, smooth width + label animation */}
       <aside
-        className={`sticky top-0 h-screen shrink-0 bg-[oklch(0.99_0.005_285)] border-r border-[oklch(0.93_0.01_285)] flex flex-col overflow-hidden transition-[width] duration-300 ease-in-out ${
+        className={`sticky top-0 h-screen shrink-0 bg-[#fbf8f1] border-r border-[#e7ddca] flex flex-col overflow-hidden transition-[width] duration-300 ease-in-out ${
           open ? 'w-[260px]' : 'w-[72px]'
         }`}
       >
         {/* Brand + collapse toggle */}
-        <div className="h-16 shrink-0 flex items-center gap-2.5 px-3 border-b border-[oklch(0.93_0.01_285)]">
+        <div className="h-16 shrink-0 flex items-center gap-2.5 px-3 border-b border-[#e7ddca]">
           <span
             className={`h-9 shrink-0 grid place-items-center rounded-[14px] text-white overflow-hidden transition-all duration-300 ${AVATAR} ${
               open ? 'w-9 opacity-100' : 'w-0 opacity-0'
@@ -101,7 +101,7 @@ export default function AdminPage() {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label={t('admin.toggleSidebar')}
-            className={`shrink-0 h-8 w-8 grid place-items-center rounded-[14px] text-[oklch(0.5_0.02_285)] hover:bg-[oklch(0.96_0.02_285)] hover:text-[oklch(0.55_0.25_285)] transition-colors ${
+            className={`shrink-0 h-8 w-8 grid place-items-center rounded-[14px] text-[#8a8072] hover:bg-[#efe7d5] hover:text-[#a98c5a] transition-colors ${
               open ? 'ml-auto' : 'mx-auto'
             }`}
           >
@@ -146,7 +146,7 @@ export default function AdminPage() {
         </nav>
 
         {/* Back to site */}
-        <div className="p-3 border-t border-[oklch(0.93_0.01_285)]">
+        <div className="p-3 border-t border-[#e7ddca]">
           <Link to="/" title={!open ? t('admin.backToSite') : undefined} className={navCls(false)}>
             <i className="fa-solid fa-arrow-up-right-from-square w-5 text-center shrink-0" aria-hidden="true" />
             <span className={`truncate min-w-0 flex-1 text-left transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
@@ -159,9 +159,9 @@ export default function AdminPage() {
       {/* MAIN */}
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Frosted header (Flux: white/80 + blur + bottom border) */}
-        <header className="sticky top-0 z-10 h-16 bg-white/80 backdrop-blur border-b border-[oklch(0.93_0.01_285)] flex items-center justify-between gap-3 px-6">
+        <header className="sticky top-0 z-10 h-16 bg-white/80 backdrop-blur border-b border-[#e7ddca] flex items-center justify-between gap-3 px-6">
           <h1 className={`text-base font-semibold truncate min-w-0 ${INK}`}>
-            <i className={`fa-solid ${active === 'audit' ? AUDIT_ICON : active.icon} mr-2 text-[oklch(0.55_0.25_285)]`} aria-hidden="true" />
+            <i className={`fa-solid ${active === 'audit' ? AUDIT_ICON : active.icon} mr-2 text-[#a98c5a]`} aria-hidden="true" />
             {active === 'audit' ? t('admin.audit') : L(active.title)}
           </h1>
           <div className="flex items-center gap-3 min-w-0">
@@ -188,7 +188,7 @@ export default function AdminPage() {
 function NavLabel({ open, children }: { open: boolean; children: React.ReactNode }) {
   return (
     <div
-      className={`px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[oklch(0.5_0.02_285)] whitespace-nowrap transition-opacity duration-200 ${
+      className={`px-3 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#8a8072] whitespace-nowrap transition-opacity duration-200 ${
         open ? 'opacity-100' : 'opacity-0'
       }`}
     >
@@ -212,7 +212,7 @@ function NotAuthorized({ email, uid }: { email: string; uid: string }) {
   const { t } = useTranslation()
   const sql = `insert into public.admins (user_id) values ('${uid}')\non conflict (user_id) do nothing;`
   return (
-    <div className={`min-h-screen bg-[oklch(0.985_0.005_285)] ${INK} grid place-items-center px-4 [font-family:Inter,ui-sans-serif,system-ui,sans-serif]`}>
+    <div className={`min-h-screen bg-[#f5efe4] ${INK} grid place-items-center px-4 [font-family:Inter,ui-sans-serif,system-ui,sans-serif]`}>
       <div className={`max-w-[560px] w-full rounded-[22px] p-6 ${CARD}`}>
         <div className={`h-10 w-10 grid place-items-center rounded-[14px] text-white mb-3 ${AVATAR}`}>
           <i className="fa-solid fa-lock" aria-hidden="true" />
@@ -222,10 +222,10 @@ function NotAuthorized({ email, uid }: { email: string; uid: string }) {
           {t('admin.forbiddenLoggedInAs')}{' '}
           <span className={`font-semibold ${INK}`}>{email}</span>
           <br />
-          <span className="text-xs font-mono text-[oklch(0.6_0.02_285)]">uid: {uid}</span>
+          <span className="text-xs font-mono text-[#a89e8c]">uid: {uid}</span>
         </p>
         <p className={`text-sm mb-2 ${INK}`}>{t('admin.forbiddenHint')}</p>
-        <pre className="bg-[oklch(0.985_0.005_285)] border border-[oklch(0.93_0.01_285)] rounded-[14px] p-3 text-xs text-[oklch(0.45_0.1_285)] overflow-x-auto whitespace-pre-wrap mb-4">
+        <pre className="bg-[#f5efe4] border border-[#e7ddca] rounded-[14px] p-3 text-xs text-[#6b5a3c] overflow-x-auto whitespace-pre-wrap mb-4">
           {sql}
         </pre>
         <div className="flex items-center gap-3">
@@ -233,7 +233,7 @@ function NotAuthorized({ email, uid }: { email: string; uid: string }) {
             <i className="fa-solid fa-rotate-right" aria-hidden="true" />
             {t('admin.recheck')}
           </button>
-          <Link to="/" className={`text-sm hover:text-[oklch(0.55_0.25_285)] ${MUTED}`}>
+          <Link to="/" className={`text-sm hover:text-[#a98c5a] ${MUTED}`}>
             {t('admin.backToSite')}
           </Link>
         </div>
@@ -368,13 +368,13 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
 
       {/* Content card */}
       <div className={`mt-4 overflow-hidden ${CARD}`}>
-        <div className="px-5 py-4 border-b border-[oklch(0.93_0.01_285)] flex items-center gap-2">
+        <div className="px-5 py-4 border-b border-[#e7ddca] flex items-center gap-2">
           <h2 className={`text-base font-semibold ${INK}`}>{L(def.title)}</h2>
           <span className={`text-xs ${MUTED}`}>({rows.length})</span>
         </div>
         {loading ? (
           <p className={`p-8 text-center text-sm ${MUTED}`}>
-            <i className="fa-solid fa-spinner fa-spin mr-2 text-[oklch(0.55_0.25_285)]" aria-hidden="true" />…
+            <i className="fa-solid fa-spinner fa-spin mr-2 text-[#a98c5a]" aria-hidden="true" />…
           </p>
         ) : rows.length === 0 ? (
           <p className={`p-8 text-center text-sm ${MUTED}`}>{t('admin.empty')}</p>
@@ -382,7 +382,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className={`bg-[oklch(0.985_0.005_285)] text-left text-[11px] uppercase tracking-wide border-b border-[oklch(0.93_0.01_285)] ${MUTED}`}>
+                <tr className={`bg-[#f5efe4] text-left text-[11px] uppercase tracking-wide border-b border-[#e7ddca] ${MUTED}`}>
                   {def.listCols.map((c) => (
                     <th key={c} className="px-4 py-2.5 font-semibold whitespace-nowrap">{c}</th>
                   ))}
@@ -392,7 +392,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
               </thead>
               <tbody>
                 {rows.map((row) => (
-                  <tr key={row.id} className="border-t border-[oklch(0.96_0.005_285)] align-top hover:bg-[oklch(0.96_0.02_285)]/50 transition-colors">
+                  <tr key={row.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
                     {def.listCols.map((c) => (
                       <td key={c} className={`px-4 py-3 max-w-[260px] truncate ${INK}`}>{cell(row, c)}</td>
                     ))}
@@ -407,7 +407,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                         aria-label={t('admin.editRecord')}
                         title={t('admin.editRecord')}
                         onClick={() => setEditing(row)}
-                        className="h-8 w-8 rounded-[14px] text-[oklch(0.5_0.02_285)] hover:text-[oklch(0.55_0.25_285)] hover:bg-[oklch(0.96_0.02_285)] transition-colors mr-1"
+                        className="h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors mr-1"
                       >
                         <i className="fa-solid fa-pen" aria-hidden="true" />
                       </button>
@@ -417,7 +417,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                         title={t('post.delete')}
                         disabled={busy}
                         onClick={() => remove(row)}
-                        className="h-8 w-8 rounded-[14px] text-[oklch(0.5_0.02_285)] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                        className="h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
                       >
                         <i className="fa-solid fa-trash-can" aria-hidden="true" />
                       </button>
@@ -480,13 +480,13 @@ function AuditPanel() {
 
       {/* Content card */}
       <div className={`mt-4 overflow-hidden ${CARD}`}>
-        <div className="px-5 py-4 border-b border-[oklch(0.93_0.01_285)] flex items-center gap-2">
+        <div className="px-5 py-4 border-b border-[#e7ddca] flex items-center gap-2">
           <h2 className={`text-base font-semibold ${INK}`}>{t('admin.recentLogins')}</h2>
           <span className={`text-xs ${MUTED}`}>({rows.length})</span>
         </div>
         {loading ? (
           <p className={`p-8 text-center text-sm ${MUTED}`}>
-            <i className="fa-solid fa-spinner fa-spin mr-2 text-[oklch(0.55_0.25_285)]" aria-hidden="true" />…
+            <i className="fa-solid fa-spinner fa-spin mr-2 text-[#a98c5a]" aria-hidden="true" />…
           </p>
         ) : rows.length === 0 ? (
           <p className={`p-8 text-center text-sm ${MUTED}`}>{t('admin.empty')}</p>
@@ -494,7 +494,7 @@ function AuditPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className={`bg-[oklch(0.985_0.005_285)] text-left text-[11px] uppercase tracking-wide border-b border-[oklch(0.93_0.01_285)] ${MUTED}`}>
+                <tr className={`bg-[#f5efe4] text-left text-[11px] uppercase tracking-wide border-b border-[#e7ddca] ${MUTED}`}>
                   <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.account')}</th>
                   <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.lastLogin')}</th>
                   <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.accountCreated')}</th>
@@ -502,7 +502,7 @@ function AuditPanel() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-t border-[oklch(0.96_0.005_285)] align-top hover:bg-[oklch(0.96_0.02_285)]/50 transition-colors">
+                  <tr key={r.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
                     <td className="px-4 py-3 max-w-[320px]">
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center text-[10px] font-bold text-white ${AVATAR}`}>

@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { alertError } from '../lib/alert'
 import type { AdminRow, FieldDef, TableDef } from './registry'
 
-// Flux console styling — matches AdminPage's standalone lavender/purple theme, not the website's.
+// Flux console styling — matches AdminPage's standalone beige/gold theme, not the website's.
 const inputCls =
-  'h-9 px-3 bg-white border border-[oklch(0.93_0.01_285)] rounded-xl text-sm text-[oklch(0.13_0.02_285)] outline-none focus:border-[oklch(0.55_0.25_285)] focus:ring-2 focus:ring-[oklch(0.55_0.25_285)]/15 w-full'
+  'h-9 px-3 bg-white border border-[#e7ddca] rounded-xl text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] focus:ring-2 focus:ring-[#a98c5a]/15 w-full'
 const areaCls =
-  'p-3 bg-white border border-[oklch(0.93_0.01_285)] rounded-xl text-sm text-[oklch(0.13_0.02_285)] outline-none focus:border-[oklch(0.55_0.25_285)] focus:ring-2 focus:ring-[oklch(0.55_0.25_285)]/15 resize-y w-full'
+  'p-3 bg-white border border-[#e7ddca] rounded-xl text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] focus:ring-2 focus:ring-[#a98c5a]/15 resize-y w-full'
 
 /** Build the form's initial values from an existing row (or field defaults). */
 function initialValues(def: TableDef, row: AdminRow | null): AdminRow {
@@ -118,8 +118,8 @@ export default function RecordForm({
         return <input type="number" value={val ?? 0} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
       case 'boolean':
         return (
-          <label className="inline-flex items-center gap-2 text-sm text-[oklch(0.3_0.02_285)]">
-            <input type="checkbox" checked={!!val} onChange={(e) => set(f.key, e.target.checked)} className="accent-[oklch(0.55_0.25_285)] w-4 h-4" />
+          <label className="inline-flex items-center gap-2 text-sm text-[#57503f]">
+            <input type="checkbox" checked={!!val} onChange={(e) => set(f.key, e.target.checked)} className="accent-[#a98c5a] w-4 h-4" />
             {t('admin.enabled')}
           </label>
         )
@@ -149,34 +149,34 @@ export default function RecordForm({
   return (
     <form
       onSubmit={submit}
-      className="bg-white rounded-[18px] border border-[oklch(0.93_0.01_285)] shadow-[0_1px_3px_0_oklch(0.55_0.15_285/0.06),0_8px_24px_0_oklch(0.55_0.15_285/0.08)] p-5 flex flex-col gap-4"
+      className="bg-white rounded-[18px] border border-[#e7ddca] shadow-[0_1px_3px_0_rgba(107,90,60,0.07),0_8px_24px_0_rgba(107,90,60,0.09)] p-5 flex flex-col gap-4"
     >
-      <h3 className="text-base font-semibold text-[oklch(0.13_0.02_285)]">
-        <i className={`fa-solid ${row ? 'fa-pen' : 'fa-plus'} mr-2 text-[oklch(0.55_0.25_285)]`} />
+      <h3 className="text-base font-semibold text-[#3f382f]">
+        <i className={`fa-solid ${row ? 'fa-pen' : 'fa-plus'} mr-2 text-[#a98c5a]`} />
         {row ? t('admin.editRecord') : t('admin.newRecord')}
       </h3>
       {def.fields.map((f) => (
         <label key={f.key} className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-[oklch(0.3_0.02_285)]">
+          <span className="text-sm font-medium text-[#57503f]">
             {f.label}
             {f.required && <span className="text-red-500 ml-0.5">*</span>}
           </span>
           {renderField(f)}
-          {f.hint && <span className="text-xs text-[oklch(0.5_0.02_285)]">{f.hint}</span>}
+          {f.hint && <span className="text-xs text-[#8a8072]">{f.hint}</span>}
         </label>
       ))}
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={busy}
-          className="inline-flex items-center h-8 px-4 rounded-[18px] bg-gradient-to-r from-[oklch(0.55_0.25_285)] to-[oklch(0.6_0.2_230)] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
+          className="inline-flex items-center h-8 px-4 rounded-[18px] bg-gradient-to-r from-[#a98c5a] to-[#6b5a3c] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
         >
           {busy ? t('auth.working') : t('admin.save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex items-center h-8 px-4 rounded-[18px] border border-[oklch(0.93_0.01_285)] bg-white text-xs font-medium text-[oklch(0.5_0.02_285)] hover:text-[oklch(0.55_0.25_285)] hover:bg-[oklch(0.96_0.02_285)] transition-colors"
+          className="inline-flex items-center h-8 px-4 rounded-[18px] border border-[#e7ddca] bg-white text-xs font-medium text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
         >
           {t('post.cancel')}
         </button>
