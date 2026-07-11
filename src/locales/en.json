@@ -62,7 +62,16 @@
     "forbiddenTitle": "This account is not an admin",
     "forbiddenLoggedInAs": "Logged in as:",
     "forbiddenHint": "To grant this account access, run this in Supabase Dashboard → SQL Editor, then click Recheck:",
-    "recheck": "Recheck"
+    "recheck": "Recheck",
+    "audit": "Login audit",
+    "auditUsedIn": "Most recent sign-ins across the system (from auth.users, admins only). Read-only — no passwords or tokens are exposed.",
+    "recentLogins": "Recent sign-ins",
+    "account": "Account",
+    "lastLogin": "Last sign-in",
+    "accountCreated": "Account created",
+    "neverLoggedIn": "Never signed in",
+    "adminBadge": "admin",
+    "refresh": "Refresh"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."

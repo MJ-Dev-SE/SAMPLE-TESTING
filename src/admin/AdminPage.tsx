@@ -7,7 +7,10 @@ import { useLocalized } from '../lib/useLocalized'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
+import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
 import RecordForm from './RecordForm'
+
+const AUDIT_ICON = 'fa-clock-rotate-left'
 
 /**
  * /admin — the DBMS. A STANDALONE console, deliberately not part of the website:
@@ -27,8 +30,9 @@ export default function AdminPage() {
   const L = useLocalized()
   const { user, loading } = useAuth()
   const isAdmin = useIsAdmin()
-  const [active, setActive] = useState<TableDef>(ADMIN_TABLES[0])
+  const [active, setActive] = useState<TableDef | 'audit'>(ADMIN_TABLES[0])
   const [open, setOpen] = useState(true)
+  const isAudit = active === 'audit'
 
   if (!PREVIEW_OPEN) {
     if (loading || (user && isAdmin === null)) {
@@ -75,7 +79,7 @@ export default function AdminPage() {
         {/* Table nav */}
         <nav className="flex-1 overflow-y-auto p-2 flex flex-col gap-1">
           {ADMIN_TABLES.map((d) => {
-            const activeTab = active.table === d.table
+            const activeTab = active !== 'audit' && active.table === d.table
             return (
               <button
                 key={d.table}
@@ -95,6 +99,24 @@ export default function AdminPage() {
               </button>
             )
           })}
+
+          {/* Audit (read-only, not a table) */}
+          <div className="my-1 border-t border-[#eee6d6]" />
+          <button
+            type="button"
+            onClick={() => setActive('audit')}
+            title={!open ? t('admin.audit') : undefined}
+            className={`group w-full flex items-center gap-3 h-11 px-3 rounded-xl transition-colors ${
+              isAudit
+                ? 'bg-[#efe7d5] text-[#4b4137] font-semibold'
+                : 'text-[#8a8072] hover:bg-[#f5efe4] hover:text-[#4b4137]'
+            }`}
+          >
+            <i className={`fa-solid ${AUDIT_ICON} w-5 text-center shrink-0 ${isAudit ? 'text-[#a98c5a]' : ''}`} aria-hidden="true" />
+            <span className={`truncate transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
+              {t('admin.audit')}
+            </span>
+          </button>
         </nav>
 
         {/* Back to site */}
@@ -116,15 +138,19 @@ export default function AdminPage() {
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="sticky top-0 z-10 h-16 bg-white/80 backdrop-blur border-b border-[#e7ddca] flex items-center justify-between gap-3 px-5">
           <h1 className="text-base font-bold text-[#3f382f] truncate min-w-0">
-            <i className={`fa-solid ${active.icon} mr-2 text-[#a98c5a]`} aria-hidden="true" />
-            {L(active.title)}
+            <i className={`fa-solid ${active === 'audit' ? AUDIT_ICON : active.icon} mr-2 text-[#a98c5a]`} aria-hidden="true" />
+            {active === 'audit' ? t('admin.audit') : L(active.title)}
           </h1>
           <span className="text-xs text-[#8a8072] truncate hidden sm:block">{user?.email ?? 'preview'}</span>
         </header>
 
         <main className="flex-1 w-full max-w-[1200px] mx-auto px-5 py-6">
           <p className="text-xs text-[#8a8072] mb-4">{t('admin.subtitle')}</p>
-          <TablePanel key={active.table} def={active} userId={user?.id ?? ''} />
+          {active === 'audit' ? (
+            <AuditPanel />
+          ) : (
+            <TablePanel key={active.table} def={active} userId={user?.id ?? ''} />
+          )}
         </main>
       </div>
     </div>
@@ -329,6 +355,92 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                       <i className="fa-solid fa-trash-can" aria-hidden="true" />
                     </button>
                   </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  )
+}
+
+/** Read-only login audit — most recent sign-ins across the system (admin-only RPC). */
+function AuditPanel() {
+  const { t } = useTranslation()
+  const [rows, setRows] = useState<LoginRow[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    listRecentLogins(50)
+      .then(setRows)
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return (
+    <section>
+      <div className="border border-[#e7ddca] bg-[#faf6ee] rounded-xl px-4 py-2.5 text-[13px] text-[#5c5346] mb-4">
+        <i className="fa-solid fa-shield-halved mr-2 text-[#a98c5a]" aria-hidden="true" />
+        <span className="font-semibold">{t('admin.audit')}:</span> {t('admin.auditUsedIn')}
+      </div>
+
+      <div className="flex items-center justify-between gap-3 mb-3">
+        <h2 className="text-sm font-semibold text-[#3f382f]">
+          {t('admin.recentLogins')} <span className="text-[#a89e8c]">({rows.length})</span>
+        </h2>
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 h-9 px-3 border border-[#e7ddca] text-[#8a8072] text-sm rounded-lg hover:bg-[#f0e9db] hover:text-[#4b4137] transition-colors disabled:opacity-60"
+        >
+          <i className={`fa-solid fa-rotate-right ${loading ? 'fa-spin' : ''}`} aria-hidden="true" />
+          {t('admin.refresh')}
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-sm text-[#8a8072]">…</p>
+      ) : rows.length === 0 ? (
+        <p className="border border-dashed border-[#dcd0b8] rounded-xl p-6 text-sm text-[#8a8072] text-center">
+          {t('admin.empty')}
+        </p>
+      ) : (
+        <div className="border border-[#e7ddca] rounded-xl overflow-x-auto bg-white shadow-sm">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-[#faf6ee] text-left text-xs text-[#8a8072] border-b border-[#e7ddca]">
+                <th className="px-3 py-2.5 font-semibold whitespace-nowrap">{t('admin.account')}</th>
+                <th className="px-3 py-2.5 font-semibold whitespace-nowrap">{t('admin.lastLogin')}</th>
+                <th className="px-3 py-2.5 font-semibold whitespace-nowrap">{t('admin.accountCreated')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.id} className="border-t border-[#eee6d6] align-top hover:bg-[#faf6ee] transition-colors">
+                  <td className="px-3 py-2.5 max-w-[320px]">
+                    <div className="font-medium text-[#3f382f] truncate flex items-center gap-2">
+                      {r.username || r.email || '—'}
+                      {r.is_admin && (
+                        <span className="text-[10px] uppercase font-semibold bg-[#efe7d5] text-[#a98c5a] rounded px-1.5 py-0.5">
+                          {t('admin.adminBadge')}
+                        </span>
+                      )}
+                    </div>
+                    {r.email && r.username && <div className="text-xs text-[#8a8072] truncate">{r.email}</div>}
+                  </td>
+                  <td className="px-3 py-2.5 text-[#3f382f] whitespace-nowrap">
+                    {r.last_sign_in_at ? formatDateTime(r.last_sign_in_at) : (
+                      <span className="text-[#a89e8c]">{t('admin.neverLoggedIn')}</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2.5 text-[#8a8072] whitespace-nowrap">{formatDateTime(r.created_at)}</td>
                 </tr>
               ))}
             </tbody>

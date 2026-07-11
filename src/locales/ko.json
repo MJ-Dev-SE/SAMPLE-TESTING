@@ -62,7 +62,16 @@
     "forbiddenTitle": "이 계정은 관리자가 아닙니다",
     "forbiddenLoggedInAs": "로그인 계정:",
     "forbiddenHint": "이 계정에 권한을 주려면 Supabase SQL Editor에서 아래를 실행한 뒤 다시 확인을 누르세요:",
-    "recheck": "다시 확인"
+    "recheck": "다시 확인",
+    "audit": "로그인 감사",
+    "auditUsedIn": "시스템 전체의 최근 로그인 기록 (auth.users, 관리자 전용). 읽기 전용 — 비밀번호나 토큰은 노출되지 않습니다.",
+    "recentLogins": "최근 로그인",
+    "account": "계정",
+    "lastLogin": "마지막 로그인",
+    "accountCreated": "가입일",
+    "neverLoggedIn": "로그인 기록 없음",
+    "adminBadge": "관리자",
+    "refresh": "새로고침"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."

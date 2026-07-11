@@ -95,3 +95,42 @@ create policy "admins manage comments" on public.comments
 insert into public.admins (user_id)
 select id from auth.users where email = 'markjerohm@gmail.com'
 on conflict (user_id) do nothing;
+
+-- =============================================================================
+-- 5) LOGIN AUDIT — recent sign-ins, admins only.
+--   auth.users (which holds last_sign_in_at) is NOT client-readable, so this
+--   SECURITY DEFINER function reads it and returns rows only for an admin caller.
+--   Ordered by most-recent login first. Read-only; exposes no passwords/tokens.
+-- =============================================================================
+create or replace function public.admin_recent_logins(p_limit int default 50)
+returns table (
+  id              uuid,
+  email           text,
+  username        text,
+  last_sign_in_at timestamptz,
+  created_at      timestamptz,
+  is_admin        boolean
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'not authorized';
+  end if;
+  return query
+    select u.id,
+           u.email::text,
+           coalesce(p.username, u.raw_user_meta_data ->> 'username') as username,
+           u.last_sign_in_at,
+           u.created_at,
+           exists (select 1 from public.admins a where a.user_id = u.id) as is_admin
+    from auth.users u
+    left join public.profiles p on p.id = u.id
+    order by u.last_sign_in_at desc nulls last
+    limit greatest(1, least(p_limit, 200));
+end;
+$$;
+
+grant execute on function public.admin_recent_logins(int) to authenticated;
