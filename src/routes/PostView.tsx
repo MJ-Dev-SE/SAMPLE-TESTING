@@ -6,6 +6,7 @@ import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import ImageCarousel from '../components/ImageCarousel'
+import CommentItem from '../components/CommentItem'
 import {
   authorName,
   createComment,
@@ -17,6 +18,7 @@ import {
   type DbComment,
   type DbPost,
 } from '../lib/posts'
+import { saveGuestCommentToken } from '../lib/guestTokens'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 
 /** Post view (/post/view?id=<uuid>&post_id=<board>). All posts are Supabase-backed. */
@@ -60,6 +62,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
         body: body.trim(),
         authorId: user?.id ?? null,
       })
+      if (!user && created.delete_token) saveGuestCommentToken(created.id, created.delete_token)
       setComments((prev) => [...prev, created])
       setBody('')
       toast(t('post.commentAdded'))
@@ -154,18 +157,11 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
             <li className="p-m text-sm text-subtlest text-center">{t('post.noComments')}</li>
           ) : (
             comments.map((c) => (
-              <li key={c.id} className="p-s border-t border-neutral-90 first:border-t-0">
-                <div className="text-xs">
-                  <span className="font-medium text-text-normal inline-flex items-center gap-1">
-                    {authorName(c)}
-                    {isGuest(c) && (
-                      <span className="text-[10px] uppercase bg-neutral-95 rounded px-1">{t('post.guestBadge')}</span>
-                    )}
-                  </span>
-                  <span className="ml-2 text-subtlest">{formatDate(c.created_at)}</span>
-                </div>
-                <p className="text-sm text-body whitespace-pre-wrap mt-1">{c.body}</p>
-              </li>
+              <CommentItem
+                key={c.id}
+                comment={c}
+                onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+              />
             ))
           )}
         </ul>

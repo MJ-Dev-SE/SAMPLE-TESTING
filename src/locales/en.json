@@ -146,7 +146,10 @@
     "delete": "Delete",
     "deleteConfirmTitle": "Delete this post?",
     "deleteConfirmText": "This cannot be undone. Its comments will be deleted too.",
-    "deleted": "Post deleted."
+    "deleted": "Post deleted.",
+    "deleteCommentConfirmTitle": "Delete this comment?",
+    "deleteCommentConfirmText": "This cannot be undone.",
+    "commentDeleted": "Comment deleted."
   },
   "profile": {
     "title": "My profile",

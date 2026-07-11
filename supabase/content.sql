@@ -201,3 +201,38 @@ create policy "media auth write" on storage.objects for insert
 drop policy if exists "media auth update" on storage.objects;
 create policy "media auth update" on storage.objects for update
   to authenticated using (bucket_id = 'media');
+
+-- =============================================================================
+-- GUEST COMMENT DELETION
+--   Guests have no account, so RLS's auth.uid() can't scope "their own" row the
+--   way it does for members (schema.sql's "members delete own comments" policy
+--   already handles that case). Instead, every comment gets a random secret
+--   delete_token at insert time. The creator's browser stores that token
+--   (localStorage) and later passes it back to delete THAT exact comment only.
+--   The token is never exposed by normal SELECTs — only the insert response
+--   (returned to the creator's own request) includes it.
+-- =============================================================================
+alter table public.comments
+  add column if not exists delete_token uuid not null default gen_random_uuid();
+
+-- security definer: runs with elevated rights so it can delete despite RLS,
+-- but ONLY when both conditions match — a guest row AND the correct token.
+create or replace function public.delete_guest_comment(p_comment_id uuid, p_token uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  affected integer;
+begin
+  delete from public.comments
+  where id = p_comment_id
+    and author_id is null
+    and delete_token = p_token;
+  get diagnostics affected = row_count;
+  return affected > 0;
+end;
+$$;
+
+grant execute on function public.delete_guest_comment(uuid, uuid) to anon, authenticated;

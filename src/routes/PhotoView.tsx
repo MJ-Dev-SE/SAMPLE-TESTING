@@ -25,6 +25,8 @@ import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
 import ImageCarousel from '../components/ImageCarousel'
+import CommentItem from '../components/CommentItem'
+import { saveGuestCommentToken } from '../lib/guestTokens'
 import type { PhotoRec } from '../types'
 
 const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
@@ -161,6 +163,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
         body: body.trim(),
         authorId: user?.id ?? null,
       })
+      if (!user && created.delete_token) saveGuestCommentToken(created.id, created.delete_token)
       setComments((prevList) => [...prevList, created])
       setBody('')
       toast(t('post.commentAdded'))
@@ -339,18 +342,11 @@ function PhotoPage({ photoId }: { photoId: string }) {
             <li className="p-m text-sm text-subtlest text-center">{t('post.noComments')}</li>
           ) : (
             comments.map((c) => (
-              <li key={c.id} className="p-s border-t border-neutral-90 first:border-t-0">
-                <div className="text-xs">
-                  <span className="font-medium text-text-normal inline-flex items-center gap-1">
-                    {authorName(c)}
-                    {isGuest(c) && (
-                      <span className="text-[10px] uppercase bg-neutral-95 rounded px-1">{t('post.guestBadge')}</span>
-                    )}
-                  </span>
-                  <span className="ml-2 text-subtlest">{formatDate(c.created_at)}</span>
-                </div>
-                <p className="text-sm text-body whitespace-pre-wrap mt-1">{c.body}</p>
-              </li>
+              <CommentItem
+                key={c.id}
+                comment={c}
+                onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+              />
             ))
           )}
         </ul>

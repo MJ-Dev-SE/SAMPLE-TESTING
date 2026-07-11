@@ -38,6 +38,12 @@ export interface DbComment {
   author?: AuthorLite | null
   /** Parent post (embedded for the "recent comments" widget). */
   post?: { id: string; title: string; board_id: string } | null
+  /**
+   * Only present in the response right after THIS browser creates a guest comment —
+   * used once to remember (localStorage) that this browser may delete it later.
+   * Never selected when listing/reading comments, so other viewers never see it.
+   */
+  delete_token?: string
 }
 
 /** Display name for a post/comment: member username → guest name → "Guest". */
@@ -52,6 +58,9 @@ export const isGuest = (row: { author_id: string | null }) => !row.author_id
 export const commentCountOf = (p: DbPost) => p.comment_count?.[0]?.count ?? 0
 
 const AUTHOR_SELECT = 'author:profiles(username, display_name, avatar_url)'
+// Explicit column list for reading comments — deliberately excludes delete_token so
+// it's never exposed to anyone but the creator's own insert response (see createComment).
+const COMMENT_COLS = 'id, post_id, board_id, author_id, guest_name, body, created_at'
 
 // -----------------------------------------------------------------------------
 // Board-id separation: this resort site shares the same Supabase project as the
@@ -102,7 +111,7 @@ export async function listPopularPosts(): Promise<DbPost[]> {
 export async function listRecentComments(limit = 8): Promise<DbComment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select(`*, ${AUTHOR_SELECT}, post:posts(id, title, board_id)`)
+    .select(`${COMMENT_COLS}, ${AUTHOR_SELECT}, post:posts(id, title, board_id)`)
     .not('body', 'eq', '')
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -129,7 +138,7 @@ export async function getPost(id: string): Promise<DbPost | null> {
 export async function listComments(postId: string): Promise<DbComment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select(`*, ${AUTHOR_SELECT}`)
+    .select(`${COMMENT_COLS}, ${AUTHOR_SELECT}`)
     .eq('post_id', postId)
     .order('created_at', { ascending: true })
   if (error) throw error
@@ -189,6 +198,29 @@ export async function createComment(c: NewComment): Promise<DbComment> {
   const { data, error } = await supabase.from('comments').insert(row).select().single()
   if (error) throw error
   return stripPost(data as unknown as DbComment)
+}
+
+/**
+ * Delete a MEMBER'S OWN comment. RLS ("members delete own comments") only lets the
+ * authoring member through — for anyone else this deletes 0 rows.
+ */
+export async function deleteComment(id: string): Promise<void> {
+  const { error } = await supabase.from('comments').delete().eq('id', id)
+  if (error) throw error
+}
+
+/**
+ * Delete a GUEST comment. Guests have no auth.uid() for RLS to check, so this goes
+ * through delete_guest_comment(), which only succeeds if `token` matches the row's
+ * secret delete_token (captured by the creator's browser at comment-creation time).
+ */
+export async function deleteGuestComment(id: string, token: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('delete_guest_comment', {
+    p_comment_id: id,
+    p_token: token,
+  })
+  if (error) throw error
+  return !!data
 }
 
 /** A member's own posts (newest first) — for the activity/profile page. */
