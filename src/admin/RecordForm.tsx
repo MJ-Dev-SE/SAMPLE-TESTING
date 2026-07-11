@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { alertError } from '../lib/alert'
 import type { AdminRow, FieldDef, TableDef } from './registry'
 
-// Dark-console styling — matches AdminPage's standalone theme, not the website's.
+// Clean beige/white console styling — matches AdminPage's standalone theme, not the website's.
 const inputCls =
-  'h-9 px-3 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 outline-none focus:border-emerald-400 w-full'
+  'h-9 px-3 bg-white border border-[#e7ddca] rounded-lg text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] w-full'
 const areaCls =
-  'p-3 bg-slate-900 border border-slate-700 rounded text-sm text-slate-100 outline-none focus:border-emerald-400 resize-y w-full'
+  'p-3 bg-white border border-[#e7ddca] rounded-lg text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] resize-y w-full'
 
 /** Build the form's initial values from an existing row (or field defaults). */
 function initialValues(def: TableDef, row: AdminRow | null): AdminRow {
@@ -118,8 +118,8 @@ export default function RecordForm({
         return <input type="number" value={val ?? 0} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
       case 'boolean':
         return (
-          <label className="inline-flex items-center gap-2 text-sm text-slate-300">
-            <input type="checkbox" checked={!!val} onChange={(e) => set(f.key, e.target.checked)} className="accent-emerald-500" />
+          <label className="inline-flex items-center gap-2 text-sm text-[#57503f]">
+            <input type="checkbox" checked={!!val} onChange={(e) => set(f.key, e.target.checked)} className="accent-[#a98c5a] w-4 h-4" />
             {t('admin.enabled')}
           </label>
         )
@@ -147,33 +147,33 @@ export default function RecordForm({
   }
 
   return (
-    <form onSubmit={submit} className="border border-emerald-500/40 bg-slate-900/70 rounded-lg p-4 flex flex-col gap-4 mb-4">
-      <h3 className="text-sm font-semibold text-slate-100">
-        <i className={`fa-solid ${row ? 'fa-pen' : 'fa-plus'} mr-2 text-emerald-400`} />
+    <form onSubmit={submit} className="border border-[#e7ddca] bg-[#faf6ee] rounded-xl p-4 flex flex-col gap-4">
+      <h3 className="text-sm font-semibold text-[#3f382f]">
+        <i className={`fa-solid ${row ? 'fa-pen' : 'fa-plus'} mr-2 text-[#a98c5a]`} />
         {row ? t('admin.editRecord') : t('admin.newRecord')}
       </h3>
       {def.fields.map((f) => (
         <label key={f.key} className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-slate-300">
+          <span className="text-sm font-medium text-[#57503f]">
             {f.label}
-            {f.required && <span className="text-rose-400 ml-0.5">*</span>}
+            {f.required && <span className="text-[#c15f3c] ml-0.5">*</span>}
           </span>
           {renderField(f)}
-          {f.hint && <span className="text-xs text-slate-500">{f.hint}</span>}
+          {f.hint && <span className="text-xs text-[#8a8072]">{f.hint}</span>}
         </label>
       ))}
       <div className="flex items-center gap-2">
         <button
           type="submit"
           disabled={busy}
-          className="h-9 px-4 bg-emerald-500 text-slate-950 text-sm font-semibold rounded hover:bg-emerald-400 disabled:opacity-60"
+          className="h-9 px-4 bg-[#4b4137] text-white text-sm font-semibold rounded-lg hover:bg-[#372f27] transition-colors disabled:opacity-60"
         >
           {busy ? t('auth.working') : t('admin.save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="h-9 px-4 border border-slate-700 text-slate-300 text-sm rounded hover:bg-slate-800"
+          className="h-9 px-4 border border-[#e7ddca] text-[#8a8072] text-sm rounded-lg hover:bg-[#f0e9db] hover:text-[#4b4137] transition-colors"
         >
           {t('post.cancel')}
         </button>

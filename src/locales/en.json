@@ -44,6 +44,7 @@
   "admin": {
     "title": "Data Manager (DBMS)",
     "backToSite": "View site",
+    "toggleSidebar": "Toggle sidebar",
     "subtitle": "Admin-only. Every dataset below is labelled with the exact part of the site where it is used.",
     "usedIn": "Where this data is used",
     "placement": "Shown at",
