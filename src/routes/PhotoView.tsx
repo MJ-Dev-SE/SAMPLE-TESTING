@@ -28,6 +28,7 @@ import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
 import ImageCarousel from '../components/ImageCarousel'
 import CommentItem from '../components/CommentItem'
+import Collapse from '../components/Collapse'
 import { saveGuestCommentToken } from '../lib/guestTokens'
 import type { PhotoRec } from '../types'
 
@@ -223,14 +224,9 @@ function PhotoPage({ photoId }: { photoId: string }) {
           </button>
         </div>
 
-        {/* Inline composer — smooth expand/collapse via the grid-rows trick */}
-        <div
-          className={`grid transition-all duration-300 ease-out ${
-            showForm ? 'grid-rows-[1fr] opacity-100 mb-m' : 'grid-rows-[0fr] opacity-0'
-          }`}
-          aria-hidden={!showForm}
-        >
-          <div className="overflow-hidden">
+        {/* Inline composer — smooth expand/collapse (JS-measured height animation) */}
+        <Collapse open={showForm}>
+          <div className="pb-m">
             <form onSubmit={submitPost} className="border border-neutral-90 rounded-l p-m flex flex-col gap-2">
               {!user && <p className="text-xs text-subtlest">{t('post.guestNote')}</p>}
               <textarea
@@ -267,7 +263,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
             </button>
             </form>
           </div>
-        </div>
+        </Collapse>
 
         {/* Inline feed of posts for this category */}
         {posts.length > 0 && (
