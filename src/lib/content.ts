@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
-import type { AdRec, BusinessRec, NewsItemRec, PhotoRec, TravelInfo } from '../types'
+import { fallbackContentBySlug, siteContentFallback } from '../data/siteContent'
+import type { AdRec, BusinessRec, NewsItemRec, PhotoRec, SiteContentRec, TravelInfo } from '../types'
 
 /**
  * Content data-access layer: everything that used to live in src/data/{home,photos,sidebar}.ts
@@ -100,6 +101,54 @@ export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
     .single()
   if (error) throw error
   return data as unknown as BusinessRec
+}
+
+/** One business by id — /company/view detail page. */
+export async function getBusiness(id: string): Promise<BusinessRec | null> {
+  const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('id', id).maybeSingle()
+  if (error) throw error
+  return (data as unknown as BusinessRec) ?? null
+}
+
+/* ---------------------------- Site content ------------------------------ */
+
+const CONTENT_COLS = 'slug, content_type, section, title, summary, body, image_url, url, sort, active'
+
+/**
+ * All active site_content rows, ordered for the footer groups. Falls back to the
+ * bundled src/data/siteContent.json when the table is missing/empty so the footer
+ * and policy pages always work.
+ */
+export async function listSiteContent(): Promise<SiteContentRec[]> {
+  try {
+    const { data, error } = await supabase
+      .from('site_content')
+      .select(CONTENT_COLS)
+      .eq('active', true)
+      .order('sort', { ascending: true })
+    if (error) throw error
+    if (data && data.length > 0) return data as unknown as SiteContentRec[]
+  } catch {
+    /* table not created yet / offline → fall back */
+  }
+  return siteContentFallback.filter((r) => r.active)
+}
+
+/** One site_content record by slug (DB first, bundled fallback second). */
+export async function getSiteContent(slug: string): Promise<SiteContentRec | null> {
+  try {
+    const { data, error } = await supabase
+      .from('site_content')
+      .select(CONTENT_COLS)
+      .eq('slug', slug)
+      .eq('active', true)
+      .maybeSingle()
+    if (error) throw error
+    if (data) return data as unknown as SiteContentRec
+  } catch {
+    /* fall back below */
+  }
+  return fallbackContentBySlug(slug)
 }
 
 /* --------------------------------- Ads --------------------------------- */

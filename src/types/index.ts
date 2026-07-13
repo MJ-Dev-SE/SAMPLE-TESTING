@@ -215,6 +215,28 @@ export interface NewsItemRec {
   sort: number
 }
 
+/** Presentation category of a site_content record (drives the ContentView layout). */
+export type SiteContentType = 'advertisement' | 'link' | 'policy'
+
+/** Site position a site_content record is assigned to (footer group today). */
+export type SiteContentSection = 'footer-advertisement' | 'footer-link' | 'footer-policy'
+
+/** public.site_content row — footer Advertisement / Link / Policy pages (ContentView). */
+export interface SiteContentRec {
+  slug: string
+  content_type: SiteContentType
+  section: SiteContentSection
+  title: Localized
+  summary: Localized
+  /** Long-form text; "## " lines are headings, "- " lines are bullets. */
+  body: Localized
+  image_url: string | null
+  /** Related/target URL (internal path or external site) shown as the CTA. */
+  url: string | null
+  sort: number
+  active: boolean
+}
+
 /** public.travel_info row — Travel Information card. */
 export interface TravelInfo {
   id: string

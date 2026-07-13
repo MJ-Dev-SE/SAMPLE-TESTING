@@ -1,6 +1,8 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { alertError } from '../lib/alert'
+import { alertError, errText } from '../lib/alert'
+import { publicUrl, uploadToMedia } from '../lib/media'
+import { useLocalized } from '../lib/useLocalized'
 import type { AdminRow, FieldDef, TableDef } from './registry'
 
 // Flux console styling — matches AdminPage's standalone beige/gold theme, not the website's.
@@ -8,6 +10,7 @@ const inputCls =
   'h-9 px-3 bg-white border border-[#e7ddca] rounded-xl text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] focus:ring-2 focus:ring-[#a98c5a]/15 w-full'
 const areaCls =
   'p-3 bg-white border border-[#e7ddca] rounded-xl text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] focus:ring-2 focus:ring-[#a98c5a]/15 resize-y w-full'
+const thumbCls = 'w-28 h-28 object-cover rounded-xl border border-[#e7ddca] bg-[#f5efe4]'
 
 /** Build the form's initial values from an existing row (or field defaults). */
 function initialValues(def: TableDef, row: AdminRow | null): AdminRow {
@@ -42,14 +45,42 @@ export default function RecordForm({
   def: TableDef
   row: AdminRow | null // null = creating
   busy: boolean
-  onSave: (values: AdminRow) => void
+  onSave: (values: AdminRow) => void | Promise<void>
   onCancel: () => void
 }) {
   const { t } = useTranslation()
+  const L = useLocalized()
   const [values, setValues] = useState<AdminRow>(() => initialValues(def, row))
+  /** Newly picked files for image fields, keyed by field key (uploaded on save). */
+  const [picks, setPicks] = useState<Record<string, File>>({})
+  const [previews, setPreviews] = useState<Record<string, string>>({})
+  const [uploading, setUploading] = useState(false)
+  const working = busy || uploading
+
   const set = (key: string, val: unknown) => setValues((prev) => ({ ...prev, [key]: val }))
 
-  const submit = (e: FormEvent) => {
+  // Revoke preview object-URLs when the form unmounts.
+  const previewsRef = useRef(previews)
+  previewsRef.current = previews
+  useEffect(() => () => Object.values(previewsRef.current).forEach((u) => URL.revokeObjectURL(u)), [])
+
+  const pickImage = (key: string, file: File | null) => {
+    setPreviews((prev) => {
+      if (prev[key]) URL.revokeObjectURL(prev[key])
+      const next = { ...prev }
+      if (file) next[key] = URL.createObjectURL(file)
+      else delete next[key]
+      return next
+    })
+    setPicks((prev) => {
+      const next = { ...prev }
+      if (file) next[key] = file
+      else delete next[key]
+      return next
+    })
+  }
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     const out: AdminRow = {}
     for (const f of def.fields) {
@@ -62,19 +93,102 @@ export default function RecordForm({
           try {
             val = JSON.parse(text)
           } catch {
-            return void alertError(t('admin.badJsonTitle'), `${f.label}: ${t('admin.badJsonText')}`)
+            return void alertError(t('admin.badJsonTitle'), `${L(f.label)}: ${t('admin.badJsonText')}`)
           }
         }
       }
       if (f.type === 'number') val = Number(val) || 0
       out[f.key] = val
     }
-    onSave(out)
+    // Upload newly picked images, then store their media-bucket paths.
+    if (Object.keys(picks).length > 0) {
+      setUploading(true)
+      try {
+        for (const f of def.fields) {
+          const file = picks[f.key]
+          if (f.type === 'image' && file) {
+            out[f.key] = await uploadToMedia(f.folder ?? def.table, file)
+          }
+        }
+      } catch (err) {
+        setUploading(false)
+        return void alertError(t('auth.errorTitle'), errText(err))
+      }
+      setUploading(false)
+    }
+    await onSave(out)
+  }
+
+  /** Image DATA SLOT: current image (what the position shows today) + new-file preview. */
+  const renderImage = (f: FieldDef) => {
+    const current = String(values[f.key] ?? '')
+    const preview = previews[f.key]
+    return (
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-start gap-4">
+          {/* CURRENT image assigned to this position (edit mode, before replacing) */}
+          <figure className="flex flex-col gap-1">
+            {current ? (
+              <img src={publicUrl(current)} alt="" className={thumbCls} />
+            ) : (
+              <span className={`${thumbCls} grid place-items-center text-[#a89e8c]`}>
+                <i className="fa-regular fa-image text-xl" aria-hidden="true" />
+              </span>
+            )}
+            <figcaption className="text-[11px] font-medium text-[#8a8072]">
+              {current ? t('admin.currentImage') : t('admin.noImage')}
+            </figcaption>
+          </figure>
+          {/* NEW image preview (before saving) */}
+          {preview && (
+            <figure className="flex flex-col gap-1">
+              <img src={preview} alt="" className={`${thumbCls} ring-2 ring-[#a98c5a]`} />
+              <figcaption className="text-[11px] font-medium text-[#a98c5a]">
+                {t('admin.newImagePreview')}
+              </figcaption>
+            </figure>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] border border-[#e7ddca] bg-white text-xs font-medium text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors cursor-pointer">
+            <i className="fa-solid fa-upload" aria-hidden="true" />
+            {t('admin.uploadImage')}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => pickImage(f.key, e.target.files?.[0] ?? null)}
+            />
+          </label>
+          {preview && (
+            <button
+              type="button"
+              onClick={() => pickImage(f.key, null)}
+              className="text-xs text-[#8a8072] hover:text-red-500 transition-colors"
+            >
+              <i className="fa-solid fa-xmark mr-1" aria-hidden="true" />
+              {t('admin.discardNewImage')}
+            </button>
+          )}
+        </div>
+        {/* Advanced: the stored path/URL stays editable by hand */}
+        <input
+          type="text"
+          value={current}
+          onChange={(e) => set(f.key, e.target.value)}
+          placeholder={t('admin.imagePathPlaceholder')}
+          className={`${inputCls} font-mono text-xs`}
+        />
+        <span className="text-xs text-[#8a8072]">{t('admin.imageHint')}</span>
+      </div>
+    )
   }
 
   const renderField = (f: FieldDef) => {
     const val = values[f.key]
     switch (f.type) {
+      case 'image':
+        return renderImage(f)
       case 'localized':
       case 'localized-textarea':
         return (
@@ -155,23 +269,34 @@ export default function RecordForm({
         <i className={`fa-solid ${row ? 'fa-pen' : 'fa-plus'} mr-2 text-[#a98c5a]`} />
         {row ? t('admin.editRecord') : t('admin.newRecord')}
       </h3>
+
+      {/* LIVE placement: where this record will show on the site, following the form values. */}
+      {def.placement && (
+        <p className="flex items-center gap-2 text-xs text-[#6b5a3c] bg-[#f5efe4] border border-[#e7ddca] rounded-xl px-3 py-2">
+          <i className="fa-solid fa-location-crosshairs text-[#a98c5a]" aria-hidden="true" />
+          <span>
+            <span className="font-semibold">{t('admin.willAppear')}:</span> {def.placement(values)}
+          </span>
+        </p>
+      )}
+
       {def.fields.map((f) => (
         <label key={f.key} className="flex flex-col gap-1">
           <span className="text-sm font-medium text-[#57503f]">
-            {f.label}
+            {L(f.label)}
             {f.required && <span className="text-red-500 ml-0.5">*</span>}
           </span>
           {renderField(f)}
-          {f.hint && <span className="text-xs text-[#8a8072]">{f.hint}</span>}
+          {f.hint && <span className="text-xs text-[#8a8072]">{L(f.hint)}</span>}
         </label>
       ))}
       <div className="flex items-center gap-2">
         <button
           type="submit"
-          disabled={busy}
+          disabled={working}
           className="inline-flex items-center h-8 px-4 rounded-[18px] bg-gradient-to-r from-[#a98c5a] to-[#6b5a3c] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60"
         >
-          {busy ? t('auth.working') : t('admin.save')}
+          {working ? t('auth.working') : t('admin.save')}
         </button>
         <button
           type="button"

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { useTranslation } from 'react-i18next'
+import { I18nextProvider, useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
+import { publicUrl } from '../lib/media'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
+import { adminI18n, setAdminLanguage } from './i18n'
 import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
 import RecordForm from './RecordForm'
 
@@ -49,7 +51,20 @@ const navCls = (activeTab: boolean) =>
 const shortDate = (iso: string | null | undefined): string =>
   iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'
 
+/**
+ * The console runs on its OWN i18next instance (src/admin/i18n.ts): English by
+ * default, toggleable to Korean from the header, persisted separately from the
+ * public site's locale so switching here never changes the website language.
+ */
 export default function AdminPage() {
+  return (
+    <I18nextProvider i18n={adminI18n}>
+      <AdminConsole />
+    </I18nextProvider>
+  )
+}
+
+function AdminConsole() {
   const { t } = useTranslation()
   const L = useLocalized()
   const { user, loading } = useAuth()
@@ -165,6 +180,7 @@ export default function AdminPage() {
             {active === 'audit' ? t('admin.audit') : L(active.title)}
           </h1>
           <div className="flex items-center gap-3 min-w-0">
+            <AdminLangToggle />
             <span className={`text-xs truncate hidden sm:block ${MUTED}`}>{email}</span>
             <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center text-[10px] font-bold text-white ${AVATAR}`}>
               {initials}
@@ -180,6 +196,36 @@ export default function AdminPage() {
           )}
         </main>
       </div>
+    </div>
+  )
+}
+
+/** EN / KO pill switch — changes ONLY the admin console language (see src/admin/i18n.ts). */
+function AdminLangToggle() {
+  const { t, i18n } = useTranslation()
+  const active = (i18n.resolvedLanguage || 'en').startsWith('ko') ? 'ko' : 'en'
+  return (
+    <div
+      role="group"
+      aria-label={t('admin.language')}
+      title={t('admin.language')}
+      className="flex items-center rounded-[18px] border border-[#e7ddca] bg-white p-0.5"
+    >
+      {(['en', 'ko'] as const).map((lng) => (
+        <button
+          key={lng}
+          type="button"
+          onClick={() => setAdminLanguage(lng)}
+          aria-pressed={active === lng}
+          className={`h-7 px-3 rounded-[16px] text-xs font-semibold transition-colors ${
+            active === lng
+              ? 'bg-gradient-to-r from-[#a98c5a] to-[#6b5a3c] text-white'
+              : 'text-[#8a8072] hover:text-[#a98c5a]'
+          }`}
+        >
+          {lng.toUpperCase()}
+        </button>
+      ))}
     </div>
   )
 }
@@ -383,6 +429,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className={`bg-[#f5efe4] text-left text-[11px] uppercase tracking-wide border-b border-[#e7ddca] ${MUTED}`}>
+                  {def.imageCol && <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.imageCol')}</th>}
                   {def.listCols.map((c) => (
                     <th key={c} className="px-4 py-2.5 font-semibold whitespace-nowrap">{c}</th>
                   ))}
@@ -393,6 +440,22 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
+                    {def.imageCol && (
+                      <td className="px-4 py-2">
+                        {row[def.imageCol] ? (
+                          <img
+                            src={publicUrl(String(row[def.imageCol]))}
+                            alt=""
+                            loading="lazy"
+                            className="h-10 w-14 object-cover rounded-lg border border-[#e7ddca] bg-[#f5efe4]"
+                          />
+                        ) : (
+                          <span className={`h-10 w-14 grid place-items-center rounded-lg border border-dashed border-[#e7ddca] text-[#a89e8c]`}>
+                            <i className="fa-regular fa-image" aria-hidden="true" />
+                          </span>
+                        )}
+                      </td>
+                    )}
                     {def.listCols.map((c) => (
                       <td key={c} className={`px-4 py-3 max-w-[260px] truncate ${INK}`}>{cell(row, c)}</td>
                     ))}

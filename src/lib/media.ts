@@ -11,7 +11,7 @@ export const MEDIA_BUCKET = 'media'
  */
 export function publicUrl(pathOrUrl: string | null | undefined): string {
   if (!pathOrUrl) return ''
-  if (/^(https?:|data:|blob:)/.test(pathOrUrl)) return pathOrUrl
+  if (/^(https?:|data:|blob:|\/)/.test(pathOrUrl)) return pathOrUrl // absolute or site-relative (/public asset)
   return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(pathOrUrl).data.publicUrl
 }
 
@@ -25,7 +25,7 @@ export function imageUrl(
   opts: { width?: number; height?: number; quality?: number } = {},
 ): string {
   if (!pathOrUrl) return ''
-  if (/^(data:|blob:)/.test(pathOrUrl)) return pathOrUrl
+  if (/^(data:|blob:|\/)/.test(pathOrUrl)) return pathOrUrl // data/blob or site-relative /public asset
   if (/\.svg($|\?)/i.test(pathOrUrl)) return publicUrl(pathOrUrl) // vector — nothing to resize
 
   const { width, height, quality = 72 } = opts

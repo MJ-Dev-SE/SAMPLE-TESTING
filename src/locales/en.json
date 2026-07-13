@@ -81,7 +81,17 @@
     "kpiModerate": "Moderate only",
     "kpiAccounts": "Accounts",
     "kpiAdmins": "Admins",
-    "kpiLatest": "Latest sign-in"
+    "kpiLatest": "Latest sign-in",
+    "language": "Dashboard language",
+    "imageCol": "Image",
+    "currentImage": "Current image",
+    "noImage": "No image assigned",
+    "newImagePreview": "New image (preview)",
+    "uploadImage": "Upload image",
+    "discardNewImage": "Discard new image",
+    "imagePathPlaceholder": "media-bucket path or full URL",
+    "imageHint": "Choose a file to upload on save, or paste a media-bucket path / full URL. The left thumbnail is what this position shows right now.",
+    "willAppear": "Will appear at"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
@@ -187,6 +197,7 @@
     "popularPosts": "Popular Posts (Last 30 days)",
     "businessDirectory": "Business Directory",
     "recentlyUpdated": "Recently updated businesses",
+    "addBusiness": "Add a business listing",
     "statistics": "Homepage Statistics",
     "subscribers": "Subscribers",
     "posts": "Posts",
@@ -230,6 +241,7 @@
     "description": "Full description",
     "descriptionPlaceholder": "Tell customers about your business…",
     "thumbnail": "Logo / photo",
+    "previewHint": "Preview — this image is uploaded when you submit.",
     "submit": "Register business",
     "created": "Business registered!",
     "emptyName": "Please enter a business name."
@@ -237,7 +249,19 @@
   "company": {
     "empty": "No businesses listed yet.",
     "registerCta": "Register your business",
-    "allCategories": "All"
+    "allCategories": "All",
+    "notFound": "This business listing could not be found.",
+    "back": "Back to Business Directory",
+    "updated": "Last updated"
+  },
+  "content": {
+    "typeAdvertisement": "Advertisement",
+    "typeLink": "Recommended link",
+    "typePolicy": "Policy",
+    "ctaAdvertisement": "Inquire about this ad",
+    "ctaLink": "Visit",
+    "notFound": "This page could not be found.",
+    "policyNote": "Official Manila Tour policy — please read carefully."
   },
   "menuPage": {
     "breadcrumbHome": "home",

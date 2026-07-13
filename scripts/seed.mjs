@@ -289,6 +289,18 @@ async function seedTravel() {
   await reinsert('travel_info', rows, (q) => q.neq('icon', '__none__'))
 }
 
+// ---------------------------------------------------------------------------
+// 6) SITE_CONTENT — footer Advertisement / Link / Policy pages.
+//    Rows come from src/data/siteContent.json (single source of truth, also the
+//    app's offline fallback), upserted by slug. Requires supabase/site_content.sql.
+// ---------------------------------------------------------------------------
+async function seedSiteContent() {
+  console.log('Seeding site_content…')
+  const json = await readFile(join(root, 'src', 'data', 'siteContent.json'), 'utf8')
+  const rows = JSON.parse(json)
+  await upsert('site_content', rows, 'slug')
+}
+
 async function main() {
   await seedPhotos()
   // Build a slug → src map for news featured thumbnails (re-read what we just seeded).
@@ -303,6 +315,7 @@ async function main() {
   await seedAds(topAds)
   await seedNews(srcBySlug)
   await seedTravel()
+  await seedSiteContent()
   console.log('\nDone. The site now renders content from Supabase.')
 }
 
