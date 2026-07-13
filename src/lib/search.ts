@@ -44,7 +44,7 @@ let poolPromise: Promise<SearchHit[]> | null = null
 function staticPool(): Promise<SearchHit[]> {
   if (!poolPromise) {
     poolPromise = Promise.all([
-      listBusinesses().catch(() => []),
+      listBusinesses(null, { pageSize: 200 }).then((p) => p.rows).catch(() => []),
       listAllPhotos().catch(() => []),
       listNews().catch(() => []),
       listTravelInfo().catch(() => []),
@@ -55,7 +55,7 @@ function staticPool(): Promise<SearchHit[]> {
           title: same(b.name),
           category: withSub(CHIP.business, b.category),
           href: b.category ? `/company?category=${encodeURIComponent(b.category)}` : '/company',
-          hay: hayOf(b.name, b.location, b.excerpt.en, b.excerpt.ko),
+          hay: hayOf(b.name, b.region ?? b.location, (b.short_intro ?? b.excerpt).en, (b.short_intro ?? b.excerpt).ko),
         }),
       ),
       ...photos.map(

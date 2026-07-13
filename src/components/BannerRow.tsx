@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react'
-import type { AdRec } from '../types'
-import { listAds } from '../lib/content'
+import type { AdPosition, AdvertisementRec } from '../types'
+import { listAdvertisements } from '../lib/content'
 import AdCarousel from './AdCarousel'
 
 /**
- * Ad-card row. Fetches the ads for a slot from Supabase and renders them as two
- * crossfading cards ("Ad Card 1" / "Ad Card 2"), splitting the creatives between them.
+ * Ad-card row. Fetches the advertisements for a position from Supabase and renders
+ * them as two crossfading cards, splitting the creatives between them.
  */
-export default function BannerRow({ slot = 'mid', className = '' }: { slot?: AdRec['slot']; className?: string }) {
-  const [ads, setAds] = useState<AdRec[]>([])
+export default function BannerRow({ position = 'homepage', className = '' }: { position?: AdPosition; className?: string }) {
+  const [ads, setAds] = useState<AdvertisementRec[]>([])
 
   useEffect(() => {
     let alive = true
-    listAds(slot)
+    listAdvertisements(position)
       .then((a) => alive && setAds(a))
       .catch(() => alive && setAds([]))
     return () => {
       alive = false
     }
-  }, [slot])
+  }, [position])
 
   if (ads.length === 0) return null
 

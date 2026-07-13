@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
-import type { AdRec } from '../types'
-import { listAds } from '../lib/content'
+import type { AdvertisementRec } from '../types'
+import { listAdvertisements } from '../lib/content'
 import { publicUrl } from '../lib/media'
+import { useLocalized } from '../lib/useLocalized'
 
 /**
  * WING (side) AD BANNERS — philgo.com style.
  * Sticky vertical ad stacks that flank the centered max-w-content shell, sitting in the
  * gutter between the content edge and the viewport edge. They only appear once the
- * viewport is wide enough to clear the content column. Creatives come from public.ads.
+ * viewport is wide enough to clear the content column. Creatives come from public.advertisements.
  */
-function Wing({ ads, side }: { ads: AdRec[]; side: 'left' | 'right' }) {
+function Wing({ ads, side }: { ads: AdvertisementRec[]; side: 'left' | 'right' }) {
+  const L = useLocalized()
   return (
     <div
       className={`pointer-events-auto absolute top-[190px] flex flex-col gap-s ${
@@ -17,10 +19,10 @@ function Wing({ ads, side }: { ads: AdRec[]; side: 'left' | 'right' }) {
       }`}
     >
       {ads.map((ad) => (
-        <a key={ad.id} href={ad.href} className="block shrink-0">
+        <a key={ad.id} href={ad.url || `/ad/view?id=${ad.id}`} className="block shrink-0">
           <img
             src={publicUrl(ad.image_url)}
-            alt={ad.alt}
+            alt={L(ad.title)}
             loading="lazy"
             className="block w-[140px] max-w-none h-auto rounded-m border border-neutral-90 shadow-sm"
           />
@@ -31,13 +33,13 @@ function Wing({ ads, side }: { ads: AdRec[]; side: 'left' | 'right' }) {
 }
 
 export default function WingBanners() {
-  const [left, setLeft] = useState<AdRec[]>([])
-  const [right, setRight] = useState<AdRec[]>([])
+  const [left, setLeft] = useState<AdvertisementRec[]>([])
+  const [right, setRight] = useState<AdvertisementRec[]>([])
 
   useEffect(() => {
     let alive = true
-    listAds('wing-left').then((a) => alive && setLeft(a)).catch(() => alive && setLeft([]))
-    listAds('wing-right').then((a) => alive && setRight(a)).catch(() => alive && setRight([]))
+    listAdvertisements('wing-left').then((a) => alive && setLeft(a)).catch(() => alive && setLeft([]))
+    listAdvertisements('wing-right').then((a) => alive && setRight(a)).catch(() => alive && setRight([]))
     return () => {
       alive = false
     }

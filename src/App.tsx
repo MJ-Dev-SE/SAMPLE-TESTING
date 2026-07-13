@@ -14,7 +14,10 @@ import PostWrite from './routes/PostWrite'
 import PhotoView from './routes/PhotoView'
 import BusinessRegister from './routes/BusinessRegister'
 import BusinessView from './routes/BusinessView'
-import ContentView from './routes/ContentView'
+import AdvertisementView from './routes/AdvertisementView'
+import LinkView from './routes/LinkView'
+import PolicyView from './routes/PolicyView'
+import NewsArticleView from './routes/NewsArticleView'
 import Placeholder from './routes/Placeholder'
 import AdminPage from './admin/AdminPage'
 
@@ -61,17 +64,19 @@ function PageRoutes() {
       <Route path="admin" element={<AdminPage />} />
       <Route path="point/history" element={<Placeholder title={{ en: 'Point history', ko: '포인트 내역' }} icon="fa-clock-rotate-left" />} />
 
-      {/* Site content pages (site_content table via ContentView) — generic route
-          + the fixed footer URLs for advertising, link and policy items */}
-      <Route path="content/view" element={<ContentView />} />
-      <Route path="adv/banner" element={<ContentView slug="banner-ad-information" />} />
-      <Route path="adv/massage" element={<ContentView slug="massage-ad-information" />} />
-      <Route path="adv/point" element={<ContentView slug="point-ad-information" />} />
-      <Route path="help/guideline" element={<ContentView slug="user-guide" />} />
-      <Route path="help/about" element={<ContentView slug="about-manilatour" />} />
-      <Route path="help/terms" element={<ContentView slug="terms-of-use" />} />
-      <Route path="help/privacy" element={<ContentView slug="privacy-policy" />} />
-      <Route path="help/safety" element={<ContentView slug="child-safety-standards" />} />
+      {/* Content-type-specific detail pages (item 12): each renders its own layout. */}
+      <Route path="ad/view" element={<AdvertisementView />} />
+      <Route path="link/view" element={<LinkView />} />
+      <Route path="policy/view" element={<PolicyView />} />
+      <Route path="news/view" element={<NewsArticleView />} />
+
+      {/* Fixed footer URLs → their content-type page */}
+      <Route path="adv/banner" element={<LinkView />} />
+      <Route path="help/guideline" element={<LinkView />} />
+      <Route path="help/about" element={<LinkView />} />
+      <Route path="help/terms" element={<PolicyView slug="terms-of-use" />} />
+      <Route path="help/privacy" element={<PolicyView slug="privacy-policy" />} />
+      <Route path="help/safety" element={<PolicyView slug="child-safety-standards" />} />
 
       {/* Unknown routes fall back to home */}
       <Route path="*" element={<Navigate to="" replace />} />

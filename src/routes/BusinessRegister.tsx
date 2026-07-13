@@ -1,14 +1,23 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import BusinessForm from '../components/BusinessForm'
+import { listCategories } from '../lib/content'
 import { useAuth } from '../lib/auth'
+import type { CategoryRec } from '../types'
 
-/** Register a business listing (/company/register) — members only. */
+/** Register a business listing (/company/register) — members only. Full-page form. */
 export default function BusinessRegister() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const { user, loading } = useAuth()
+  const [categories, setCategories] = useState<CategoryRec[]>([])
+
+  useEffect(() => {
+    listCategories().then(setCategories).catch(() => setCategories([]))
+  }, [])
 
   if (loading) return <Layout><p className="text-sm text-muted">…</p></Layout>
 
@@ -17,13 +26,13 @@ export default function BusinessRegister() {
       <Layout>
         <div className="max-w-[460px] mx-auto border border-neutral-90 rounded-l p-l text-center">
           <p className="text-sm text-muted mb-3">{t('business.memberOnly')}</p>
-          <Link to="/user/login" className="text-sm text-link font-medium hover:underline">
-            {t('nav.login')}
-          </Link>
+          <Link to="/user/login" className="text-sm text-link font-medium hover:underline">{t('nav.login')}</Link>
         </div>
       </Layout>
     )
   }
+
+  const lockedCategory = categories.find((c) => c.slug === params.get('category')) ?? null
 
   return (
     <Layout>
@@ -37,10 +46,12 @@ export default function BusinessRegister() {
 
       <h1 className="text-xl font-bold text-text-normal mb-l">{t('business.registerTitle')}</h1>
 
-      <div className="border border-neutral-90 rounded-l p-l max-w-[560px]">
+      <div className="border border-neutral-90 rounded-l p-l max-w-[640px]">
         <BusinessForm
           ownerId={user.id}
-          onCreated={(biz) => navigate(`/company?category=${biz.category ?? ''}`)}
+          categories={categories}
+          lockedCategory={lockedCategory}
+          onCreated={(biz) => navigate(`/company/view?id=${biz.id}`)}
           onCancel={() => navigate('/company')}
         />
       </div>

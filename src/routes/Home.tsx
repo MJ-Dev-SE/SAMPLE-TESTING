@@ -57,7 +57,7 @@ export default function Home() {
         <PhotoBanner photos={banner} />
 
         {/* Ad cards (crossfading, from the DB) */}
-        <BannerRow slot="mid" />
+        <BannerRow position="homepage" />
 
         {/* 4c. Board columns ("Latest posts") */}
         <div>

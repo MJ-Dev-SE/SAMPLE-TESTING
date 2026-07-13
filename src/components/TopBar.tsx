@@ -19,7 +19,7 @@ export default function TopBar() {
   const name = profile?.display_name || profile?.username || user?.email?.split('@')[0]
 
   return (
-    <div className="sticky top-0 z-40 bg-page border-b border-neutral-90 shadow-sm">
+    <div className="bg-page border-b border-neutral-90">
       <div className="mx-auto max-w-content px-xs flex items-center justify-center sm:justify-between h-9 text-[13px] text-[#333]">
         {/* Left utility links: hidden on phones (crowded in a 36px row), shown from sm up. */}
         <nav className="hidden sm:flex items-center gap-m" aria-label="Top utility left">

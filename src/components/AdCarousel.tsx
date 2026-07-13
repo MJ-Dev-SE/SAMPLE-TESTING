@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import type { AdRec } from '../types'
+import type { AdvertisementRec } from '../types'
 import { publicUrl } from '../lib/media'
+import { useLocalized } from '../lib/useLocalized'
 
 /** Internal app routes navigate via <Link> (SPA — opens in the middle); external URLs use <a>. */
 function AdLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
@@ -22,10 +23,11 @@ export default function AdCarousel({
   intervalMs = 5000,
   className = '',
 }: {
-  ads: AdRec[]
+  ads: AdvertisementRec[]
   intervalMs?: number
   className?: string
 }) {
+  const L = useLocalized()
   const [i, setI] = useState(0)
 
   useEffect(() => {
@@ -43,12 +45,12 @@ export default function AdCarousel({
       {ads.map((ad, idx) => (
         <AdLink
           key={ad.id}
-          href={ad.href}
+          href={ad.url || `/ad/view?id=${ad.id}`}
           className={`absolute inset-0 block transition-opacity duration-700 ${
             idx === i ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
         >
-          <img src={publicUrl(ad.image_url)} alt={ad.alt} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+          <img src={publicUrl(ad.image_url)} alt={L(ad.title)} loading="lazy" decoding="async" className="w-full h-full object-cover" />
         </AdLink>
       ))}
     </div>

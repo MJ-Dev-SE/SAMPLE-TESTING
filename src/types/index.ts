@@ -183,58 +183,105 @@ export interface PhotoRec {
   details: Localized[]
 }
 
-/** public.businesses row — Business Directory + recently-updated widget. */
+/** public.categories row — Business Directory parent + child categories. */
+export interface CategoryRec {
+  id: string
+  slug: string
+  parent_slug: string | null
+  name: Localized
+  icon: string
+  sort: number
+}
+
+/** public.business_images row — a business's logo / main / gallery photos. */
+export interface BusinessImage {
+  id: string
+  image_url: string
+  image_type: 'logo' | 'main' | 'gallery'
+  display_order: number
+}
+
+/** public.businesses row — Business Directory cards, profile page, widgets. */
 export interface BusinessRec {
   id: string
   name: string
   category: string | null
+  category_id: string | null
   location: string | null
+  region: string | null
+  address: string | null
+  phone: string | null
+  /** { en, ko } one-line intro (card). Falls back to legacy `excerpt`. */
+  short_intro: Localized
+  /** { en, ko } full intro (profile). Falls back to legacy `description`. */
+  detailed_intro: Localized
   excerpt: Localized
   description: Localized
   thumb_url: string | null
+  logo_url: string | null
+  main_image_url: string | null
+  status: string
+  display_order: number
   updated_at: string
+  created_at?: string
+  /** Joined gallery (profile page only). */
+  images?: BusinessImage[]
 }
 
-/** public.ads row — ad cards + wing banners. */
-export interface AdRec {
+/** Advertisement position on the site (drives where a banner renders). */
+export type AdPosition = 'header' | 'homepage' | 'wing-left' | 'wing-right' | 'footer-info'
+
+/** public.advertisements row — header/homepage/wing banners + footer program pages. */
+export interface AdvertisementRec {
   id: string
-  slot: 'mid' | 'wing-left' | 'wing-right' | 'top'
-  image_url: string
-  href: string
-  alt: string
+  title: Localized
+  description: Localized
+  body: Localized
+  image_url: string | null
+  url: string | null
+  position: AdPosition
+  sort: number
+  active: boolean
+  start_date: string | null
+  end_date: string | null
 }
 
-/** public.news_items row — homepage News tabs. */
+/** public.links row — partner websites, tourism resources, references. */
+export interface LinkRec {
+  id: string
+  slug: string | null
+  title: Localized
+  description: Localized
+  body: Localized
+  url: string | null
+  image_url: string | null
+  category: string | null
+  section: string
+  sort: number
+}
+
+/** public.policies row — Terms / Privacy / Child Safety, formal documents. */
+export interface PolicyRec {
+  id: string
+  slug: string
+  title: Localized
+  summary: Localized
+  body: Localized
+  sort: number
+}
+
+/** public.news_items row — homepage News tabs + news/information article pages. */
 export interface NewsItemRec {
   tab: string
   kind: 'featured' | 'headline'
   title: Localized
+  body: Localized
   thumb_url: string | null
+  image_url: string | null
   href: string
+  article_slug: string | null
   comment_count: number
   sort: number
-}
-
-/** Presentation category of a site_content record (drives the ContentView layout). */
-export type SiteContentType = 'advertisement' | 'link' | 'policy'
-
-/** Site position a site_content record is assigned to (footer group today). */
-export type SiteContentSection = 'footer-advertisement' | 'footer-link' | 'footer-policy'
-
-/** public.site_content row — footer Advertisement / Link / Policy pages (ContentView). */
-export interface SiteContentRec {
-  slug: string
-  content_type: SiteContentType
-  section: SiteContentSection
-  title: Localized
-  summary: Localized
-  /** Long-form text; "## " lines are headings, "- " lines are bullets. */
-  body: Localized
-  image_url: string | null
-  /** Related/target URL (internal path or external site) shown as the CTA. */
-  url: string | null
-  sort: number
-  active: boolean
 }
 
 /** public.travel_info row — Travel Information card. */

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { alertError, errText } from '../lib/alert'
+import { listCategories } from '../lib/content'
 import { publicUrl, uploadToMedia } from '../lib/media'
 import { useLocalized } from '../lib/useLocalized'
+import type { CategoryRec } from '../types'
 import type { AdminRow, FieldDef, TableDef } from './registry'
 
 // Flux console styling — matches AdminPage's standalone beige/gold theme, not the website's.
@@ -55,7 +57,15 @@ export default function RecordForm({
   const [picks, setPicks] = useState<Record<string, File>>({})
   const [previews, setPreviews] = useState<Record<string, string>>({})
   const [uploading, setUploading] = useState(false)
+  const [categories, setCategories] = useState<CategoryRec[]>([])
   const working = busy || uploading
+
+  // Load categories once if any field is a category selector (businesses).
+  useEffect(() => {
+    if (def.fields.some((f) => f.type === 'category')) {
+      listCategories().then(setCategories).catch(() => setCategories([]))
+    }
+  }, [def])
 
   const set = (key: string, val: unknown) => setValues((prev) => ({ ...prev, [key]: val }))
 
@@ -230,6 +240,17 @@ export default function RecordForm({
         )
       case 'number':
         return <input type="number" value={val ?? 0} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
+      case 'date':
+        return <input type="date" value={val ?? ''} onChange={(e) => set(f.key, e.target.value || null)} className={inputCls} />
+      case 'category':
+        return (
+          <select value={val ?? ''} onChange={(e) => set(f.key, e.target.value || null)} className={inputCls}>
+            <option value="">—</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{L(c.name)}</option>
+            ))}
+          </select>
+        )
       case 'boolean':
         return (
           <label className="inline-flex items-center gap-2 text-sm text-[#57503f]">

@@ -7,11 +7,8 @@ import type { Localized, NewsItemRec } from '../types'
 
 /** Tab bar config (labels/icons are UI chrome; the items come from Supabase). */
 const TABS: { key: string; label: Localized; icon: string }[] = [
-  { key: 'news', label: { en: 'news', ko: '뉴스' }, icon: 'fa-newspaper' },
-  { key: 'travel', label: { en: 'travel', ko: '여행' }, icon: 'fa-plane' },
-  { key: 'information', label: { en: 'information', ko: '정보' }, icon: 'fa-circle-info' },
-  { key: 'mustread', label: { en: 'Must Read', ko: '필독' }, icon: 'fa-bookmark' },
-  { key: 'lifetips', label: { en: 'Life Tips', ko: '생활의 팁' }, icon: 'fa-lightbulb' },
+  { key: 'news', label: { en: 'News', ko: '뉴스' }, icon: 'fa-newspaper' },
+  { key: 'information', label: { en: 'Information', ko: '정보' }, icon: 'fa-circle-info' },
 ]
 
 /**

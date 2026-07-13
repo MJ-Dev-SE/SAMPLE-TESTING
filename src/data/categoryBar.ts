@@ -1,63 +1,58 @@
 import type { CategoryGroup, NavLink } from '../types'
 
-// DATA SLOT: the maroon scrolling category bar, re-categorized for 88 Hotspring Resort.
-// Parents are resort themes; children link to the matching photo pages (/photo/view?id=…)
-// or to the community boards. Same philgo layout: one parent strip + 2 child rows.
+// DATA SLOT: the maroon scrolling category bar — Manila Tour taxonomy.
+// Parents Information / News / Business Directory (+ Q&A, Community, Marketplace …)
+// with two child rows each. One continuous parent strip, horizontally scrollable.
 export const categoryGroups: CategoryGroup[] = [
-  { parent: { label: { en: 'Rooms & Rates', ko: '객실 요금' }, href: '/photo/view?id=bamboo-deluxe' },
+  { parent: { label: { en: 'Information', ko: '정보' }, href: '/post/list?post_id=freetalk&category=info' },
     children: [
-      { label: { en: 'Bamboo Deluxe', ko: '뱀부 디럭스' }, href: '/photo/view?id=bamboo-deluxe' },
-      { label: { en: 'Bamboo Suite', ko: '뱀부 스위트' }, href: '/photo/view?id=bamboo-suite' },
+      { label: { en: 'Weather', ko: '날씨' }, href: '/weather' },
+      { label: { en: 'Experiences', ko: '경험담' }, href: '/post/list?post_id=freetalk&category=경험담' },
     ] },
-  { parent: { label: { en: 'Villas & Executive', ko: '빌라·이그제큐티브' }, href: '/photo/view?id=executive-room' },
+  { parent: { label: { en: 'News', ko: '뉴스' }, href: '/post/list?post_id=news' },
     children: [
-      { label: { en: 'Executive Room', ko: '이그제큐티브 룸' }, href: '/photo/view?id=executive-room' },
-      { label: { en: 'Villa Room', ko: '빌라 룸' }, href: '/photo/view?id=villa-room' },
+      { label: { en: 'Notices', ko: '공지사항' }, href: '/post/list?post_id=freetalk&category=공지사항' },
+      { label: { en: 'Life Tips', ko: '생활의 팁' }, href: '/post/list?post_id=freetalk&category=생활의팁' },
     ] },
-  { parent: { label: { en: 'Garden & Pension', ko: '가든·펜션' }, href: '/photo/view?id=garden-room' },
+  { parent: { label: { en: 'Business Directory', ko: '업소록' }, href: '/company' },
     children: [
-      { label: { en: 'Garden Room', ko: '가든 룸' }, href: '/photo/view?id=garden-room' },
-      { label: { en: 'Pension House', ko: '펜션 하우스' }, href: '/photo/view?id=pension-house' },
+      { label: { en: 'Restaurants', ko: '음식점' }, href: '/company?category=food' },
+      { label: { en: 'Hotels', ko: '호텔' }, href: '/company?category=hotel' },
     ] },
-  { parent: { label: { en: 'Promos', ko: '프로모션' }, href: '/photo/view?id=promo-30-off' },
+  { parent: { label: { en: 'Q&A', ko: '질문답변' }, href: '/post/list?post_id=qna' },
     children: [
-      { label: { en: '30% Off Rooms', ko: '객실 30% 할인' }, href: '/photo/view?id=promo-30-off' },
-      { label: { en: 'Daytour Rates', ko: '데이투어 요금' }, href: '/photo/view?id=daytour-2026' },
-    ] },
-  { parent: { label: { en: 'Cottages', ko: '코티지' }, href: '/photo/view?id=cottages' },
-    children: [
-      { label: { en: 'Cottages for Rent', ko: '대여 코티지' }, href: '/photo/view?id=cottages' },
-      { label: { en: 'Free Swing Type', ko: '무료 스윙형' }, href: '/photo/view?id=cottages' },
-    ] },
-  { parent: { label: { en: 'Tours', ko: '투어' }, href: '/photo/view?id=tour-itineraries' },
-    children: [
-      { label: { en: 'Tour Itineraries', ko: '투어 일정' }, href: '/photo/view?id=tour-itineraries' },
-      { label: { en: 'Manila Tour Getaway', ko: '마닐라 투어' }, href: '/photo/view?id=manila-tour' },
-    ] },
-  { parent: { label: { en: 'Events', ko: '이벤트' }, href: '/photo/view?id=events-place' },
-    children: [
-      { label: { en: 'Events Place', ko: '이벤트 플레이스' }, href: '/photo/view?id=events-place' },
-      { label: { en: 'Inquiries', ko: '문의' }, href: '/post/list?post_id=qna' },
-    ] },
-  { parent: { label: { en: 'Dining', ko: '레스토랑' }, href: '/photo/view?id=ihawan-garden' },
-    children: [
-      { label: { en: 'Ihawan Garden', ko: '이하완 가든' }, href: '/photo/view?id=ihawan-garden' },
-      { label: { en: 'Korean Restaurant', ko: '한식당' }, href: '/photo/view?id=brochure' },
-    ] },
-  { parent: { label: { en: 'Resort Guide', ko: '리조트 안내' }, href: '/photo/view?id=guide-map' },
-    children: [
-      { label: { en: 'Guide Map', ko: '가이드맵' }, href: '/photo/view?id=guide-map' },
-      { label: { en: 'Brochure', ko: '브로슈어' }, href: '/photo/view?id=brochure' },
-    ] },
-  { parent: { label: { en: 'Policies', ko: '이용 규정' }, href: '/photo/view?id=resort-rules' },
-    children: [
-      { label: { en: 'Resort Rules', ko: '리조트 규칙' }, href: '/photo/view?id=resort-rules' },
-      { label: { en: 'Pet Policy', ko: '반려동물 정책' }, href: '/photo/view?id=pet-policy' },
+      { label: { en: 'Free discussion', ko: '자유게시판' }, href: '/post/list?post_id=freetalk' },
+      { label: { en: 'Chit-chat', ko: '잡담' }, href: '/post/list?post_id=freetalk&category=잡담' },
     ] },
   { parent: { label: { en: 'Community', ko: '커뮤니티' }, href: '/post/list?post_id=freetalk' },
     children: [
-      { label: { en: 'Free Board', ko: '자유게시판' }, href: '/post/list?post_id=freetalk' },
-      { label: { en: 'Q&A', ko: '질문답변' }, href: '/post/list?post_id=qna' },
+      { label: { en: 'Manila', ko: '마닐라' }, href: '/post/region?region=마닐라' },
+      { label: { en: 'Angeles', ko: '앙헬레스' }, href: '/post/region?region=앙헬레스' },
+    ] },
+  { parent: { label: { en: "Members' Marketplace", ko: '회원장터' }, href: '/post/list?post_id=buyandsell' },
+    children: [
+      { label: { en: 'Cell phone', ko: '핸드폰' }, href: '/post/list?post_id=buyandsell&category=핸드폰' },
+      { label: { en: 'Peso exchange', ko: '페소환전' }, href: '/post/list?post_id=buyandsell&category=페소환전' },
+    ] },
+  { parent: { label: { en: 'Travel', ko: '여행' }, href: '/post/list?post_id=travel' },
+    children: [
+      { label: { en: 'Tours & itineraries', ko: '투어·일정' }, href: '/company?category=travel' },
+      { label: { en: 'Food trips', ko: '먹방' }, href: '/post/list?post_id=freetalk&category=먹방' },
+    ] },
+  { parent: { label: { en: 'Jobs', ko: '구인구직' }, href: '/post/list?post_id=wanted' },
+    children: [
+      { label: { en: 'New member greetings', ko: '신입인사' }, href: '/post/list?post_id=greeting' },
+      { label: { en: 'People search', ko: '사람찾기' }, href: '/post/list?post_id=lookfor' },
+    ] },
+  { parent: { label: { en: 'Immigration', ko: '이민' }, href: '/post/list?post_id=freetalk&category=이민' },
+    children: [
+      { label: { en: 'Passport / Visa', ko: '여권/비자' }, href: '/post/list?post_id=qna&category=여권/비자' },
+      { label: { en: 'Boarding house', ko: '하숙집' }, href: '/post/list?post_id=boarding_house' },
+    ] },
+  { parent: { label: { en: 'Real estate', ko: '부동산' }, href: '/company?category=realestate' },
+    children: [
+      { label: { en: 'Rental car', ko: '렌트카' }, href: '/company?category=rentcar' },
+      { label: { en: 'Massage / Spa', ko: '마사지' }, href: '/company?category=spa' },
     ] },
 ]
 
