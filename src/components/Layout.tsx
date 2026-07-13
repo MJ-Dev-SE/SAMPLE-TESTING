@@ -17,13 +17,13 @@ export default function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex flex-col bg-page">
       <WingBanners />
 
-      {/* Sticky top band: utility bar + logo/search + category bar stay visible while
-          scrolling. `position: sticky` keeps them in normal flow, so content below is
-          never covered (no manual offset needed). */}
+      {/* Sticky top band: ONLY the thin utility bar stays visible while scrolling —
+          the banners/logo/category bar below scroll away normally. `position: sticky`
+          keeps it in normal flow, so content below is never covered. */}
       <div className="sticky top-0 z-40 bg-page shadow-sm">
         <TopBar />
-        <Header />
       </div>
+      <Header />
 
       <div className="mx-auto w-full max-w-content px-xs py-l flex-1">
         <div className="flex flex-col lg:flex-row gap-l items-start">

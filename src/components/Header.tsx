@@ -10,7 +10,7 @@ import CategoryBar from './CategoryBar'
  * HEADER / TOP NAVIGATION (banner):
  *  1) banner row: [Header Ad 1] · [logo + search centered] · [Header Ad 2]
  *  2) maroon Manila Tour category bar (Information / News / Business Directory …)
- * Rendered inside Layout's sticky top band so it stays visible while scrolling.
+ * Rendered below Layout's sticky TopBar and scrolls away normally with the page.
  * The two side banner ads come from the `header` advertisement position (hidden if none).
  */
 export default function Header() {

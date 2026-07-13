@@ -91,7 +91,18 @@
     "discardNewImage": "새 이미지 취소",
     "imagePathPlaceholder": "media 버킷 경로 또는 전체 URL",
     "imageHint": "파일을 선택하면 저장 시 업로드됩니다. media 버킷 경로나 전체 URL을 직접 입력할 수도 있습니다. 왼쪽 썸네일이 현재 이 위치에 표시 중인 이미지입니다.",
-    "willAppear": "표시될 위치"
+    "willAppear": "표시될 위치",
+    "slotsNote": "광고 위치는 고정되어 있습니다. 슬롯을 수정해 표시될 콘텐츠만 바꾸세요 — 저장하면 사이트의 정확히 그 자리에 반영됩니다.",
+    "emptySlot": "빈 슬롯",
+    "setContent": "콘텐츠 설정",
+    "clearSlot": "슬롯 비우기",
+    "clearSlotConfirmTitle": "이 슬롯을 비울까요?",
+    "clearSlotConfirmText": "고정 위치는 유지됩니다. 새 콘텐츠를 설정할 때까지 해당 자리에는 아무것도 표시되지 않습니다.",
+    "hiddenBadge": "숨김",
+    "extraRows": "고정 슬롯 외 추가 소재",
+    "editingSlot": "수정 중",
+    "kpiSlotsFilled": "채워진 슬롯",
+    "kpiActiveAds": "활성 광고"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."

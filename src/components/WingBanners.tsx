@@ -38,8 +38,9 @@ export default function WingBanners() {
 
   useEffect(() => {
     let alive = true
-    listAdvertisements('wing-left').then((a) => alive && setLeft(a)).catch(() => alive && setLeft([]))
-    listAdvertisements('wing-right').then((a) => alive && setRight(a)).catch(() => alive && setRight([]))
+    // Fixed slot counts (managed per-slot in the admin console): LEFT 4 · RIGHT 3.
+    listAdvertisements('wing-left').then((a) => alive && setLeft(a.slice(0, 4))).catch(() => alive && setLeft([]))
+    listAdvertisements('wing-right').then((a) => alive && setRight(a.slice(0, 3))).catch(() => alive && setRight([]))
     return () => {
       alive = false
     }

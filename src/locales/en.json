@@ -91,7 +91,18 @@
     "discardNewImage": "Discard new image",
     "imagePathPlaceholder": "media-bucket path or full URL",
     "imageHint": "Choose a file to upload on save, or paste a media-bucket path / full URL. The left thumbnail is what this position shows right now.",
-    "willAppear": "Will appear at"
+    "willAppear": "Will appear at",
+    "slotsNote": "Ad positions are FIXED. Edit a slot to change what shows there — saving locks the content to that exact spot on the site.",
+    "emptySlot": "Empty slot",
+    "setContent": "Set content",
+    "clearSlot": "Clear slot",
+    "clearSlotConfirmTitle": "Clear this slot?",
+    "clearSlotConfirmText": "The fixed position stays; its content is removed and the site shows nothing there until you set new content.",
+    "hiddenBadge": "hidden",
+    "extraRows": "Extra creatives beyond the fixed slots",
+    "editingSlot": "Editing",
+    "kpiSlotsFilled": "Slots filled",
+    "kpiActiveAds": "Active ads"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."

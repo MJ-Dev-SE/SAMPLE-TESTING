@@ -11,6 +11,8 @@ import { useIsAdmin } from './useIsAdmin'
 import { adminI18n, setAdminLanguage } from './i18n'
 import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
 import RecordForm from './RecordForm'
+import AdSlotsPanel from './AdSlotsPanel'
+import { AVATAR, BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN, shortDate } from './ui'
 
 const AUDIT_ICON = 'fa-clock-rotate-left'
 
@@ -25,20 +27,7 @@ const AUDIT_ICON = 'fa-clock-rotate-left'
 // admin guard (e.g. before supabase/admin.sql has run). Never ship it as `true`.
 const PREVIEW_OPEN = false
 
-// ---- Flux design tokens (class fragments; Tailwind JIT scans these strings) ----
-const INK = 'text-[#3f382f]'
-const MUTED = 'text-[#8a8072]'
-const CARD =
-  'bg-white rounded-[18px] border border-[#e7ddca] shadow-[0_1px_3px_0_rgba(107,90,60,0.07),0_8px_24px_0_rgba(107,90,60,0.09)] transition-shadow duration-200 hover:shadow-[0_2px_6px_0_rgba(107,90,60,0.11),0_16px_36px_0_rgba(107,90,60,0.14)]'
-const HERO =
-  'relative overflow-hidden rounded-[22px] p-8 text-white bg-gradient-to-br from-[#a98c5a] via-[#a98c5a]/90 to-[#6b5a3c]'
-const PRIMARY_BTN =
-  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] bg-gradient-to-r from-[#a98c5a] to-[#6b5a3c] text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-60'
-const GHOST_BTN =
-  'inline-flex items-center gap-1.5 h-8 px-4 rounded-[18px] border border-[#e7ddca] bg-white text-xs font-medium text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors disabled:opacity-60'
-const BADGE =
-  'inline-flex items-center rounded-xl bg-[#a98c5a]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#a98c5a]'
-const AVATAR = 'bg-gradient-to-br from-[#a98c5a] to-[#6b5a3c]'
+// Flux design tokens (beige palette) are shared with the other panels via ./ui.
 
 /** Sidebar nav item — 36px pill, active = beige bg + gold text (Flux spec, beige palette). */
 const navCls = (activeTab: boolean) =>
@@ -47,9 +36,6 @@ const navCls = (activeTab: boolean) =>
       ? 'bg-[#efe7d5] text-[#a98c5a]'
       : 'text-[#8a8072] hover:bg-[#efe7d5]/60 hover:text-[#3f382f]'
   }`
-
-const shortDate = (iso: string | null | undefined): string =>
-  iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'
 
 /**
  * The console runs on its OWN i18next instance (src/admin/i18n.ts): English by
@@ -191,6 +177,8 @@ function AdminConsole() {
         <main className="flex-1 w-full max-w-[1280px] mx-auto p-6">
           {active === 'audit' ? (
             <AuditPanel />
+          ) : active.table === 'advertisements' ? (
+            <AdSlotsPanel def={active} />
           ) : (
             <TablePanel key={active.table} def={active} userId={user?.id ?? ''} />
           )}
@@ -239,16 +227,6 @@ function NavLabel({ open, children }: { open: boolean; children: React.ReactNode
       }`}
     >
       {children}
-    </div>
-  )
-}
-
-/** Glassmorphism KPI stat card inside the gradient hero (white/10 + backdrop blur). */
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[18px] bg-white/10 backdrop-blur-[8px] p-4 hover:bg-white/15 transition-colors">
-      <div className="text-[11px] font-medium text-white/70">{label}</div>
-      <div className="mt-1 text-2xl font-bold text-white truncate">{value}</div>
     </div>
   )
 }

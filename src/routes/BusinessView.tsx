@@ -12,6 +12,21 @@ import type { BusinessRec, CategoryRec } from '../types'
  * gallery, name, category, short + detailed intro, region, address, phone and
  * date posted. Deliberately distinct from the advertisement / link / policy pages.
  */
+
+/** One contact fact: icon chip + label over value, so long values never fight a label column. */
+function InfoTile({ icon, label, value }: { icon: string; label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-3 rounded-m bg-neutral-97 px-3 py-2.5">
+      <span className="w-8 h-8 shrink-0 grid place-items-center rounded-m bg-white border border-neutral-90 text-accent-blue">
+        <i className={`fa-solid ${icon}`} aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <dt className="text-[11px] uppercase tracking-[0.5px] text-subtlest">{label}</dt>
+        <dd className="text-sm font-medium text-text-normal break-words">{value}</dd>
+      </div>
+    </div>
+  )
+}
 export default function BusinessView() {
   const { t, i18n } = useTranslation()
   const L = useLocalized()
@@ -105,65 +120,50 @@ export default function BusinessView() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-l">
-        {/* Left: detailed intro + gallery */}
-        <div className="lg:col-span-2 flex flex-col gap-l">
-          {detailed && (
-            <section className="border border-neutral-90 rounded-l p-l">
-              <h2 className="text-[15px] font-bold text-text-normal mb-2">{t('business.about')}</h2>
-              <p className="text-sm leading-6 text-text-normal whitespace-pre-line">{detailed}</p>
-            </section>
-          )}
-          {allShots.length > 0 && (
-            <section className="border border-neutral-90 rounded-l p-l">
-              <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.photos')}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {allShots.map((src, i) => (
-                  <SmartImage key={i} src={src} cover className="aspect-[4/3] rounded-m border border-neutral-90" />
-                ))}
-              </div>
-            </section>
-          )}
-        </div>
-
-        {/* Right: contact / info card */}
-        <aside className="flex flex-col gap-l">
+      {/* Stacked full-width cards — the center column is narrow (~510px), so a
+          side-by-side split leaves no room for values to breathe. */}
+      <div className="flex flex-col gap-l">
+        {detailed && (
           <section className="border border-neutral-90 rounded-l p-l">
-            <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.info')}</h2>
-            <dl className="flex flex-col gap-2.5 text-sm">
-              {(biz.region || biz.location) && (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-subtlest"><i className="fa-solid fa-location-dot mr-1.5" aria-hidden="true" />{t('business.region')}</dt>
-                  <dd className="text-text-normal">{biz.region || biz.location}</dd>
-                </div>
-              )}
-              {biz.address && (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-subtlest"><i className="fa-solid fa-map mr-1.5" aria-hidden="true" />{t('business.address')}</dt>
-                  <dd className="text-text-normal">{biz.address}</dd>
-                </div>
-              )}
-              {biz.phone && (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-subtlest"><i className="fa-solid fa-phone mr-1.5" aria-hidden="true" />{t('business.phone')}</dt>
-                  <dd className="text-text-normal">
-                    <a href={`tel:${biz.phone}`} className="text-link hover:underline">{biz.phone}</a>
-                  </dd>
-                </div>
-              )}
-              {postedLabel && (
-                <div className="flex gap-2">
-                  <dt className="w-20 shrink-0 text-subtlest"><i className="fa-solid fa-calendar mr-1.5" aria-hidden="true" />{t('business.posted')}</dt>
-                  <dd className="text-muted">{postedLabel}</dd>
-                </div>
-              )}
-            </dl>
+            <h2 className="text-[15px] font-bold text-text-normal mb-2">{t('business.about')}</h2>
+            <p className="text-sm leading-6 text-text-normal whitespace-pre-line">{detailed}</p>
           </section>
-          <Link to="/company" className="inline-flex items-center gap-2 text-sm text-link font-medium hover:underline">
-            <i className="fa-solid fa-arrow-left" aria-hidden="true" />
-            {t('company.back')}
-          </Link>
-        </aside>
+        )}
+
+        {/* Contact / info — label-over-value tiles in a 2-col grid */}
+        <section className="border border-neutral-90 rounded-l p-l">
+          <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.info')}</h2>
+          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {(biz.region || biz.location) && (
+              <InfoTile icon="fa-location-dot" label={t('business.region')} value={biz.region || biz.location || ''} />
+            )}
+            {biz.address && <InfoTile icon="fa-map" label={t('business.address')} value={biz.address} />}
+            {biz.phone && (
+              <InfoTile
+                icon="fa-phone"
+                label={t('business.phone')}
+                value={<a href={`tel:${biz.phone}`} className="text-link hover:underline">{biz.phone}</a>}
+              />
+            )}
+            {postedLabel && <InfoTile icon="fa-calendar" label={t('business.posted')} value={postedLabel} />}
+          </dl>
+        </section>
+
+        {allShots.length > 0 && (
+          <section className="border border-neutral-90 rounded-l p-l">
+            <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.photos')}</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {allShots.map((src, i) => (
+                <SmartImage key={i} src={src} cover className="aspect-[4/3] rounded-m border border-neutral-90" />
+              ))}
+            </div>
+          </section>
+        )}
+
+        <Link to="/company" className="inline-flex items-center gap-2 text-sm text-link font-medium hover:underline">
+          <i className="fa-solid fa-arrow-left" aria-hidden="true" />
+          {t('company.back')}
+        </Link>
       </div>
     </Layout>
   )
