@@ -12,11 +12,16 @@ import { BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN } from './ui
 
 /**
  * FIXED-SLOT manager for `advertisements`. The ad POSITIONS on the site are
- * hard-wired (header 2 · homepage 2 · wing-left 4 · wing-right 3); the admin
+ * hard-wired (header 4 · homepage 2 · wing-left 4 · wing-right 3); the admin
  * edits WHAT shows inside each slot instead of free-adding rows and guessing
  * where they land. Saving a slot forces position + sort, so the content always
- * appears exactly where the slot says. The footer ADVERTISEMENT column stays a
- * flexible list (it's a text list, not a fixed banner).
+ * appears exactly where the slot says.
+ *
+ * header/homepage render via AdCarousel (crossfade), so their base slots can
+ * take unlimited "+ Add extra" creatives that lengthen the rotation — wing
+ * rails render as a fixed list (WingBanners.tsx) and must stay at their exact
+ * count, so they don't get that button. The footer ADVERTISEMENT column stays
+ * a flexible list (it's a text list, not a fixed banner).
  */
 
 interface SlotGroup {
@@ -26,7 +31,18 @@ interface SlotGroup {
   hint: Localized
   count: number
   slotName: (i: number) => Localized
+  /** Crossfade groups (header/homepage use AdCarousel) can take extra creatives
+   *  beyond the base count — they just lengthen the rotation. Wing rails must
+   *  stay at their exact fixed count, so they don't get this. */
+  allowExtra: boolean
 }
+
+const HEADER_SLOT_NAMES: Localized[] = [
+  { en: 'Ad 1 — left of logo', ko: '광고 1 — 로고 왼쪽' },
+  { en: 'Ad 2 — right of logo', ko: '광고 2 — 로고 오른쪽' },
+  { en: 'Ad 1 — left of logo (2nd)', ko: '광고 1 — 로고 왼쪽 (두 번째)' },
+  { en: 'Ad 2 — right of logo (2nd)', ko: '광고 2 — 로고 오른쪽 (두 번째)' },
+]
 
 const GROUPS: SlotGroup[] = [
   {
@@ -34,25 +50,24 @@ const GROUPS: SlotGroup[] = [
     icon: 'fa-window-maximize',
     title: { en: 'Header banner', ko: '헤더 배너' },
     hint: {
-      en: 'The two banners beside the logo (Header.tsx). Extra creatives keep crossfading in rotation.',
-      ko: '로고 양옆의 배너 2개(Header.tsx). 초과 소재는 회전(크로스페이드)됩니다.',
+      en: 'Two spots beside the logo — LEFT and RIGHT — each now crossfades between 2 creatives (4 total). Use "+ Add extra" for an even longer rotation.',
+      ko: '로고 왼쪽·오른쪽 자리 각각 소재 2개씩(총 4개) 교차 노출됩니다. "+ 추가 소재"로 더 늘릴 수 있습니다.',
     },
-    count: 2,
-    slotName: (i) =>
-      i === 0
-        ? { en: 'Ad 1 — left of logo', ko: '광고 1 — 로고 왼쪽' }
-        : { en: 'Ad 2 — right of logo', ko: '광고 2 — 로고 오른쪽' },
+    count: 4,
+    slotName: (i) => HEADER_SLOT_NAMES[i] ?? { en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` },
+    allowExtra: true,
   },
   {
     position: 'homepage',
     icon: 'fa-table-cells-large',
     title: { en: 'Homepage ad cards', ko: '홈페이지 광고 카드' },
     hint: {
-      en: 'The two ad cards on the homepage (BannerRow.tsx). Extra creatives keep crossfading in rotation.',
-      ko: '홈페이지의 광고 카드 2개(BannerRow.tsx). 초과 소재는 회전됩니다.',
+      en: 'The two ad cards on the homepage (BannerRow.tsx). Use "+ Add extra" for a longer crossfade rotation.',
+      ko: '홈페이지의 광고 카드 2개(BannerRow.tsx). "+ 추가 소재"로 회전을 늘릴 수 있습니다.',
     },
     count: 2,
     slotName: (i) => ({ en: `Card ${i + 1}`, ko: `카드 ${i + 1}` }),
+    allowExtra: true,
   },
   {
     position: 'wing-left',
@@ -64,6 +79,7 @@ const GROUPS: SlotGroup[] = [
     },
     count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
+    allowExtra: false,
   },
   {
     position: 'wing-right',
@@ -75,6 +91,7 @@ const GROUPS: SlotGroup[] = [
     },
     count: 3,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
+    allowExtra: false,
   },
 ]
 
@@ -156,6 +173,30 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
 
   const openSlot = (g: SlotGroup, i: number, row: AdminRow | null) =>
     setEditing({ position: g.position, sort: i, row, caption: `${L(g.title)} · ${L(g.slotName(i))}`, isFooter: false })
+
+  /** Add a NEW creative to a crossfade group, appended after its existing rows
+   *  so it joins the rotation without colliding with any fixed slot's sort. */
+  const openExtra = (g: SlotGroup) => {
+    const list = rows.filter((r) => r.position === g.position)
+    const nextSort = list.reduce((m, r) => Math.max(m, (r.sort ?? 0) + 1), g.count)
+    setEditing({
+      position: g.position,
+      sort: nextSort,
+      row: null,
+      caption: `${L(g.title)} · ${t('admin.extraCreative')}`,
+      isFooter: false,
+    })
+  }
+
+  /** Edit an existing extra creative in place (keeps its current sort). */
+  const editExtra = (g: SlotGroup, row: AdminRow) =>
+    setEditing({
+      position: g.position,
+      sort: row.sort ?? 0,
+      row,
+      caption: `${L(g.title)} · ${t('admin.extraCreative')}`,
+      isFooter: false,
+    })
 
   const openFooter = (row: AdminRow | null) =>
     setEditing({
@@ -255,7 +296,17 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
               <i className={`fa-solid ${g.icon} text-[#a98c5a]`} aria-hidden="true" />
               <h2 className={`text-base font-semibold ${INK}`}>{L(g.title)}</h2>
               <span className={BADGE}>{slots.filter(Boolean).length}/{g.count}</span>
-              <p className={`w-full sm:w-auto sm:ml-2 text-xs ${MUTED}`}>{L(g.hint)}</p>
+              <p className={`flex-1 min-w-[200px] text-xs ${MUTED}`}>{L(g.hint)}</p>
+              {g.allowExtra && (
+                <button
+                  type="button"
+                  onClick={() => openExtra(g)}
+                  className={`${GHOST_BTN} !h-7 !px-3 shrink-0`}
+                >
+                  <i className="fa-solid fa-plus" aria-hidden="true" />
+                  {t('admin.addExtra')}
+                </button>
+              )}
             </div>
 
             <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -316,7 +367,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
               })}
             </div>
 
-            {/* Legacy rows beyond the fixed slots — cleanable here */}
+            {/* Extra creatives beyond the fixed slots — extend the rotation, editable/removable here */}
             {extras.length > 0 && (
               <div className="px-4 pb-4">
                 <p className={`text-[11px] font-semibold uppercase tracking-[0.08em] mb-2 ${MUTED}`}>
@@ -333,7 +384,16 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                         </span>
                       )}
                       <span className={`text-sm truncate flex-1 ${INK}`}>{L(r.title) || '—'}</span>
-                      <span className={BADGE}>sort {String(r.sort ?? 0)}</span>
+                      {!r.active && <span className={BADGE}>{t('admin.hiddenBadge')}</span>}
+                      <button
+                        type="button"
+                        aria-label={t('admin.editRecord')}
+                        title={t('admin.editRecord')}
+                        onClick={() => editExtra(g, r)}
+                        className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
+                      >
+                        <i className="fa-solid fa-pen" aria-hidden="true" />
+                      </button>
                       <button
                         type="button"
                         aria-label={t('post.delete')}

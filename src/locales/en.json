@@ -102,7 +102,9 @@
     "extraRows": "Extra creatives beyond the fixed slots",
     "editingSlot": "Editing",
     "kpiSlotsFilled": "Slots filled",
-    "kpiActiveAds": "Active ads"
+    "kpiActiveAds": "Active ads",
+    "addExtra": "Add extra",
+    "extraCreative": "Extra creative"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."

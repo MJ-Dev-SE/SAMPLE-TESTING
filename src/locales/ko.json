@@ -102,7 +102,9 @@
     "extraRows": "고정 슬롯 외 추가 소재",
     "editingSlot": "수정 중",
     "kpiSlotsFilled": "채워진 슬롯",
-    "kpiActiveAds": "활성 광고"
+    "kpiActiveAds": "활성 광고",
+    "addExtra": "추가 소재",
+    "extraCreative": "추가 소재"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."
