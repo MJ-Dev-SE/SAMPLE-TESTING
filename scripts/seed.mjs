@@ -62,7 +62,11 @@ function svg(label, bg, { w = 600, h = 450, sub = '' } = {}) {
 }
 
 async function put(destPath, buffer) {
-  const { error } = await db.storage.from(BUCKET).upload(destPath, buffer, { contentType: 'image/svg+xml', upsert: true })
+  // 7-day browser/CDN cache: long enough to kill repeat-view egress, short enough
+  // that a re-seed (which OVERWRITES these fixed paths) propagates within a week.
+  const { error } = await db.storage
+    .from(BUCKET)
+    .upload(destPath, buffer, { contentType: 'image/svg+xml', upsert: true, cacheControl: '604800' })
   if (error) throw new Error(`upload ${destPath}: ${error.message}`)
   return destPath
 }

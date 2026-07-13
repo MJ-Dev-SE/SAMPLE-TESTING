@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useLocalized } from '../lib/useLocalized'
 import { publicUrl } from '../lib/media'
+import { bustContentCache } from '../lib/contentCache'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import type { Localized } from '../types'
 import type { AdminRow, TableDef } from './registry'
@@ -177,6 +178,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
         const { error } = await supabase.from('advertisements').insert(payload)
         if (error) throw error
       }
+      bustContentCache('ads') // header/homepage/wing ads re-read fresh on the site
       toast(t('admin.saved'))
       setEditing(null)
       load()
@@ -199,6 +201,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
     try {
       const { error } = await supabase.from('advertisements').delete().eq('id', row.id)
       if (error) throw error
+      bustContentCache('ads')
       toast(t('admin.deleted'))
       setEditing(null)
       setRows((prev) => prev.filter((r) => r.id !== row.id))

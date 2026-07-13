@@ -4,7 +4,9 @@ import { publicUrl } from '../lib/media'
 /**
  * Full-resolution image with a loading effect: while the (full) image downloads, a
  * shimmering skeleton + spinner fills the box; when it finishes it fades in. No resizing/
- * transform — the picture shown is always the original file.
+ * transform — the picture shown is always the original file, everywhere it appears.
+ * Egress is controlled elsewhere (1-year cacheControl on uploads → each browser
+ * downloads a file at most once), not by degrading what renders.
  *
  * Modes:
  *  - default → natural aspect (free height; a min-height holds the skeleton until load).

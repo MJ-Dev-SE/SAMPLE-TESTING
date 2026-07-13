@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { publicUrl } from '../lib/media'
+import { bustContentCache } from '../lib/contentCache'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
@@ -299,6 +300,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
         const { error } = await supabase.from(def.table).update(values).eq('id', editing.id)
         if (error) throw error
       }
+      bustContentCache() // the site's content cache must reflect this edit immediately
       toast(t('admin.saved'))
       setEditing(null)
       load()
@@ -321,6 +323,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
     try {
       const { error } = await supabase.from(def.table).delete().eq('id', row.id)
       if (error) throw error
+      bustContentCache()
       toast(t('admin.deleted'))
       setRows((prev) => prev.filter((r) => r.id !== row.id))
     } catch (err) {

@@ -108,6 +108,9 @@ export default function RecordForm({
         }
       }
       if (f.type === 'number') val = Number(val) || 0
+      // An untouched optional date input keeps its initial '' value (from
+      // initialValues) — Postgres rejects "" for a date column, so blank → null.
+      if (f.type === 'date' && !val) val = null
       out[f.key] = val
     }
     // Upload newly picked images, then store their media-bucket paths.

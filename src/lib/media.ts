@@ -62,6 +62,10 @@ export async function uploadToMedia(folder: string, file: File): Promise<string>
   const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, {
     contentType: file.type || undefined,
     upsert: false,
+    // The path is unique per upload (timestamp+rand) so the file is immutable —
+    // let browsers/CDN cache it for a year. Repeat views then cost zero egress;
+    // replacing an image writes a NEW path, so nobody ever sees a stale file.
+    cacheControl: '31536000',
   })
   if (error) throw error
   return path
