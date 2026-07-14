@@ -1,15 +1,24 @@
 import { useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, type Location } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import { useAuth } from '../lib/auth'
 import { alertError, errText, toast } from '../lib/alert'
 import GoogleButton from '../components/GoogleButton'
 
-/** Log-in page (/user/login) — email + password via Supabase auth. */
+/**
+ * Log-in page (/user/login) — email + password via Supabase auth.
+ * Callers that redirected here because an action needed login (see
+ * lib/alert.ts requireLogin()) pass `state: { from: location }`; on success
+ * we navigate back there instead of always to home. Google's OAuth redirect
+ * is a full page reload (redirectTo: origin in lib/auth.tsx), so this
+ * "return to where you were" behavior only applies to the email/password path.
+ */
 export default function Login() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = (location.state as { from?: Location } | null)?.from
   const { signIn, user } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,7 +33,7 @@ export default function Login() {
     try {
       await signIn(email, password)
       toast(t('auth.loginSuccess'))
-      navigate('/', { replace: true })
+      navigate(from ? `${from.pathname}${from.search}` : '/', { replace: true })
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
     } finally {

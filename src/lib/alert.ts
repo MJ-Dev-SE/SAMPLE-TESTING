@@ -48,6 +48,32 @@ export const alertConfirm = async (
     })
   ).isConfirmed
 
+/**
+ * "You need to log in" prompt shown before a protected action a logged-out
+ * visitor just attempted (starting a chat, sending a message, etc — see
+ * lib/chat.ts / components/ChatButton.tsx). Resolves true only if they chose
+ * to log in; the caller is responsible for navigating to /user/login with
+ * `state: { from: location }` so Login.tsx can send them back afterward.
+ */
+export const requireLogin = async (
+  title: string,
+  text: string,
+  confirmText: string,
+  cancelText: string,
+): Promise<boolean> =>
+  (
+    await Swal.fire({
+      icon: 'info',
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+      confirmButtonColor: accent,
+      cancelButtonColor: '#8a8072',
+    })
+  ).isConfirmed
+
 /** Small top-right toast that auto-dismisses (used after login/sign-up). */
 export const toast = (title: string, icon: 'success' | 'info' = 'success') =>
   Swal.fire({

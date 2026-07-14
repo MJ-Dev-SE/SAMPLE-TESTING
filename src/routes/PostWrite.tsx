@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -6,14 +6,23 @@ import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { createPost } from '../lib/posts'
+import { getCategoryBySlug, listCategories } from '../lib/content'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
+import type { CategoryRec } from '../types'
 
 /**
- * Compose page (/post/write?post_id=…&category=…).
+ * Compose page (/post/write?post_id=…&category=…, or /post/write?maroon=<slug>).
  * Anyone can post to ANY board (board picker). Members may attach photos; guests are text-only.
+ *
+ * When opened with `?maroon=<slug>` (the maroon-bar "Write" button — from a
+ * category feed page), the board picker is replaced by a parent→child community
+ * category cascade instead: board is fixed to the synthetic 'maroon' board and
+ * posts.category_id is what actually places the post in its feeds. The incoming
+ * slug (parent or child) is auto-detected and pre-filled (4.1); submission is
+ * blocked until a specific child is chosen — a post is never saved parent-only (4).
  */
 export default function PostWrite() {
   const { t } = useTranslation()
@@ -22,6 +31,8 @@ export default function PostWrite() {
   const [params] = useSearchParams()
   const { user, profile } = useAuth()
 
+  const maroonSlug = params.get('maroon')
+  const isCommunityPost = !!maroonSlug
   const category = params.get('category')
   const [boardId, setBoardId] = useState(params.get('post_id') || 'freetalk')
   const [title, setTitle] = useState('')
@@ -29,12 +40,49 @@ export default function PostWrite() {
   const { picks, addFiles, removeAt } = usePhotoPicker()
   const [busy, setBusy] = useState(false)
 
+  // Community category cascade (only relevant when isCommunityPost).
+  const [parents, setParents] = useState<CategoryRec[]>([])
+  const [parentSlug, setParentSlug] = useState<string | null>(null)
+  const [children, setChildren] = useState<CategoryRec[]>([])
+  const [childId, setChildId] = useState<string>('')
+  const autoFilled = useRef(false)
+
+  useEffect(() => {
+    if (!isCommunityPost) return
+    listCategories(null, 'community').then(setParents).catch(() => setParents([]))
+  }, [isCommunityPost])
+
+  // Auto-detect parent (+ child, if the incoming slug is itself a child) once.
+  useEffect(() => {
+    if (!isCommunityPost || !maroonSlug || autoFilled.current) return
+    autoFilled.current = true
+    getCategoryBySlug(maroonSlug, 'community')
+      .then((cat) => {
+        if (!cat) return
+        if (cat.parent_slug === null) {
+          setParentSlug(cat.slug)
+        } else {
+          setParentSlug(cat.parent_slug)
+          setChildId(cat.id)
+        }
+      })
+      .catch(() => {})
+  }, [isCommunityPost, maroonSlug])
+
+  // Reload children whenever the parent changes.
+  useEffect(() => {
+    if (!parentSlug) return setChildren([])
+    listCategories(parentSlug, 'community').then(setChildren).catch(() => setChildren([]))
+  }, [parentSlug])
+
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
-  const boardOptions = Object.entries(boardTitles)
+  const boardOptions = Object.entries(boardTitles).filter(([id]) => id !== 'maroon')
+  const communityBoard = boardTitles.maroon
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return alertError(t('post.emptyTitle'))
+    if (isCommunityPost && !childId) return alertError(t('post.communityCategoryRequired'))
     setBusy(true)
     try {
       // Members may attach photos; upload them to Storage first.
@@ -44,15 +92,16 @@ export default function PostWrite() {
         images = paths.map(publicUrl)
       }
       const created = await createPost({
-        boardId,
+        boardId: isCommunityPost ? 'maroon' : boardId,
         category,
+        categoryId: isCommunityPost ? childId : null,
         title: title.trim(),
         body: body.trim(),
         authorId: user?.id ?? null,
         images,
       })
       toast(t('post.created'))
-      navigate(`/post/view?id=${created.id}&post_id=${boardId}`)
+      navigate(`/post/view?id=${created.id}&post_id=${isCommunityPost ? 'maroon' : boardId}`)
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
     } finally {
@@ -60,12 +109,21 @@ export default function PostWrite() {
     }
   }
 
+  const boardLabel = isCommunityPost ? communityBoard : (boardTitles[boardId] ?? { en: 'Board', ko: '게시판' })
+  // Reflects whatever the user has ACTUALLY selected right now (not just the
+  // slug the form was opened with) so Cancel/breadcrumb always lands correctly,
+  // even after switching parent/child away from the auto-filled starting point.
+  const effectiveMaroonSlug = children.find((c) => c.id === childId)?.slug ?? parentSlug ?? maroonSlug
+  const boardBackHref = isCommunityPost && effectiveMaroonSlug
+    ? `/post/list?maroon=${effectiveMaroonSlug}`
+    : `/post/list?post_id=${boardId}`
+
   return (
     <Layout>
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>
-        <Link to={`/post/list?post_id=${boardId}`} className="text-link">{L(boardTitles[boardId] ?? { en: 'Board', ko: '게시판' })}</Link>
+        <Link to={boardBackHref} className="text-link">{L(boardLabel)}</Link>
         <span className="mx-1 text-subtlest">›</span>
         <span className="text-muted">{t('post.newPost')}</span>
       </nav>
@@ -88,19 +146,59 @@ export default function PostWrite() {
       </div>
 
       <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m">
-        {/* Board / category picker — post under any board, not just Community */}
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-text-normal">{t('post.boardLabel')}</span>
-          <select
-            value={boardId}
-            onChange={(e) => setBoardId(e.target.value)}
-            className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
-          >
-            {boardOptions.map(([id, label]) => (
-              <option key={id} value={id}>{L(label)}</option>
-            ))}
-          </select>
-        </label>
+        {isCommunityPost ? (
+          /* Community (maroon-bar) category cascade — replaces the board picker */
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-text-normal">
+                {t('post.communityParent')}<span className="text-red-500 ml-0.5">*</span>
+              </span>
+              <select
+                value={parentSlug ?? ''}
+                onChange={(e) => {
+                  setParentSlug(e.target.value || null)
+                  setChildId('')
+                }}
+                className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
+              >
+                <option value="" disabled>{t('post.communityParentPlaceholder')}</option>
+                {parents.map((p) => (
+                  <option key={p.id} value={p.slug}>{L(p.name)}</option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="text-sm font-medium text-text-normal">
+                {t('post.communityChild')}<span className="text-red-500 ml-0.5">*</span>
+              </span>
+              <select
+                value={childId}
+                onChange={(e) => setChildId(e.target.value)}
+                disabled={!parentSlug}
+                className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue disabled:opacity-60"
+              >
+                <option value="" disabled>{t('post.communityChildPlaceholder')}</option>
+                {children.map((c) => (
+                  <option key={c.id} value={c.id}>{L(c.name)}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : (
+          /* Board / category picker — post under any board, not just Community */
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-text-normal">{t('post.boardLabel')}</span>
+            <select
+              value={boardId}
+              onChange={(e) => setBoardId(e.target.value)}
+              className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
+            >
+              {boardOptions.map(([id, label]) => (
+                <option key={id} value={id}>{L(label)}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         {category && (
           <p className="text-xs text-muted">
@@ -164,7 +262,7 @@ export default function PostWrite() {
             {busy ? t('auth.working') : t('post.submit')}
           </button>
           <Link
-            to={`/post/list?post_id=${boardId}`}
+            to={boardBackHref}
             className="h-10 px-5 grid place-items-center border border-neutral-90 text-text-normal text-sm rounded-m hover:bg-neutral-97"
           >
             {t('post.cancel')}

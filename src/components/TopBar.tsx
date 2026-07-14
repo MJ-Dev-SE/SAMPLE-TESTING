@@ -3,6 +3,7 @@ import { topBarLeft, topBarRight } from '../data/categoryBar'
 import { useLocalized } from '../lib/useLocalized'
 import { useAuth } from '../lib/auth'
 import LanguageSwitcher from './LanguageSwitcher'
+import ChatButton from './ChatButton'
 
 // Sister deployment (PhilGo portal) + the top-bar Write button are currently disabled
 // in the markup below. Re-add `useTranslation`/`SISTER_SITE_URL` here if you restore them.
@@ -66,6 +67,7 @@ export default function TopBar() {
               {L(l.label)}
             </Link>
           ))}
+          <ChatButton />
           <LanguageSwitcher className="shrink-0" />
         </div>
       </div>

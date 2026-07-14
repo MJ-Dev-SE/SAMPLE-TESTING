@@ -16,6 +16,7 @@ import {
   getPost,
   isGuest,
   listComments,
+  recordPostView,
   type DbComment,
   type DbPost,
 } from '../lib/posts'
@@ -48,6 +49,12 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
     let alive = true
     getPost(id).then((p) => alive && setPost(p)).catch(() => {})
     listComments(id).then((c) => alive && setComments(c)).catch(() => {})
+    // Fire-and-forget: dedup happens server-side, so this is safe to call on
+    // every mount (including StrictMode's double-invoke in dev) without
+    // inflating the count — a repeat call within 24h just re-reads the total.
+    recordPostView(id)
+      .then((views) => alive && setPost((prev) => (prev ? { ...prev, views } : prev)))
+      .catch(() => {})
     return () => {
       alive = false
     }

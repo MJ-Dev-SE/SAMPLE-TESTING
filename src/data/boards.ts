@@ -5,9 +5,12 @@ import type { Localized } from '../types'
 export const boardTitles: Record<string, Localized> = {
   freetalk: { en: 'Free Board', ko: '자유게시판' },
   qna: { en: 'Q&A board', ko: '질문게시판' },
-  // Resort community board: user posts made from a category page (maroon bar). Each
-  // post carries a `category` = the photo/theme slug so it groups under that category.
-  resort_community: { en: 'Resort Community', ko: '리조트 커뮤니티' },
+  // Photo-page community board: user posts made from a /photo/view category page.
+  // Each post carries a `category` = the photo/theme slug so it groups under that category.
+  resort_community: { en: 'Photo Community', ko: '포토 커뮤니티' },
+  // Maroon-bar community posts: board is fixed to this id, the real filtering
+  // dimension is posts.category_id (see supabase/community.sql + lib/posts.ts).
+  maroon: { en: 'Community Categories', ko: '커뮤니티 카테고리' },
   news: { en: 'News', ko: '뉴스' },
   travel: { en: 'Travel', ko: '여행' },
   buyandsell: { en: 'Marketplace', ko: '장터' },

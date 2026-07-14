@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { randomGuestName } from './guestName'
+import { getAnonSessionId } from './deviceId'
 
 /** Author info embedded from public.profiles (null for guest rows). */
 export interface AuthorLite {
@@ -8,10 +9,20 @@ export interface AuthorLite {
   avatar_url: string | null
 }
 
+/** Minimal category info embedded on a post row (the maroon child it's tagged with). */
+export interface PostCategoryLite {
+  id: string
+  slug: string
+  name: { en: string; ko: string }
+  icon: string
+}
+
 export interface DbPost {
   id: string
   board_id: string
   category: string | null
+  /** Maroon-bar child category id, or null (posts outside the maroon feed system). */
+  category_id: string | null
   title: string
   body: string
   author_id: string | null
@@ -25,6 +36,8 @@ export interface DbPost {
   comment_count?: { count: number }[]
   /** Total comments — present on rows from the `popular_posts` view. */
   comment_total?: number
+  /** Embedded via category_id — which specific maroon child this post belongs to. */
+  category_row?: PostCategoryLite | null
 }
 
 export interface DbComment {
@@ -63,12 +76,12 @@ const AUTHOR_SELECT = 'author:profiles(username, display_name, avatar_url)'
 const COMMENT_COLS = 'id, post_id, board_id, author_id, guest_name, body, created_at'
 
 // -----------------------------------------------------------------------------
-// Board-id separation: this resort site shares the same Supabase project as the
-// PhilGo-clone site, but stores its rows under a "resort-" board prefix so the
+// Board-id separation: this Manila Tour site shares the same Supabase project as
+// the PhilGo-clone site, but stores its rows under an "mt-" board prefix so the
 // two sites never see each other's posts/comments (accounts stay shared).
 // UI code keeps using the plain ids (freetalk, qna, …); the mapping lives here.
 // -----------------------------------------------------------------------------
-const BOARD_PREFIX = 'resort-'
+const BOARD_PREFIX = 'mt-'
 export const toDbBoard = (boardId: string) => BOARD_PREFIX + boardId
 export const fromDbBoard = (boardId: string) =>
   boardId.startsWith(BOARD_PREFIX) ? boardId.slice(BOARD_PREFIX.length) : boardId
@@ -93,6 +106,58 @@ export async function listPosts(boardId: string, limit?: number, category?: stri
   const { data, error } = await q
   if (error) throw error
   return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+}
+
+export interface PostPage {
+  rows: DbPost[]
+  total: number
+}
+
+const CATEGORY_EMBED = 'category_row:categories(id, slug, name, icon)'
+
+/**
+ * Posts tagged with one specific maroon CHILD category (clicking a child in the
+ * bar). Independent of board_id — a post can carry this tag regardless of which
+ * board it was written under. Paginated (default 20/page).
+ */
+export async function listPostsByCategory(
+  categoryId: string,
+  opts: { page?: number; pageSize?: number } = {},
+): Promise<PostPage> {
+  const page = Math.max(1, opts.page ?? 1)
+  const pageSize = opts.pageSize ?? 20
+  const from = (page - 1) * pageSize
+  const { data, error, count } = await supabase
+    .from('posts')
+    .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+    .eq('category_id', categoryId)
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1)
+  if (error) throw error
+  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+}
+
+/**
+ * Combined feed for a maroon PARENT category: the union of posts across all of
+ * its children (clicking "Information" shows Weather + Experiences together).
+ * `childIds` comes from listCategories(parentSlug, 'community').
+ */
+export async function listPostsByParentCategory(
+  childIds: string[],
+  opts: { page?: number; pageSize?: number } = {},
+): Promise<PostPage> {
+  if (childIds.length === 0) return { rows: [], total: 0 }
+  const page = Math.max(1, opts.page ?? 1)
+  const pageSize = opts.pageSize ?? 20
+  const from = (page - 1) * pageSize
+  const { data, error, count } = await supabase
+    .from('posts')
+    .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+    .in('category_id', childIds)
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1)
+  if (error) throw error
+  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
 }
 
 /**
@@ -134,6 +199,21 @@ export async function getPost(id: string): Promise<DbPost | null> {
   return data ? stripPost(data as unknown as DbPost) : null
 }
 
+/**
+ * Record a view of this post (deduped server-side, once per viewer per 24h —
+ * see record_post_view() in supabase/community.sql) and return the live count.
+ * The eye icon on post cards/detail pages is purely a display of this number;
+ * it never toggles visibility of anything.
+ */
+export async function recordPostView(postId: string): Promise<number> {
+  const { data, error } = await supabase.rpc('record_post_view', {
+    p_post_id: postId,
+    p_anon_id: getAnonSessionId(),
+  })
+  if (error) throw error
+  return (data as number) ?? 0
+}
+
 /** Comments for a post, oldest-first. */
 export async function listComments(postId: string): Promise<DbComment[]> {
   const { data, error } = await supabase
@@ -148,6 +228,8 @@ export async function listComments(postId: string): Promise<DbComment[]> {
 interface NewPost {
   boardId: string
   category?: string | null
+  /** Maroon-bar CHILD category id (see PostWrite's community-category picker). */
+  categoryId?: string | null
   title: string
   body: string
   /** Logged-in user's id, or null for a guest post. */
@@ -160,6 +242,7 @@ export async function createPost(p: NewPost): Promise<DbPost> {
   const row = {
     board_id: toDbBoard(p.boardId),
     category: p.category ?? null,
+    category_id: p.categoryId ?? null,
     title: p.title,
     body: p.body,
     author_id: p.authorId,
@@ -277,7 +360,7 @@ export async function getOrCreatePhotoPost(photoId: string, title: string): Prom
       title,
       body: '',
       author_id: null,
-      guest_name: '88 Hotspring Resort',
+      guest_name: 'Manila Tour',
     })
     .select()
     .single()

@@ -6,6 +6,7 @@ import type {
   AdvertisementRec,
   BusinessImage,
   BusinessRec,
+  CategoryKind,
   CategoryRec,
   LinkRec,
   NewsItemRec,
@@ -69,17 +70,44 @@ export async function getPhoto(slug: string): Promise<PhotoRec | null> {
 
 /* ------------------------------ Categories ----------------------------- */
 
-/** Business Directory child categories (shared by the filter, cards, posting + admin forms). */
-export async function listCategories(parentSlug = 'business-directory'): Promise<CategoryRec[]> {
-  return cachedQuery(`categories.${parentSlug}`, async () => {
-    const { data, error } = await supabase
+const CATEGORY_COLS = 'id, slug, parent_slug, kind, name, icon, sort'
+
+/**
+ * Child categories under one parent, shared by the filter chips, posting form,
+ * card display and admin form. Defaults to the Business Directory tree
+ * (`kind='business'`); pass `kind='community'` for the maroon-bar post-category
+ * tree (parentSlug null = the 8 top-level maroon parents themselves).
+ */
+export async function listCategories(
+  parentSlug: string | null = 'business-directory',
+  kind: CategoryKind = 'business',
+): Promise<CategoryRec[]> {
+  return cachedQuery(`categories.${kind}.${parentSlug ?? 'root'}`, async () => {
+    let q = supabase
       .from('categories')
-      .select('id, slug, parent_slug, name, icon, sort')
-      .eq('parent_slug', parentSlug)
+      .select(CATEGORY_COLS)
+      .eq('kind', kind)
       .eq('active', true)
       .order('sort', { ascending: true })
+    q = parentSlug === null ? q.is('parent_slug', null) : q.eq('parent_slug', parentSlug)
+    const { data, error } = await q
     if (error) throw error
     return (data ?? []) as unknown as CategoryRec[]
+  })
+}
+
+/** One category row by slug (either a maroon parent or a child), or null. */
+export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'community'): Promise<CategoryRec | null> {
+  return cachedQuery(`categories.${kind}.bySlug.${slug}`, async () => {
+    const { data, error } = await supabase
+      .from('categories')
+      .select(CATEGORY_COLS)
+      .eq('slug', slug)
+      .eq('kind', kind)
+      .eq('active', true)
+      .maybeSingle()
+    if (error) throw error
+    return (data as unknown as CategoryRec) ?? null
   })
 }
 

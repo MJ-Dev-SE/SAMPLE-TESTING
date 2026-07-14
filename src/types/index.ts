@@ -183,11 +183,16 @@ export interface PhotoRec {
   details: Localized[]
 }
 
-/** public.categories row — Business Directory parent + child categories. */
+/** Which tree a category row belongs to: Business Directory, or the maroon community bar. */
+export type CategoryKind = 'business' | 'community'
+
+/** public.categories row — Business Directory parent + child categories, and
+ *  (kind='community') the maroon category bar's parent + child post categories. */
 export interface CategoryRec {
   id: string
   slug: string
   parent_slug: string | null
+  kind: CategoryKind
   name: Localized
   icon: string
   sort: number

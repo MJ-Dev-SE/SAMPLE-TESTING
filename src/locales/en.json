@@ -156,7 +156,11 @@
     "resent": "Code sent — check your email.",
     "verifiedSuccess": "Email verified. Welcome to PhilGo!",
     "continueGoogle": "Continue with Google",
-    "or": "or"
+    "or": "or",
+    "loginRequiredTitle": "Login Required",
+    "loginRequiredText": "You need to log in before you can continue with this action.",
+    "loginRequiredConfirm": "Log In",
+    "loginRequiredCancel": "Cancel"
   },
   "post": {
     "write": "Write",
@@ -192,7 +196,12 @@
     "deleted": "Post deleted.",
     "deleteCommentConfirmTitle": "Delete this comment?",
     "deleteCommentConfirmText": "This cannot be undone.",
-    "commentDeleted": "Comment deleted."
+    "commentDeleted": "Comment deleted.",
+    "communityParent": "Category",
+    "communityParentPlaceholder": "Choose a category…",
+    "communityChild": "Sub-category",
+    "communityChildPlaceholder": "Choose a sub-category…",
+    "communityCategoryRequired": "Please choose a specific sub-category before posting."
   },
   "profile": {
     "title": "My profile",
@@ -303,6 +312,25 @@
     "ctaLink": "Visit",
     "notFound": "This page could not be found.",
     "policyNote": "Official Manila Tour policy — please read carefully."
+  },
+  "category": {
+    "notFound": "This category could not be found.",
+    "allChildren": "all sub-categories",
+    "empty": "No posts in this category yet. Be the first!"
+  },
+  "chat": {
+    "searchPlaceholder": "Search people…",
+    "searching": "Searching…",
+    "noUsersFound": "No matching users found.",
+    "loadingConversations": "Loading conversations…",
+    "noConversations": "No conversations yet.",
+    "noMessagesYet": "No messages yet.",
+    "selectConversation": "Select a conversation, or search for someone to message.",
+    "back": "Back",
+    "loadOlder": "Load older messages",
+    "loading": "Loading…",
+    "messagePlaceholder": "Write a message…",
+    "send": "Send"
   },
   "menuPage": {
     "breadcrumbHome": "home",
