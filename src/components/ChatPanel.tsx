@@ -164,11 +164,19 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
 
   const loadOlder = async () => {
     if (!activeId || messages.length === 0) return
+    const el = scrollRef.current
+    const prevScrollHeight = el?.scrollHeight ?? 0
     setLoadingOlder(true)
     try {
       const older = await listMessages(activeId, { before: messages[0].createdAt })
       setMessages((prev) => [...older, ...prev])
       setHasMore(older.length >= 30)
+      // Older messages are prepended ABOVE what's on screen — without this the
+      // browser keeps the same scrollTop, which visually yanks the view down to
+      // the new (taller) top. Re-anchor on the message the user was looking at.
+      requestAnimationFrame(() => {
+        if (el) el.scrollTop = el.scrollHeight - prevScrollHeight
+      })
     } catch {
       setHasMore(false) // can't reach older messages right now — stop offering the button
     } finally {
@@ -246,8 +254,8 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
                 key={c.id}
                 type="button"
                 onClick={() => openConversation(c.id)}
-                className={`w-full flex items-center gap-2 px-3 py-2.5 text-left border-b border-neutral-95 hover:bg-neutral-97 ${
-                  c.id === activeId ? 'bg-chip-blue/40' : ''
+                className={`w-full flex items-center gap-2.5 px-3 py-3 text-left border-b border-neutral-95 transition-colors hover:bg-neutral-97 ${
+                  c.id === activeId ? 'bg-chip-blue/50' : ''
                 }`}
               >
                 <Avatar profile={c.otherUser} />
@@ -272,15 +280,17 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
       {/* RIGHT: active thread */}
       <div className={`flex-1 min-w-0 flex flex-col ${activeId ? 'flex' : 'hidden sm:flex'}`}>
         {!activeConvo ? (
-          <div className="flex-1 grid place-items-center text-center p-6">
+          <div className="flex-1 grid place-items-center text-center p-6 bg-neutral-97/40">
             <div>
-              <i className="fa-solid fa-comments text-3xl text-neutral-90 mb-2" />
-              <p className="text-sm text-subtlest">{t('chat.selectConversation')}</p>
+              <span className="mx-auto mb-3 h-16 w-16 rounded-full bg-chip-blue grid place-items-center">
+                <i className="fa-solid fa-comments text-2xl text-accent-blue" aria-hidden="true" />
+              </span>
+              <p className="text-sm text-subtlest max-w-[220px] mx-auto">{t('chat.selectConversation')}</p>
             </div>
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-2 px-m py-2.5 border-b border-neutral-90">
+            <div className="flex items-center gap-2 px-m py-3 border-b border-neutral-90 bg-white shadow-sm relative z-10">
               <button
                 type="button"
                 onClick={() => setActiveId(null)}
@@ -303,14 +313,15 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
               )}
             </div>
 
-            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-m py-3 flex flex-col gap-2">
+            <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto bg-neutral-97/40 px-m py-4 flex flex-col gap-2.5">
               {hasMore && messages.length > 0 && (
                 <button
                   type="button"
                   onClick={loadOlder}
                   disabled={loadingOlder}
-                  className="self-center text-xs text-link hover:underline disabled:opacity-60 mb-2"
+                  className="self-center inline-flex items-center gap-1.5 rounded-full border border-neutral-90 bg-white px-3.5 py-1.5 text-xs font-medium text-muted shadow-sm hover:border-accent-blue hover:text-accent-blue disabled:opacity-60 transition-colors mb-3"
                 >
+                  <i className={`fa-solid ${loadingOlder ? 'fa-spinner fa-spin' : 'fa-clock-rotate-left'} text-[11px]`} aria-hidden="true" />
                   {loadingOlder ? t('chat.loading') : t('chat.loadOlder')}
                 </button>
               )}
@@ -323,9 +334,13 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
                   const mine = m.senderId === user.id
                   return (
                     <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] rounded-m px-3 py-2 text-sm ${mine ? 'bg-accent-blue text-white' : 'bg-neutral-95 text-text-normal'}`}>
-                        <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                        <span className={`block mt-0.5 text-[10px] ${mine ? 'text-white/70' : 'text-subtlest'}`}>{timeAgo(m.createdAt)}</span>
+                      <div
+                        className={`max-w-[75%] rounded-l px-3.5 py-2.5 text-sm shadow-sm ${
+                          mine ? 'bg-accent-blue text-white rounded-br-m' : 'bg-white text-text-normal rounded-bl-m'
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{m.body}</p>
+                        <span className={`block mt-1 text-[10px] ${mine ? 'text-white/70' : 'text-subtlest'}`}>{timeAgo(m.createdAt)}</span>
                       </div>
                     </div>
                   )
@@ -338,22 +353,22 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
                 e.preventDefault()
                 submit()
               }}
-              className="flex items-center gap-2 px-m py-2.5 border-t border-neutral-90"
+              className="flex items-center gap-2 px-m py-3 border-t border-neutral-90 bg-white"
             >
               <input
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder={t('chat.messagePlaceholder')}
-                className="flex-1 h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
+                className="flex-1 h-10 px-4 border border-neutral-90 rounded-full text-sm outline-none focus:border-accent-blue focus:ring-2 focus:ring-accent-blue/15"
               />
               <button
                 type="submit"
                 disabled={!text.trim() || sending}
-                className="h-10 w-10 shrink-0 grid place-items-center bg-accent-blue text-white rounded-m hover:bg-[#005bc4] disabled:opacity-60"
+                className="h-10 w-10 shrink-0 grid place-items-center bg-accent-blue text-white rounded-full hover:bg-[#005bc4] disabled:opacity-60 transition-colors"
                 aria-label={t('chat.send')}
               >
-                <i className={`fa-solid ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`} />
+                <i className={`fa-solid ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-sm`} aria-hidden="true" />
               </button>
             </form>
           </>

@@ -32,7 +32,9 @@ export default function Chat() {
         <i className="fa-solid fa-comments mr-2 text-accent-blue" aria-hidden="true" />
         {t('nav.chatting')}
       </h1>
-      <div className="h-[560px]">
+      {/* Fills most of the viewport instead of a small boxed-in area, so the
+          thread reads as a full, complete chat experience, not a cramped widget. */}
+      <div className="h-[78vh] min-h-[560px] max-h-[820px]">
         <ChatPanel />
       </div>
     </Layout>
