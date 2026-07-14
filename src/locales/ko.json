@@ -104,7 +104,8 @@
     "kpiSlotsFilled": "채워진 슬롯",
     "kpiActiveAds": "활성 광고",
     "addExtra": "추가 소재",
-    "extraCreative": "추가 소재"
+    "extraCreative": "추가 소재",
+    "viewImage": "원본 이미지 크게 보기"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."

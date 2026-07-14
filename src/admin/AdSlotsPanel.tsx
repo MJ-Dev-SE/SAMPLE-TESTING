@@ -8,6 +8,7 @@ import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import type { Localized } from '../types'
 import type { AdminRow, TableDef } from './registry'
 import RecordForm from './RecordForm'
+import Lightbox from './Lightbox'
 import { BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN } from './ui'
 
 /**
@@ -121,6 +122,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<EditTarget | null>(null)
   const [busy, setBusy] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -320,12 +322,23 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                     }`}
                   >
                     {row?.image_url ? (
-                      <img
-                        src={publicUrl(String(row.image_url))}
-                        alt=""
-                        loading="lazy"
-                        className="h-24 w-full object-cover border-b border-[#e7ddca] bg-[#f5efe4]"
-                      />
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setLightbox(String(row.image_url))
+                        }}
+                        aria-label={t('admin.viewImage')}
+                        title={t('admin.viewImage')}
+                        className="block w-full"
+                      >
+                        <img
+                          src={publicUrl(String(row.image_url))}
+                          alt=""
+                          loading="lazy"
+                          className="h-24 w-full object-cover border-b border-[#e7ddca] bg-[#f5efe4] cursor-zoom-in hover:opacity-90 transition-opacity"
+                        />
+                      </button>
                     ) : (
                       <div className="h-24 grid place-items-center border-b border-dashed border-[#e7ddca] text-[#a89e8c] bg-[#fbf8f1]">
                         <i className="fa-regular fa-image text-xl" aria-hidden="true" />
@@ -377,7 +390,20 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                   {extras.map((r) => (
                     <li key={r.id} className="flex items-center gap-3 rounded-[14px] border border-[#e7ddca] bg-[#fbf8f1] px-3 py-2">
                       {r.image_url ? (
-                        <img src={publicUrl(String(r.image_url))} alt="" loading="lazy" className="h-8 w-12 object-cover rounded-lg border border-[#e7ddca]" />
+                        <button
+                          type="button"
+                          onClick={() => setLightbox(String(r.image_url))}
+                          aria-label={t('admin.viewImage')}
+                          title={t('admin.viewImage')}
+                          className="shrink-0"
+                        >
+                          <img
+                            src={publicUrl(String(r.image_url))}
+                            alt=""
+                            loading="lazy"
+                            className="h-8 w-12 object-cover rounded-lg border border-[#e7ddca] cursor-zoom-in hover:opacity-90 transition-opacity"
+                          />
+                        </button>
                       ) : (
                         <span className="h-8 w-12 grid place-items-center rounded-lg border border-dashed border-[#e7ddca] text-[#a89e8c]">
                           <i className="fa-regular fa-image" aria-hidden="true" />
@@ -461,6 +487,8 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
           </ul>
         )}
       </div>
+
+      <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </section>
   )
 }

@@ -13,6 +13,7 @@ import { adminI18n, setAdminLanguage } from './i18n'
 import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
 import RecordForm from './RecordForm'
 import AdSlotsPanel from './AdSlotsPanel'
+import Lightbox from './Lightbox'
 import { AVATAR, BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN, shortDate } from './ui'
 
 const AUDIT_ICON = 'fa-clock-rotate-left'
@@ -275,6 +276,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
   /** null = closed · 'new' = creating · row = editing that row */
   const [editing, setEditing] = useState<AdminRow | 'new' | null>(null)
   const [busy, setBusy] = useState(false)
+  const [lightbox, setLightbox] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -343,6 +345,10 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
     if (/^\d{4}-\d{2}-\d{2}T/.test(s)) return s.slice(0, 10) // ISO timestamp → date
     return s.length > 60 ? `${s.slice(0, 60)}…` : s
   }
+
+  // Captured to a local const so TS narrows it as defined inside the row-map
+  // closures below (`def.imageCol` itself doesn't narrow across closures).
+  const imgCol = def.imageCol
 
   const newest = rows.reduce<string | null>((acc, r) => {
     const v = (r.updated_at ?? r.created_at) as string | undefined
@@ -421,15 +427,23 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
-                    {def.imageCol && (
+                    {imgCol && (
                       <td className="px-4 py-2">
-                        {row[def.imageCol] ? (
-                          <img
-                            src={publicUrl(String(row[def.imageCol]))}
-                            alt=""
-                            loading="lazy"
-                            className="h-10 w-14 object-cover rounded-lg border border-[#e7ddca] bg-[#f5efe4]"
-                          />
+                        {row[imgCol] ? (
+                          <button
+                            type="button"
+                            onClick={() => setLightbox(String(row[imgCol as string]))}
+                            aria-label={t('admin.viewImage')}
+                            title={t('admin.viewImage')}
+                            className="block rounded-lg overflow-hidden border border-[#e7ddca] hover:ring-2 hover:ring-[#a98c5a]/40 transition-shadow"
+                          >
+                            <img
+                              src={publicUrl(String(row[imgCol]))}
+                              alt=""
+                              loading="lazy"
+                              className="h-10 w-14 object-cover bg-[#f5efe4] cursor-zoom-in"
+                            />
+                          </button>
                         ) : (
                           <span className={`h-10 w-14 grid place-items-center rounded-lg border border-dashed border-[#e7ddca] text-[#a89e8c]`}>
                             <i className="fa-regular fa-image" aria-hidden="true" />
@@ -473,6 +487,8 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
           </div>
         )}
       </div>
+
+      <Lightbox src={lightbox} onClose={() => setLightbox(null)} />
     </section>
   )
 }
