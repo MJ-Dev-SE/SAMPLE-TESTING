@@ -25,8 +25,12 @@ export default function CategoryBar() {
     <nav aria-label="Categories" className="border-b border-neutral-90">
       <div className="mx-auto max-w-content px-xs">
         <div className="overflow-x-auto no-scrollbar">
-          {/* min-w-max keeps every column on a single horizontal strip (scrolls instead of wrapping) */}
-          <div className="flex min-w-max">
+          {/* min-w-max keeps every column on a single horizontal strip (scrolls instead of wrapping).
+              justify-center centers the columns when they're narrower than the bar (e.g. Korean
+              labels, which run shorter than English ones, otherwise pack flush-left leaving a bare
+              gap on the right); when columns overflow (English) this has no visual effect other
+              than the scrollable area growing symmetrically, so scroll-to-see-more still works. */}
+          <div className="flex min-w-max justify-center">
             {categoryGroups.map((g, i) => {
               const parentSlug = maroonSlugOf(g.parent.href)
               const parentActive = !!parentSlug && parentSlug === activeMaroon
