@@ -123,6 +123,8 @@
     "signupLink": "Sign up",
     "loginLink": "Log in",
     "logout": "Log out",
+    "logoutConfirmTitle": "Log out?",
+    "logoutConfirmText": "You'll need to log in again to access your account.",
     "loggedInAs": "Logged in as",
     "myProfile": "My profile",
     "working": "Please wait…",

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/auth'
+import { confirmLogout } from '../lib/alert'
 
 /** Sidebar login box — logged-out (login/signup) or logged-in (profile + logout) state. */
 export default function LoginCard() {
@@ -8,6 +9,11 @@ export default function LoginCard() {
   const { user, profile, signOut } = useAuth()
 
   const name = profile?.display_name || profile?.username || user?.email?.split('@')[0]
+
+  const handleLogout = async () => {
+    const ok = await confirmLogout(t('auth.logoutConfirmTitle'), t('auth.logoutConfirmText'), t('auth.logout'), t('post.cancel'))
+    if (ok) signOut()
+  }
 
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">
@@ -42,7 +48,7 @@ export default function LoginCard() {
           </Link>
           <button
             type="button"
-            onClick={signOut}
+            onClick={handleLogout}
             className="w-full text-center border border-neutral-90 text-text-normal text-sm font-semibold py-2 rounded-m hover:bg-neutral-97"
           >
             <i className="fa-solid fa-arrow-right-from-bracket mr-2 text-muted" />

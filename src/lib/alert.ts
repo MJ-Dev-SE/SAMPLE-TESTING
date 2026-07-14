@@ -74,6 +74,30 @@ export const requireLogin = async (
     })
   ).isConfirmed
 
+/**
+ * "Are you sure you want to log out?" prompt (LoginCard's sign-out button).
+ * Not styled as a danger action like alertConfirm — logging out isn't
+ * destructive, just worth a beat before it happens.
+ */
+export const confirmLogout = async (
+  title: string,
+  text: string,
+  confirmText: string,
+  cancelText: string,
+): Promise<boolean> =>
+  (
+    await Swal.fire({
+      icon: 'question',
+      title,
+      text,
+      showCancelButton: true,
+      confirmButtonText: confirmText,
+      cancelButtonText: cancelText,
+      confirmButtonColor: accent,
+      cancelButtonColor: '#8a8072',
+    })
+  ).isConfirmed
+
 /** Small top-right toast that auto-dismisses (used after login/sign-up). */
 export const toast = (title: string, icon: 'success' | 'info' = 'success') =>
   Swal.fire({

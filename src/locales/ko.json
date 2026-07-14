@@ -123,6 +123,8 @@
     "signupLink": "회원가입",
     "loginLink": "로그인",
     "logout": "로그아웃",
+    "logoutConfirmTitle": "로그아웃 하시겠습니까?",
+    "logoutConfirmText": "계정을 이용하려면 다시 로그인해야 합니다.",
     "loggedInAs": "로그인 계정",
     "myProfile": "내 프로필",
     "working": "잠시만 기다려 주세요…",
