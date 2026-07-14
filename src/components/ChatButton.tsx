@@ -11,7 +11,8 @@ const POLL_MS = 20_000 // lightweight badge refresh; the open thread itself upda
 /**
  * Header chat icon + unread badge. Logged out → SweetAlert login prompt (6),
  * preserving where the user was so Login.tsx can send them back. Logged in →
- * opens the ChatDrawer slide-over.
+ * the SAME icon toggles the ChatDrawer sidebar open and closed (click again
+ * to close, not just via the drawer's own X/Esc/backdrop).
  */
 export default function ChatButton({ className = '' }: { className?: string }) {
   const { t } = useTranslation()
@@ -34,7 +35,13 @@ export default function ChatButton({ className = '' }: { className?: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
+  const close = () => {
+    setOpen(false)
+    refreshUnread()
+  }
+
   const handleClick = async () => {
+    if (open) return close()
     if (!user) {
       const go = await requireLogin(
         t('auth.loginRequiredTitle'),
@@ -54,7 +61,10 @@ export default function ChatButton({ className = '' }: { className?: string }) {
         type="button"
         onClick={handleClick}
         aria-label={t('nav.chatting')}
-        className={`relative shrink-0 h-8 w-8 grid place-items-center rounded-m text-[#333] hover:text-accent-blue hover:bg-neutral-97 transition-colors ${className}`}
+        aria-expanded={open}
+        className={`relative shrink-0 h-8 w-8 grid place-items-center rounded-m transition-colors ${
+          open ? 'bg-chip-blue text-accent-blue' : 'text-[#333] hover:text-accent-blue hover:bg-neutral-97'
+        } ${className}`}
       >
         <i className="fa-solid fa-comments" aria-hidden="true" />
         {unread > 0 && (
@@ -63,14 +73,7 @@ export default function ChatButton({ className = '' }: { className?: string }) {
           </span>
         )}
       </button>
-      {open && (
-        <ChatDrawer
-          onClose={() => {
-            setOpen(false)
-            refreshUnread()
-          }}
-        />
-      )}
+      <ChatDrawer open={open} onClose={close} />
     </>
   )
 }
