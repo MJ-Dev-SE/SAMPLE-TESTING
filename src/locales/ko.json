@@ -331,7 +331,9 @@
     "loadOlder": "이전 메시지 더 보기",
     "loading": "불러오는 중…",
     "messagePlaceholder": "메시지를 입력하세요…",
-    "send": "보내기"
+    "send": "보내기",
+    "hideList": "대화 목록 숨기기",
+    "showList": "대화 목록 보기"
   },
   "menuPage": {
     "breadcrumbHome": "홈",

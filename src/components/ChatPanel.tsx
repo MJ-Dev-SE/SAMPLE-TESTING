@@ -51,6 +51,9 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
   const [loadingConvos, setLoadingConvos] = useState(true)
   const [activeId, setActiveId] = useState<string | null>(null)
   const activeConvo = conversations.find((c) => c.id === activeId) ?? null
+  // Desktop-only: shrink the conversation list out of the way once you're inside
+  // a thread, so the thread gets the room. Mobile already swaps to single-pane.
+  const [listCollapsed, setListCollapsed] = useState(false)
 
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [loadingMessages, setLoadingMessages] = useState(false)
@@ -204,8 +207,20 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="flex h-full min-h-0 border border-neutral-90 rounded-l overflow-hidden bg-white">
-      {/* LEFT: search + conversation list */}
-      <div className={`w-full sm:w-[280px] shrink-0 border-r border-neutral-90 flex flex-col ${activeId ? 'hidden sm:flex' : 'flex'}`}>
+      {/* LEFT: search + conversation list — collapses to 0 width (desktop only,
+          via listCollapsed) once a thread is open, so the thread gets the room. */}
+      <div
+        className={`${activeId ? 'hidden sm:flex' : 'flex'} shrink-0 flex-col border-r border-neutral-90 overflow-hidden transition-[width] duration-300 ease-in-out w-full ${
+          activeId && listCollapsed ? 'sm:w-0 sm:border-r-0' : 'sm:w-[280px]'
+        }`}
+      >
+        {/* Fixed inner width so the search box/list never reflow while the
+            outer wrapper is animating its width down to 0. */}
+        <div
+          className={`w-full sm:w-[280px] h-full flex flex-col transition-opacity duration-200 ${
+            activeId && listCollapsed ? 'sm:opacity-0' : 'opacity-100'
+          }`}
+        >
         <div className="p-s border-b border-neutral-90">
           <div className="relative">
             <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-subtlest text-xs" />
@@ -275,6 +290,7 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
             ))
           )}
         </div>
+        </div>
       </div>
 
       {/* RIGHT: active thread */}
@@ -298,6 +314,16 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
                 aria-label={t('chat.back')}
               >
                 <i className="fa-solid fa-arrow-left" />
+              </button>
+              {/* Desktop-only: shrink/restore the conversation list to give the thread more room. */}
+              <button
+                type="button"
+                onClick={() => setListCollapsed((v) => !v)}
+                className="hidden sm:grid h-8 w-8 shrink-0 place-items-center rounded-m text-muted hover:bg-neutral-97 hover:text-accent-blue transition-colors"
+                aria-label={listCollapsed ? t('chat.showList') : t('chat.hideList')}
+                title={listCollapsed ? t('chat.showList') : t('chat.hideList')}
+              >
+                <i className={`fa-solid ${listCollapsed ? 'fa-angles-right' : 'fa-angles-left'} text-xs`} aria-hidden="true" />
               </button>
               <Avatar profile={activeConvo.otherUser} size={28} />
               <span className="text-sm font-semibold text-text-normal truncate">{nameOf(activeConvo.otherUser)}</span>
