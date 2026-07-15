@@ -247,6 +247,26 @@
     "calculator": "계산기",
     "travelInfo": "여행 정보"
   },
+  "weather": {
+    "title": "날씨",
+    "currentTitle": "현재 날씨",
+    "byTimeOfDay": "시간대별 날씨",
+    "hour": "시간",
+    "today": "오늘",
+    "tomorrow": "내일",
+    "dayAfterTomorrow": "모레",
+    "loading": "날씨 불러오는 중…",
+    "unavailable": "날씨 정보를 일시적으로 사용할 수 없습니다."
+  },
+  "currency": {
+    "title": "환율 계산기",
+    "subtitle": "필리핀 페소 ↔ 한국 원 ↔ 미국 달러",
+    "amount": "금액",
+    "from": "기준 통화",
+    "liveRates": "실시간 환율",
+    "loading": "환율 불러오는 중…",
+    "unavailable": "환율 정보를 일시적으로 사용할 수 없습니다."
+  },
   "settings": {
     "title": "프로필 설정",
     "photoSection": "프로필 사진",

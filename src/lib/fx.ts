@@ -43,6 +43,23 @@ async function fetchFx(): Promise<FxRates> {
   return value
 }
 
+export type Currency = 'PHP' | 'KRW' | 'USD'
+
+/** 1 unit of `currency` expressed in USD, from the same USD-base rates the hook returns. */
+function toUsd(rates: FxRates, currency: Currency): number {
+  if (currency === 'USD') return 1
+  if (currency === 'PHP') return rates.php ? 1 / rates.php : 0
+  return rates.krw ? 1 / rates.krw : 0
+}
+
+/** Convert `amount` of `from` into `to`, using live USD-base rates from useFx(). */
+export function convertAmount(amount: number, from: Currency, to: Currency, rates: FxRates): number {
+  if (from === to) return amount
+  const usd = amount * toUsd(rates, from)
+  if (to === 'USD') return usd
+  return to === 'PHP' ? usd * rates.php : usd * rates.krw
+}
+
 /** React hook: returns current FX rates (cache first, then live). */
 export function useFx(): FxRates | null {
   const [data, setData] = useState<FxRates | null>(() => readCache())

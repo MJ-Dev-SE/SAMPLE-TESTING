@@ -247,6 +247,26 @@
     "calculator": "calculator",
     "travelInfo": "Travel Information"
   },
+  "weather": {
+    "title": "Weather",
+    "currentTitle": "Current weather",
+    "byTimeOfDay": "Weather by time of day",
+    "hour": "hour",
+    "today": "today",
+    "tomorrow": "tomorrow",
+    "dayAfterTomorrow": "day after tomorrow",
+    "loading": "Loading weather…",
+    "unavailable": "Weather is temporarily unavailable."
+  },
+  "currency": {
+    "title": "Exchange rate calculator",
+    "subtitle": "Philippine peso ↔ Korean won ↔ US dollar",
+    "amount": "Amount",
+    "from": "From",
+    "liveRates": "Live rates",
+    "loading": "Loading rates…",
+    "unavailable": "Exchange rates are temporarily unavailable."
+  },
   "settings": {
     "title": "Profile settings",
     "photoSection": "Profile photo",

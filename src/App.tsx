@@ -29,6 +29,8 @@ const LinkView = lazy(() => import('./routes/LinkView'))
 const PolicyView = lazy(() => import('./routes/PolicyView'))
 const NewsArticleView = lazy(() => import('./routes/NewsArticleView'))
 const RecentCommentsView = lazy(() => import('./routes/RecentCommentsView'))
+const WeatherView = lazy(() => import('./routes/WeatherView'))
+const CurrencyView = lazy(() => import('./routes/CurrencyView'))
 const AdminPage = lazy(() => import('./admin/AdminPage'))
 
 /**
@@ -91,8 +93,8 @@ function PageRoutes() {
       {/* Utilities */}
       <Route path="chat" element={<Chat />} />
       <Route path="chat/index" element={<Chat />} />
-      <Route path="weather" element={<Placeholder title={{ en: 'Weather', ko: '날씨' }} icon="fa-cloud-sun" />} />
-      <Route path="currency" element={<Placeholder title={{ en: 'Exchange rate calculator', ko: '환율 계산기' }} icon="fa-calculator" />} />
+      <Route path="weather" element={<WeatherView />} />
+      <Route path="currency" element={<CurrencyView />} />
       <Route path="ai" element={<Placeholder title={{ en: 'AI chatbot', ko: 'AI 챗봇' }} icon="fa-robot" />} />
       <Route path="today" element={<Placeholder title={{ en: 'Today', ko: '오늘' }} icon="fa-calendar-day" />} />
 
