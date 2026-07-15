@@ -52,6 +52,8 @@ export interface TableDef {
   orderBy: { col: string; ascending: boolean }
   canCreate: boolean
   filter?: { col: string; op: 'like'; value: string }
+  /** Raw PostgREST `.or()` expression, for filters a single-column `.like()` can't express. */
+  orFilter?: string
   injectOnCreate?: (userId: string) => AdminRow
 }
 
@@ -329,16 +331,21 @@ export const ADMIN_TABLES: TableDef[] = [
   {
     table: 'comments',
     icon: 'fa-comments',
-    title: { en: 'Comments', ko: '댓글' },
+    title: { en: 'Comments & Reviews', ko: '댓글 · 리뷰' },
     usedIn: {
-      en: 'Comment threads on /post/view + /photo/view, and the sidebar "Recent Comments" widget.',
-      ko: '/post/view · /photo/view 댓글, 사이드바 최근 댓글 위젯.',
+      en: 'Comment threads on /post/view + /photo/view, star reviews on Business/Advertisement/News detail pages, and the sidebar "Recent Comments" widget.',
+      ko: '/post/view · /photo/view 댓글, 비즈니스/광고/뉴스 상세 별점 리뷰, 사이드바 최근 댓글 위젯.',
     },
-    placement: (r) => `board: ${String(r.board_id ?? '')}`,
-    listCols: ['body', 'board_id', 'guest_name', 'created_at'],
+    placement: (r) =>
+      r.content_type === 'post' ? `board: ${String(r.board_id ?? '')}` : `${String(r.content_type ?? '')} review`,
+    listCols: ['body', 'content_type', 'rating', 'board_id', 'guest_name', 'created_at'],
     fields: [{ key: 'body', label: { en: 'Comment text', ko: '댓글 내용' }, type: 'textarea', required: true }],
     orderBy: { col: 'created_at', ascending: false },
     canCreate: false,
-    filter: { col: 'board_id', op: 'like', value: 'mt-%' },
+    // Manila Tour post comments (board_id like 'mt-%') OR any business/ad/news
+    // review (content_type != 'post', board_id null) — excludes the shared
+    // PhilGo clone's own post comments either way. A plain .like() can't OR
+    // across two columns, hence orFilter (see AdminPage.tsx TablePanel#load).
+    orFilter: 'content_type.neq.post,board_id.like.mt-%',
   },
 ]

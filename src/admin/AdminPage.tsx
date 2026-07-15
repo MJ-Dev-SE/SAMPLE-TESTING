@@ -288,6 +288,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
     setLoading(true)
     let q = supabase.from(def.table).select('*').order(def.orderBy.col, { ascending: def.orderBy.ascending })
     if (def.filter) q = q.like(def.filter.col, def.filter.value)
+    if (def.orFilter) q = q.or(def.orFilter)
     const { data, error } = await q
     setRows(error ? [] : ((data ?? []) as AdminRow[]))
     setLoading(false)

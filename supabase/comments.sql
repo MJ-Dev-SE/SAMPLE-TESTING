@@ -36,8 +36,12 @@ begin
   end if;
 end $$;
 
--- Non-post comments (business/advertisement/news) have no parent post.
-alter table public.comments alter column post_id drop not null;
+-- Non-post comments (business/advertisement/news) have no parent post — and no
+-- board. board_id is denormalized from posts for the "commented in X" query, so
+-- it is meaningless (and must be nullable) for non-post content types. PhilGo/
+-- post inserts still set it themselves, so their "commented in X" query is intact.
+alter table public.comments alter column post_id  drop not null;
+alter table public.comments alter column board_id drop not null;
 
 -- ---------------------------------------------------------------------------
 -- 2) Backfill existing rows → they are all post comments.
