@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { BusinessRec, CategoryRec } from '../types'
 import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
+import { businessPath } from '../lib/content'
 
 /**
  * Business Directory card — image-first: main photo on top, then name, one-line
@@ -23,7 +24,7 @@ export default function BusinessCard({
 
   return (
     <Link
-      to={`/company/view?id=${business.id}`}
+      to={businessPath(business)}
       className="group flex flex-col overflow-hidden border border-neutral-90 rounded-l bg-white hover:shadow-card hover:-translate-y-0.5 transition-all"
     >
       {/* Image-first header */}

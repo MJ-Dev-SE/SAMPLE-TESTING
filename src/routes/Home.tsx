@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import PhotoBanner from '../components/PhotoBanner'
 import NewsTabs from '../components/NewsTabs'
 import BoardColumn from '../components/BoardColumn'
@@ -8,7 +9,10 @@ import PopularList from '../components/PopularList'
 import BannerRow from '../components/BannerRow'
 import { boardTitles } from '../data/boards'
 import { listPhotos } from '../lib/content'
-import { commentCountOf, listPosts, type DbPost } from '../lib/posts'
+import { commentCountOf, listPosts, postPath, type DbPost } from '../lib/posts'
+import { organizationLd, websiteLd } from '../lib/seo/structuredData'
+import { DEFAULT_TITLE } from '../config/site'
+import { useLocalized } from '../lib/useLocalized'
 import type { Board, PhotoRec } from '../types'
 
 /** Board ids previewed on the homepage "Latest posts" columns. */
@@ -23,13 +27,14 @@ function toBoard(boardId: string, posts: DbPost[]): Board {
     posts: posts.map((p) => ({
       title: { en: p.title, ko: p.title },
       commentCount: commentCountOf(p),
-      href: `/post/view?id=${p.id}&post_id=${boardId}`,
+      href: postPath(p),
     })),
   }
 }
 
 export default function Home() {
   const { t } = useTranslation()
+  const L = useLocalized()
   const [banner, setBanner] = useState<PhotoRec[]>([])
   const [boards, setBoards] = useState<Board[]>([])
 
@@ -49,6 +54,9 @@ export default function Home() {
 
   return (
     <Layout>
+      <Seo path="/" jsonLd={[websiteLd(), organizationLd()]} />
+      {/* Single page h1 — visually hidden; the homepage design has no title row. */}
+      <h1 className="sr-only">{L(DEFAULT_TITLE)}</h1>
       <div className="flex flex-col gap-l">
         {/* 4a. News tab block */}
         <NewsTabs />

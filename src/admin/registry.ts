@@ -22,6 +22,9 @@ export type FieldType =
   | 'localized' // { en, ko } pair of inputs
   | 'localized-textarea'
   | 'json' // raw JSON textarea (validated on save)
+  | 'slug' // URL slug: auto-generate button + format validation (lib/seo/slug)
+  | 'seo-title' // text + live char counter (recommended 50–60, warn-only)
+  | 'seo-description' // textarea + live char counter (recommended 140–160, warn-only)
 
 export interface FieldDef {
   key: string
@@ -31,6 +34,10 @@ export interface FieldDef {
   required?: boolean
   hint?: Localized
   folder?: string // image fields: media-bucket folder for new uploads
+  /** Groups the field under the collapsible "SEO" section of the form. */
+  seo?: boolean
+  /** slug fields: which form value the "generate" button derives from. */
+  slugSource?: string
 }
 
 export interface TableDef {
@@ -46,6 +53,28 @@ export interface TableDef {
   canCreate: boolean
   filter?: { col: string; op: 'like'; value: string }
   injectOnCreate?: (userId: string) => AdminRow
+}
+
+/** Shared SEO field block (columns from supabase/seo.sql). `slugKey`/`slugSource`
+ *  vary per table; every field is optional — blank values fall back to content. */
+function seoFields(opts: { slugKey?: string; slugSource?: string; imageFolder: string }): FieldDef[] {
+  const fields: FieldDef[] = []
+  if (opts.slugKey) {
+    fields.push({
+      key: opts.slugKey,
+      label: { en: 'URL slug', ko: 'URL 슬러그' },
+      type: 'slug',
+      seo: true,
+      slugSource: opts.slugSource,
+    })
+  }
+  fields.push(
+    { key: 'meta_title', label: { en: 'SEO title', ko: 'SEO 제목' }, type: 'seo-title', seo: true },
+    { key: 'meta_description', label: { en: 'Meta description', ko: '메타 설명' }, type: 'seo-description', seo: true },
+    { key: 'og_image_url', label: { en: 'Social share image', ko: '소셜 공유 이미지' }, type: 'image', folder: opts.imageFolder, seo: true },
+    { key: 'is_indexable', label: { en: 'Search indexing', ko: '검색 색인' }, type: 'boolean', seo: true },
+  )
+  return fields
 }
 
 const AD_POSITION_PLACEMENT: Record<string, string> = {
@@ -79,6 +108,8 @@ export const ADMIN_TABLES: TableDef[] = [
       { key: 'icon', label: { en: 'Icon (fa-*)', ko: '아이콘 (fa-*)' }, type: 'text', hint: { en: 'Font Awesome class, e.g. fa-utensils', ko: 'Font Awesome 클래스 (예: fa-utensils)' } },
       { key: 'sort', label: { en: 'Sort order', ko: '정렬 순서' }, type: 'number' },
       { key: 'active', label: { en: 'Active', ko: '활성' }, type: 'boolean' },
+      // Category landing pages (/information, /business-directory/<slug>, …)
+      ...seoFields({ imageFolder: 'categories' }),
     ],
     orderBy: { col: 'sort', ascending: true },
     canCreate: true,
@@ -106,6 +137,7 @@ export const ADMIN_TABLES: TableDef[] = [
       { key: 'main_image_url', label: { en: 'Main image', ko: '메인 이미지' }, type: 'image', folder: 'businesses' },
       { key: 'status', label: { en: 'Status', ko: '상태' }, type: 'select', options: ['active', 'inactive'] },
       { key: 'display_order', label: { en: 'Display order', ko: '표시 순서' }, type: 'number' },
+      ...seoFields({ slugKey: 'slug', slugSource: 'name', imageFolder: 'businesses' }),
     ],
     orderBy: { col: 'updated_at', ascending: false },
     canCreate: true,
@@ -221,10 +253,11 @@ export const ADMIN_TABLES: TableDef[] = [
       { key: 'title', label: { en: 'Title', ko: '제목' }, type: 'localized', required: true },
       { key: 'body', label: { en: 'Article body', ko: '기사 본문' }, type: 'localized-textarea' },
       { key: 'image_url', label: { en: 'Image', ko: '이미지' }, type: 'image', folder: 'news' },
-      { key: 'article_slug', label: { en: 'Article slug', ko: '기사 슬러그' }, type: 'text', hint: { en: 'Used as /news/view?slug=<slug>', ko: '/news/view?slug=<slug>' } },
       { key: 'href', label: { en: 'Link', ko: '링크' }, type: 'text' },
       { key: 'comment_count', label: { en: 'Comment badge', ko: '댓글 배지' }, type: 'number' },
       { key: 'sort', label: { en: 'Display order', ko: '표시 순서' }, type: 'number' },
+      // article_slug doubles as the news slug — /news/article/<slug>
+      ...seoFields({ slugKey: 'article_slug', slugSource: 'title', imageFolder: 'news' }),
     ],
     orderBy: { col: 'sort', ascending: true },
     canCreate: true,
@@ -287,6 +320,7 @@ export const ADMIN_TABLES: TableDef[] = [
       { key: 'category', label: { en: 'Category', ko: '카테고리' }, type: 'text' },
       { key: 'body', label: { en: 'Body', ko: '본문' }, type: 'textarea' },
       { key: 'views', label: { en: 'Views', ko: '조회수' }, type: 'number' },
+      ...seoFields({ slugKey: 'slug', slugSource: 'title', imageFolder: 'posts' }),
     ],
     orderBy: { col: 'created_at', ascending: false },
     canCreate: false,

@@ -1,9 +1,7 @@
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { categoryGroups } from '../data/categoryBar'
 import { useLocalized } from '../lib/useLocalized'
-
-/** Pull the `?maroon=` slug out of one of this bar's own hrefs, for active-state matching. */
-const maroonSlugOf = (href: string) => new URLSearchParams(href.split('?')[1] ?? '').get('maroon')
+import { stripLocalePrefix } from '../lib/seo/url'
 
 /**
  * Maroon category bar (#7f1d1d) — Manila Tour taxonomy (Information, News,
@@ -12,14 +10,14 @@ const maroonSlugOf = (href: string) => new URLSearchParams(href.split('?')[1] ??
  * columns aligned. Horizontally scrollable — parents that overflow can be
  * reached by scrolling right.
  *
- * Parents/children whose href carries `?maroon=<slug>` are the DB-backed
- * post-category feed (see src/data/categoryBar.ts); the currently selected one
- * (from the URL) gets a visible active state.
+ * Parents/children now link to the stable category landing pages
+ * (/information, /information/weather — see src/data/categoryBar.ts); the one
+ * matching the current URL path gets a visible active state.
  */
 export default function CategoryBar() {
   const L = useLocalized()
-  const [params] = useSearchParams()
-  const activeMaroon = params.get('maroon')
+  const { pathname } = useLocation()
+  const activePath = stripLocalePrefix(pathname)
 
   return (
     <nav aria-label="Categories" className="border-b border-neutral-90">
@@ -32,8 +30,7 @@ export default function CategoryBar() {
               than the scrollable area growing symmetrically, so scroll-to-see-more still works. */}
           <div className="flex min-w-max justify-center">
             {categoryGroups.map((g, i) => {
-              const parentSlug = maroonSlugOf(g.parent.href)
-              const parentActive = !!parentSlug && parentSlug === activeMaroon
+              const parentActive = activePath === g.parent.href.split('?')[0]
               return (
                 <div key={i} className="flex flex-col shrink-0">
                   {/* Parent (maroon row) */}
@@ -49,8 +46,7 @@ export default function CategoryBar() {
                   {/* Children (2 rows) — aligned to the parent column width */}
                   <div className="bg-[#fcecec] flex-1 flex flex-col items-center px-3 py-1.5 gap-0.5 border-r border-neutral-90">
                     {g.children.map((c) => {
-                      const childSlug = maroonSlugOf(c.href)
-                      const childActive = !!childSlug && childSlug === activeMaroon
+                      const childActive = activePath === c.href.split('?')[0]
                       return (
                         <Link
                           key={c.label.en}

@@ -40,7 +40,7 @@ export default function BusinessDirectoryWidget() {
         {categories.map((c) => (
           <Link
             key={c.id}
-            to={`/company?category=${c.slug}`}
+            to={`/business-directory/${c.slug}`}
             className="px-2 py-0.5 text-[11px] border border-neutral-90 rounded-full text-muted hover:bg-neutral-97 hover:text-accent-blue"
           >
             {L(c.name)}

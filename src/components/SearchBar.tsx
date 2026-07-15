@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { searchQuickLinks } from '../data/categoryBar'
 import { useLocalized } from '../lib/useLocalized'
 import { searchSuggestions, type SearchHit } from '../lib/search'
+import Tooltip from './Tooltip'
 
 /** Center search box (under the logo) + quick links to the right.
  *  Typing shows live suggestions from every content source, each labelled
@@ -77,8 +78,9 @@ export default function SearchBar() {
           onSubmit={submit}
           className="flex items-center h-10 border border-neutral-90 rounded-m overflow-hidden bg-page"
         >
-          <button type="submit" aria-label={t('nav.search')} className="px-3 text-muted hover:text-accent-blue">
+          <button type="submit" aria-label={t('nav.search')} className="group relative px-3 text-muted hover:text-accent-blue">
             <i className="fa-solid fa-magnifying-glass" />
+            <Tooltip label={t('nav.search')} position="bottom" />
           </button>
           <input
             value={q}

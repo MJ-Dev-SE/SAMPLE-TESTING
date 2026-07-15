@@ -14,6 +14,8 @@ import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
 import RecordForm from './RecordForm'
 import AdSlotsPanel from './AdSlotsPanel'
 import Lightbox from './Lightbox'
+import Tooltip from '../components/Tooltip'
+import Seo from '../components/seo/Seo'
 import { AVATAR, BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN, shortDate } from './ui'
 
 const AUDIT_ICON = 'fa-clock-rotate-left'
@@ -33,7 +35,7 @@ const PREVIEW_OPEN = false
 
 /** Sidebar nav item — 36px pill, active = beige bg + gold text (Flux spec, beige palette). */
 const navCls = (activeTab: boolean) =>
-  `w-full flex items-center gap-3 h-9 px-3 rounded-[18px] text-sm font-medium transition-colors ${
+  `group relative w-full flex items-center gap-3 h-9 px-3 rounded-[18px] text-sm font-medium transition-colors ${
     activeTab
       ? 'bg-[#efe7d5] text-[#a98c5a]'
       : 'text-[#8a8072] hover:bg-[#efe7d5]/60 hover:text-[#3f382f]'
@@ -47,6 +49,8 @@ const navCls = (activeTab: boolean) =>
 export default function AdminPage() {
   return (
     <I18nextProvider i18n={adminI18n}>
+      {/* Private console — never indexed; auth (useIsAdmin) is the real gate. */}
+      <Seo title="Admin" noindex noAlternates />
       <AdminConsole />
     </I18nextProvider>
   )
@@ -104,11 +108,12 @@ function AdminConsole() {
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-label={t('admin.toggleSidebar')}
-            className={`shrink-0 h-8 w-8 grid place-items-center rounded-[14px] text-[#8a8072] hover:bg-[#efe7d5] hover:text-[#a98c5a] transition-colors ${
+            className={`group relative shrink-0 h-8 w-8 grid place-items-center rounded-[14px] text-[#8a8072] hover:bg-[#efe7d5] hover:text-[#a98c5a] transition-colors ${
               open ? 'ml-auto' : 'mx-auto'
             }`}
           >
             <i className={`fa-solid fa-angles-left transition-transform duration-300 ${open ? '' : 'rotate-180'}`} aria-hidden="true" />
+            <Tooltip label={t('admin.toggleSidebar')} position="bottom" />
           </button>
         </div>
 
@@ -122,13 +127,13 @@ function AdminConsole() {
                 key={d.table}
                 type="button"
                 onClick={() => setActive(d)}
-                title={!open ? L(d.title) : undefined}
                 className={navCls(activeTab)}
               >
                 <i className={`fa-solid ${d.icon} w-5 text-center shrink-0`} aria-hidden="true" />
                 <span className={`truncate min-w-0 flex-1 text-left transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
                   {L(d.title)}
                 </span>
+                {!open && <Tooltip label={L(d.title)} />}
               </button>
             )
           })}
@@ -138,23 +143,24 @@ function AdminConsole() {
           <button
             type="button"
             onClick={() => setActive('audit')}
-            title={!open ? t('admin.audit') : undefined}
             className={navCls(isAudit)}
           >
             <i className={`fa-solid ${AUDIT_ICON} w-5 text-center shrink-0`} aria-hidden="true" />
             <span className={`truncate min-w-0 flex-1 text-left transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
               {t('admin.audit')}
             </span>
+            {!open && <Tooltip label={t('admin.audit')} />}
           </button>
         </nav>
 
         {/* Back to site */}
         <div className="p-3 border-t border-[#e7ddca]">
-          <Link to="/" title={!open ? t('admin.backToSite') : undefined} className={navCls(false)}>
+          <Link to="/" className={navCls(false)}>
             <i className="fa-solid fa-arrow-up-right-from-square w-5 text-center shrink-0" aria-hidden="true" />
             <span className={`truncate min-w-0 flex-1 text-left transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
               {t('admin.backToSite')}
             </span>
+            {!open && <Tooltip label={t('admin.backToSite')} />}
           </Link>
         </div>
       </aside>
@@ -434,8 +440,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                             type="button"
                             onClick={() => setLightbox(String(row[imgCol as string]))}
                             aria-label={t('admin.viewImage')}
-                            title={t('admin.viewImage')}
-                            className="block rounded-lg overflow-hidden border border-[#e7ddca] hover:ring-2 hover:ring-[#a98c5a]/40 transition-shadow"
+                            className="group relative block rounded-lg overflow-hidden border border-[#e7ddca] hover:ring-2 hover:ring-[#a98c5a]/40 transition-shadow"
                           >
                             <img
                               src={publicUrl(String(row[imgCol]))}
@@ -443,6 +448,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                               loading="lazy"
                               className="h-10 w-14 object-cover bg-[#f5efe4] cursor-zoom-in"
                             />
+                            <Tooltip label={t('admin.viewImage')} />
                           </button>
                         ) : (
                           <span className={`h-10 w-14 grid place-items-center rounded-lg border border-dashed border-[#e7ddca] text-[#a89e8c]`}>
@@ -463,21 +469,21 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
                       <button
                         type="button"
                         aria-label={t('admin.editRecord')}
-                        title={t('admin.editRecord')}
                         onClick={() => setEditing(row)}
-                        className="h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors mr-1"
+                        className="group relative h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors mr-1"
                       >
                         <i className="fa-solid fa-pen" aria-hidden="true" />
+                        <Tooltip label={t('admin.editRecord')} />
                       </button>
                       <button
                         type="button"
                         aria-label={t('post.delete')}
-                        title={t('post.delete')}
                         disabled={busy}
                         onClick={() => remove(row)}
-                        className="h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                        className="group relative h-8 w-8 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
                       >
                         <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                        <Tooltip label={t('post.delete')} />
                       </button>
                     </td>
                   </tr>

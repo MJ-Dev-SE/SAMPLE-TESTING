@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import BusinessForm from '../components/BusinessForm'
 import { listCategories } from '../lib/content'
 import { useAuth } from '../lib/auth'
@@ -24,6 +25,7 @@ export default function BusinessRegister() {
   if (!user) {
     return (
       <Layout>
+        <Seo title={t('business.registerTitle')} noindex />
         <div className="max-w-[460px] mx-auto border border-neutral-90 rounded-l p-l text-center">
           <p className="text-sm text-muted mb-3">{t('business.memberOnly')}</p>
           <Link to="/user/login" className="text-sm text-link font-medium hover:underline">{t('nav.login')}</Link>
@@ -36,6 +38,7 @@ export default function BusinessRegister() {
 
   return (
     <Layout>
+      <Seo title={t('business.registerTitle')} noindex />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

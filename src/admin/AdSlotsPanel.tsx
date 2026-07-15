@@ -9,6 +9,7 @@ import type { Localized } from '../types'
 import type { AdminRow, TableDef } from './registry'
 import RecordForm from './RecordForm'
 import Lightbox from './Lightbox'
+import Tooltip from '../components/Tooltip'
 import { BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN } from './ui'
 
 /**
@@ -329,8 +330,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                           setLightbox(String(row.image_url))
                         }}
                         aria-label={t('admin.viewImage')}
-                        title={t('admin.viewImage')}
-                        className="block w-full"
+                        className="group relative block w-full"
                       >
                         <img
                           src={publicUrl(String(row.image_url))}
@@ -338,6 +338,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                           loading="lazy"
                           className="h-24 w-full object-cover border-b border-[#e7ddca] bg-[#f5efe4] cursor-zoom-in hover:opacity-90 transition-opacity"
                         />
+                        <Tooltip label={t('admin.viewImage')} />
                       </button>
                     ) : (
                       <div className="h-24 grid place-items-center border-b border-dashed border-[#e7ddca] text-[#a89e8c] bg-[#fbf8f1]">
@@ -365,12 +366,12 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                           <button
                             type="button"
                             aria-label={t('admin.clearSlot')}
-                            title={t('admin.clearSlot')}
                             disabled={busy}
                             onClick={() => remove(row, true)}
-                            className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                            className="group relative h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
                           >
                             <i className="fa-solid fa-eraser" aria-hidden="true" />
+                            <Tooltip label={t('admin.clearSlot')} />
                           </button>
                         )}
                       </div>
@@ -394,8 +395,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                           type="button"
                           onClick={() => setLightbox(String(r.image_url))}
                           aria-label={t('admin.viewImage')}
-                          title={t('admin.viewImage')}
-                          className="shrink-0"
+                          className="group relative shrink-0"
                         >
                           <img
                             src={publicUrl(String(r.image_url))}
@@ -403,6 +403,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                             loading="lazy"
                             className="h-8 w-12 object-cover rounded-lg border border-[#e7ddca] cursor-zoom-in hover:opacity-90 transition-opacity"
                           />
+                          <Tooltip label={t('admin.viewImage')} />
                         </button>
                       ) : (
                         <span className="h-8 w-12 grid place-items-center rounded-lg border border-dashed border-[#e7ddca] text-[#a89e8c]">
@@ -414,21 +415,21 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                       <button
                         type="button"
                         aria-label={t('admin.editRecord')}
-                        title={t('admin.editRecord')}
                         onClick={() => editExtra(g, r)}
-                        className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
+                        className="group relative h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
                       >
                         <i className="fa-solid fa-pen" aria-hidden="true" />
+                        <Tooltip label={t('admin.editRecord')} />
                       </button>
                       <button
                         type="button"
                         aria-label={t('post.delete')}
-                        title={t('post.delete')}
                         disabled={busy}
                         onClick={() => remove(r, false)}
-                        className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                        className="group relative h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
                       >
                         <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                        <Tooltip label={t('post.delete')} />
                       </button>
                     </li>
                   ))}
@@ -466,21 +467,21 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
                 <button
                   type="button"
                   aria-label={t('admin.editRecord')}
-                  title={t('admin.editRecord')}
                   onClick={() => openFooter(r)}
-                  className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
+                  className="group relative h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
                 >
                   <i className="fa-solid fa-pen" aria-hidden="true" />
+                  <Tooltip label={t('admin.editRecord')} />
                 </button>
                 <button
                   type="button"
                   aria-label={t('post.delete')}
-                  title={t('post.delete')}
                   disabled={busy}
                   onClick={() => remove(r, false)}
-                  className="h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
+                  className="group relative h-7 w-7 shrink-0 rounded-[14px] text-[#8a8072] hover:text-white hover:bg-red-500 transition-colors disabled:opacity-50"
                 >
                   <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                  <Tooltip label={t('post.delete')} />
                 </button>
               </li>
             ))}

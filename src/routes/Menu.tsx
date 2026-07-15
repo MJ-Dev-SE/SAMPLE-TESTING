@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import MenuSection from '../components/MenuSection'
 import { menuSections } from '../data/menu'
 
@@ -9,6 +10,7 @@ export default function Menu() {
   const { t } = useTranslation()
   return (
     <Layout>
+      <Seo title={t('menuPage.title')} description={t('menuPage.description')} path="/menu" />
       {/* Breadcrumb: home › menu */}
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">

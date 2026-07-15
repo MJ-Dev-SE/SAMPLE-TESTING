@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import SmartImage from '../components/SmartImage'
 import ArticleBody from '../components/ArticleBody'
+import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import { metaDescription } from '../lib/seo/text'
 import { getAdvertisement } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import type { AdvertisementRec } from '../types'
@@ -31,6 +34,7 @@ export default function AdvertisementView() {
   if (!rec) {
     return (
       <Layout>
+        <Seo title={t('content.notFound')} noindex />
         <div className="border border-neutral-90 rounded-l p-2xl text-center">
           <p className="text-sm text-muted mb-3">{t('content.notFound')}</p>
           <Link to="/" className="text-sm text-link font-medium hover:underline">{t('menuPage.breadcrumbHome')}</Link>
@@ -52,6 +56,14 @@ export default function AdvertisementView() {
 
   return (
     <Layout>
+      {/* Sponsored, date-windowed promos: metadata for sharing, but noindex —
+          they expire and would otherwise accumulate as dead thin pages. */}
+      <Seo
+        title={L(rec.title)}
+        description={metaDescription(L(rec.description), L(rec.body), L(rec.title))}
+        image={rec.image_url}
+        noindex
+      />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>
@@ -72,6 +84,13 @@ export default function AdvertisementView() {
           {cta}
         </div>
       </div>
+
+      <CommentsReviewsSection
+        contentType="advertisement"
+        contentId={id}
+        allowRating
+        highlightedCommentId={params.get('comment')}
+      />
     </Layout>
   )
 }

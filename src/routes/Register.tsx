@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import { useAuth } from '../lib/auth'
 import { scorePassword } from '../lib/password'
 import { alertError, alertSuccess, errText, toast } from '../lib/alert'
@@ -50,6 +51,7 @@ export default function Register() {
 
   return (
     <Layout>
+      <Seo title={t('auth.registerTitle')} noindex />
       <div className="max-w-[420px] mx-auto">
         <h1 className="text-xl font-bold text-text-normal mb-l">
           <i className="fa-solid fa-user-plus mr-2 text-accent-blue" />

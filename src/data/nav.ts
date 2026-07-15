@@ -8,7 +8,7 @@ export const navRow1: NavLink[] = [
   { label: { en: 'question', ko: '질문' }, href: '/post/list?post_id=qna' },
   { label: { en: 'experiences', ko: '경험담' }, href: '/post/list?post_id=freetalk&category=경험담' },
   { label: { en: 'marketplace', ko: '장터' }, href: '/post/list?post_id=buyandsell' },
-  { label: { en: 'Business Directory', ko: '업소록' }, href: '/company' },
+  { label: { en: 'Business Directory', ko: '업소록' }, href: '/business-directory' },
   { label: { en: 'travel', ko: '여행' }, href: '/post/list?post_id=travel' },
   { label: { en: 'currency exchange', ko: '환전' }, href: '/currency' },
   { label: { en: 'rental car', ko: '렌트카' }, href: '/post/list?post_id=buyandsell&category=렌트카' },

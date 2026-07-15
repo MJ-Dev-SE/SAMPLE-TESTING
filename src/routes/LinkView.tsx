@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import SmartImage from '../components/SmartImage'
 import ArticleBody from '../components/ArticleBody'
+import { metaDescription } from '../lib/seo/text'
 import { getLink } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import type { LinkRec } from '../types'
@@ -32,6 +34,7 @@ export default function LinkView() {
   if (!rec) {
     return (
       <Layout>
+        <Seo title={t('content.notFound')} noindex />
         <div className="border border-neutral-90 rounded-l p-2xl text-center">
           <p className="text-sm text-muted mb-3">{t('content.notFound')}</p>
           <Link to="/" className="text-sm text-link font-medium hover:underline">{t('menuPage.breadcrumbHome')}</Link>
@@ -54,6 +57,12 @@ export default function LinkView() {
 
   return (
     <Layout>
+      <Seo
+        title={L(rec.title)}
+        description={metaDescription(L(rec.description), L(rec.body), L(rec.title))}
+        path={rec.slug ? `/link/view?slug=${encodeURIComponent(rec.slug)}` : undefined}
+        image={rec.image_url}
+      />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../lib/auth'
 import BusinessForm from './BusinessForm'
+import Tooltip from './Tooltip'
 import type { BusinessRec, CategoryRec } from '../types'
 
 /**
@@ -39,9 +40,10 @@ export default function BusinessModal({
             type="button"
             onClick={onClose}
             aria-label={t('post.cancel')}
-            className="h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
+            className="group relative h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
           >
             <i className="fa-solid fa-xmark" aria-hidden="true" />
+            <Tooltip label={t('post.cancel')} position="bottom" />
           </button>
         </div>
         <div className="p-l">

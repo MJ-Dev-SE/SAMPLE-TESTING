@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
@@ -120,6 +121,7 @@ export default function PostWrite() {
 
   return (
     <Layout>
+      <Seo title={t('post.write')} noindex />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

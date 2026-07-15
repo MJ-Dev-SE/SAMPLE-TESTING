@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { listCategories, listRecentBusinesses } from '../lib/content'
+import { businessPath, listCategories, listRecentBusinesses } from '../lib/content'
 import BusinessModal from './BusinessModal'
 import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
+import Tooltip from './Tooltip'
 import type { BusinessRec, CategoryRec } from '../types'
 
 /** Sidebar "Recently updated businesses" widget — newest-updated listings from Supabase.
@@ -38,16 +39,16 @@ export default function RecentBusinessesWidget() {
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t('home.addBusiness')}
-          title={t('home.addBusiness')}
-          className="h-5 w-5 grid place-items-center rounded-m text-muted hover:text-white hover:bg-accent-blue transition-colors"
+          className="group relative h-5 w-5 grid place-items-center rounded-m text-muted hover:text-white hover:bg-accent-blue transition-colors"
         >
           <i className="fa-solid fa-plus text-xs" aria-hidden="true" />
+          <Tooltip label={t('home.addBusiness')} />
         </button>
       </div>
       <ul>
         {items.map((b) => (
           <li key={b.id} className="border-t border-neutral-90 first:border-t-0">
-            <Link to={`/company/view?id=${b.id}`} className="flex gap-2 px-s py-2 hover:bg-neutral-97">
+            <Link to={businessPath(b)} className="flex gap-2 px-s py-2 hover:bg-neutral-97">
               {(b.main_image_url || b.thumb_url) && (
                 <SmartImage src={(b.main_image_url || b.thumb_url) as string} cover className="w-9 h-9 rounded-m shrink-0 border border-neutral-90" />
               )}

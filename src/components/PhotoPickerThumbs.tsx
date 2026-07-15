@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import type { PhotoPick } from '../lib/usePhotoPicker'
+import Tooltip from './Tooltip'
 
 /** Preview thumbnails for picked photos, each with an ✕ badge to remove it. */
 export default function PhotoPickerThumbs({
@@ -22,11 +23,11 @@ export default function PhotoPickerThumbs({
           <button
             type="button"
             aria-label={t('post.removePhoto')}
-            title={t('post.removePhoto')}
             onClick={() => onRemove(i)}
-            className="absolute -top-1.5 -right-1.5 h-5 w-5 grid place-items-center rounded-full bg-black/60 text-white text-[10px] leading-none hover:bg-accent-pink"
+            className="group absolute -top-1.5 -right-1.5 h-5 w-5 grid place-items-center rounded-full bg-black/60 text-white text-[10px] leading-none hover:bg-accent-pink"
           >
             <i className="fa-solid fa-xmark" aria-hidden="true" />
+            <Tooltip label={t('post.removePhoto')} />
           </button>
         </div>
       ))}

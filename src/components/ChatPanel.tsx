@@ -4,6 +4,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuth } from '../lib/auth'
 import { useDebouncedValue } from '../lib/useDebouncedValue'
 import { timeAgo } from '../lib/posts'
+import Tooltip from './Tooltip'
 import {
   getOrCreateDirectConversation,
   listConversations,
@@ -310,20 +311,21 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
               <button
                 type="button"
                 onClick={() => setActiveId(null)}
-                className="sm:hidden h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
+                className="group relative sm:hidden h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
                 aria-label={t('chat.back')}
               >
                 <i className="fa-solid fa-arrow-left" />
+                <Tooltip label={t('chat.back')} position="bottom" />
               </button>
               {/* Desktop-only: shrink/restore the conversation list to give the thread more room. */}
               <button
                 type="button"
                 onClick={() => setListCollapsed((v) => !v)}
-                className="hidden sm:grid h-8 w-8 shrink-0 place-items-center rounded-m text-muted hover:bg-neutral-97 hover:text-accent-blue transition-colors"
+                className="group relative hidden sm:grid h-8 w-8 shrink-0 place-items-center rounded-m text-muted hover:bg-neutral-97 hover:text-accent-blue transition-colors"
                 aria-label={listCollapsed ? t('chat.showList') : t('chat.hideList')}
-                title={listCollapsed ? t('chat.showList') : t('chat.hideList')}
               >
                 <i className={`fa-solid ${listCollapsed ? 'fa-angles-right' : 'fa-angles-left'} text-xs`} aria-hidden="true" />
+                <Tooltip label={listCollapsed ? t('chat.showList') : t('chat.hideList')} position="bottom" />
               </button>
               <Avatar profile={activeConvo.otherUser} size={28} />
               <span className="text-sm font-semibold text-text-normal truncate">{nameOf(activeConvo.otherUser)}</span>
@@ -331,10 +333,11 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="ml-auto h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
+                  className="group relative ml-auto h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
                   aria-label={t('post.cancel')}
                 >
                   <i className="fa-solid fa-xmark" />
+                  <Tooltip label={t('post.cancel')} position="bottom" />
                 </button>
               )}
             </div>
@@ -391,10 +394,11 @@ export default function ChatPanel({ onClose }: { onClose?: () => void }) {
               <button
                 type="submit"
                 disabled={!text.trim() || sending}
-                className="h-10 w-10 shrink-0 grid place-items-center bg-accent-blue text-white rounded-full hover:bg-[#005bc4] disabled:opacity-60 transition-colors"
+                className="group relative h-10 w-10 shrink-0 grid place-items-center bg-accent-blue text-white rounded-full hover:bg-[#005bc4] disabled:opacity-60 transition-colors"
                 aria-label={t('chat.send')}
               >
                 <i className={`fa-solid ${sending ? 'fa-spinner fa-spin' : 'fa-paper-plane'} text-sm`} aria-hidden="true" />
+                <Tooltip label={t('chat.send')} />
               </button>
             </form>
           </>

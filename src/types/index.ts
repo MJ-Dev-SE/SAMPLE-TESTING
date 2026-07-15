@@ -171,6 +171,16 @@ export interface Language {
 
 /* ---- Supabase content records (jsonb localized fields → Localized) ---- */
 
+/** SEO columns shared by posts / businesses / news_items (supabase/seo.sql).
+ *  All optional overrides — pages fall back to the record's own content. */
+export interface SeoFields {
+  meta_title: string | null
+  meta_description: string | null
+  og_image_url: string | null
+  canonical_url: string | null
+  is_indexable: boolean
+}
+
 /** public.photos row — banner row, recent-photos grid, /photo/view. */
 export interface PhotoRec {
   slug: string
@@ -196,6 +206,11 @@ export interface CategoryRec {
   name: Localized
   icon: string
   sort: number
+  /** SEO overrides for the category's landing page (nullable, seo.sql). */
+  meta_title?: string | null
+  meta_description?: string | null
+  og_image_url?: string | null
+  is_indexable?: boolean
 }
 
 /** public.business_images row — a business's logo / main / gallery photos. */
@@ -207,8 +222,10 @@ export interface BusinessImage {
 }
 
 /** public.businesses row — Business Directory cards, profile page, widgets. */
-export interface BusinessRec {
+export interface BusinessRec extends Partial<SeoFields> {
   id: string
+  /** URL slug (/business/<slug>), auto-generated from the name (seo.sql). */
+  slug?: string | null
   name: string
   category: string | null
   category_id: string | null
@@ -276,8 +293,12 @@ export interface PolicyRec {
 }
 
 /** public.news_items row — homepage News tabs + news/information article pages. */
-export interface NewsItemRec {
+export interface NewsItemRec extends Partial<SeoFields> {
+  /** Row id (used as content_id for the polymorphic comments/reviews section). */
+  id?: string
   tab: string
+  /** <lastmod> source for the sitemap (seo.sql adds the column + trigger). */
+  updated_at?: string
   kind: 'featured' | 'headline'
   title: Localized
   body: Localized

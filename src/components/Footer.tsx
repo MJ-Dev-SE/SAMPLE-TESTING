@@ -5,10 +5,13 @@ import { listAdvertisements, listLinks, listPolicies } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import type { AdvertisementRec, LinkRec, PolicyRec } from '../types'
 import Logo from './Logo'
+import MobileFooterContentCard, { type FooterGroup } from './MobileFooterContentCard'
+import FooterCardNavigationButton from './FooterCardNavigationButton'
 
-interface Group {
-  title: { en: string; ko: string }
-  links: { key: string; label: { en: string; ko: string }; href: string }[]
+const NEXT_LABEL_KEY: Record<FooterGroup['kind'], string> = {
+  ad: 'footer.showAdvertisements',
+  link: 'footer.showLinks',
+  policy: 'footer.showPolicies',
 }
 
 /** FOOTER (contentinfo) — Manila Tour branding (left) + Advertisement / Link / Policy (right). */
@@ -17,7 +20,10 @@ export default function Footer() {
   const L = useLocalized()
   const isKo = (i18n.resolvedLanguage || i18n.language || '').startsWith('ko')
 
-  const [groups, setGroups] = useState<Group[]>([])
+  const [groups, setGroups] = useState<FooterGroup[]>([])
+  // Mobile-only rotating card: which group is shown + a light fade on swap.
+  const [cardIdx, setCardIdx] = useState(0)
+  const [fading, setFading] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -28,25 +34,40 @@ export default function Footer() {
     ])
       .then(([ads, links, policies]) => {
         if (!alive) return
-        const next: Group[] = [
+        const all: FooterGroup[] = [
           {
+            kind: 'ad',
             title: { en: 'ADVERTISEMENT', ko: '광고' },
             links: ads.map((a) => ({ key: a.id, label: a.title, href: `/ad/view?id=${a.id}` })),
           },
           {
+            kind: 'link',
             title: { en: 'LINK', ko: '링크' },
             links: links.map((l) => ({ key: l.id, label: l.title, href: l.slug ? `/link/view?slug=${l.slug}` : l.url || '#' })),
           },
           {
+            kind: 'policy',
             title: { en: 'POLICY', ko: '정책' },
             links: policies.map((p) => ({ key: p.id, label: p.title, href: `/policy/view?slug=${p.slug}` })),
           },
-        ].filter((g) => g.links.length > 0)
+        ]
+        const next = all.filter((g) => g.links.length > 0)
         if (next.length) setGroups(next)
       })
       .catch(() => {})
     return () => { alive = false }
   }, [])
+
+  // Advance the mobile card to the next group (Advertisement → Link → Policy → …).
+  const nextIdx = groups.length ? (cardIdx + 1) % groups.length : 0
+  const cycleCard = () => {
+    if (groups.length < 2 || fading) return
+    setFading(true)
+    window.setTimeout(() => {
+      setCardIdx((i) => (i + 1) % groups.length)
+      setFading(false)
+    }, 160)
+  }
 
   // Policy quick-row under the brand (fixed routes, always available).
   const policyNav = [
@@ -58,15 +79,15 @@ export default function Footer() {
   return (
     <footer className="border-t border-neutral-90 mt-2xl">
       <div className="mx-auto max-w-content px-xs py-xl">
-        <div className="flex flex-col gap-l md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-l items-center text-center md:flex-row md:items-start md:justify-between md:text-left">
           {/* LEFT: Manila Tour brand + description + copyright + policy nav */}
-          <div className="text-left max-w-[360px]">
+          <div className="max-w-[360px] flex flex-col items-center md:items-start">
             <Logo className="h-[48px]" />
             <p className="text-xs text-muted mt-3">
               {t('footer.tagline')}
             </p>
             <p className="text-xs text-muted mt-2 mb-2">{t('footer.copyright')}</p>
-            <nav className="flex flex-wrap items-center gap-x-1 text-xs text-muted">
+            <nav className="flex flex-wrap items-center justify-center gap-x-1 text-xs text-muted md:justify-start">
               {policyNav.map((link, i) => (
                 <span key={link.label.en} className="inline-flex items-center">
                   {i > 0 && <span className="mx-1 text-subtlest">·</span>}
@@ -76,9 +97,12 @@ export default function Footer() {
             </nav>
           </div>
 
-          {/* RIGHT: Advertisement / Link / Policy groups (stack on mobile) */}
-          <div className="rounded-l border border-neutral-90 bg-neutral-97 p-l md:min-w-[460px] md:shrink-0">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-l text-left">
+          {/* RIGHT: Advertisement / Link / Policy.
+              Desktop (sm+): all groups side-by-side (unchanged).
+              Mobile (<sm): ONE rotating card (Advertisement first) + a ">" cycle button. */}
+          <div className="w-full rounded-l border border-neutral-90 bg-neutral-97 p-l md:w-auto md:min-w-[460px] md:shrink-0">
+            {/* Desktop — 3-up columns */}
+            <div className="hidden sm:grid sm:grid-cols-3 gap-l text-left">
               {groups.map((group) => (
                 <div key={group.title.en}>
                   <h4
@@ -100,6 +124,18 @@ export default function Footer() {
                 </div>
               ))}
             </div>
+
+            {/* Mobile — single rotating card */}
+            {groups.length > 0 && (
+              <div className="sm:hidden flex items-start gap-3 text-left">
+                <div className={`flex-1 min-w-0 transition-opacity duration-150 ${fading ? 'opacity-0' : 'opacity-100'}`}>
+                  <MobileFooterContentCard group={groups[Math.min(cardIdx, groups.length - 1)]} />
+                </div>
+                {groups.length > 1 && (
+                  <FooterCardNavigationButton nextLabel={t(NEXT_LABEL_KEY[groups[nextIdx].kind])} onClick={cycleCard} />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

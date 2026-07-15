@@ -11,16 +11,40 @@ no API, and no real pagination — every page renders mockup data sequentially.
 ## Commands
 
 ```bash
-npm run dev       # Vite dev server on http://localhost:5175
-npm run build     # tsc -b (type-check, references tsconfig.node.json) + vite build
-npm run preview   # serve the production build
+npm run dev              # Vite dev server on http://localhost:5175
+npm run build            # generate sitemap/robots + tsc -b (type-check) + vite build
+npm run build:prerender  # build + snapshot known public routes into dist/ (Playwright)
+npm run preview          # serve the production build
+npm run generate:sitemap # (re)write public/sitemap.xml + robots.txt from Supabase + VITE_SITE_URL
+npm run test:seo         # SEO utility unit tests (esbuild + node, no server needed)
+node tests/seo-render.mjs # SEO head-tag render checks (needs `npm run dev` running)
 ```
 
-There is no test runner and no linter configured. Type-checking via `tsc -b` (run by `build`) is
-the only automated check. `tsconfig.json` is strict and uses `noUnusedLocals`/`noUnusedParameters`,
-so unused imports/vars fail the build.
+There is no linter configured. Type-checking via `tsc -b` (run by `build`) plus the two SEO test
+scripts above are the automated checks. `tsconfig.json` is strict and uses
+`noUnusedLocals`/`noUnusedParameters`, so unused imports/vars fail the build.
 
 In VS Code this project is launched via the `philgo` launch config (port 5175).
+
+## SEO layer
+
+- `src/config/site.ts` — SITE_URL/SITE_NAME from `VITE_SITE_URL`/`VITE_SITE_NAME` (validated; loud
+  console error + origin fallback in prod when missing). Never hardcode the production domain.
+- `src/components/seo/Seo.tsx` — one per page: title/description/canonical/robots/OG/Twitter/
+  hreflang/JSON-LD via react-helmet-async (provider in `main.tsx`). `Breadcrumbs.tsx` renders the
+  shared crumb trail + BreadcrumbList JSON-LD.
+- `src/lib/seo/*` — slugify (Korean-preserving), excerpt/strip/truncate, canonical/image URL
+  helpers, schema.org builders. Mirrored server-side by `public.slugify()` in `supabase/seo.sql`.
+- **`supabase/seo.sql` must run before deploying**: adds slug + meta columns, slug triggers and
+  the `slug_redirects` table. Until it runs, `lib/content.ts` falls back to legacy column lists
+  (`withSeoColumnFallback`), so the site still works pre-migration.
+- URLs: posts `/posts/<slug>`, businesses `/business/<slug>`, news `/news/article/<slug>`,
+  community categories `/<parent>[/<child>]` (routes/CategoryPage.tsx), directory
+  `/business-directory[/<category>]`. All legacy query-param URLs still resolve (redirect or
+  canonical). Link posts/businesses ONLY via `postPath()` (lib/posts) / `businessPath()`
+  (lib/content). Unknown routes render `routes/NotFound.tsx` (noindex), not a home redirect.
+- `scripts/generate-sitemap.mjs` (build-time, anon key only) writes sitemap.xml + robots.txt;
+  `scripts/prerender.mjs` snapshots the known public routes. See `docs/SEO_DEPLOYMENT.md`.
 
 ## Architecture
 

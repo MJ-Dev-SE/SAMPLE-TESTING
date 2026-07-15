@@ -54,6 +54,15 @@ export default function Header() {
             <span className="hidden md:block shrink-0 w-[300px]" />
           )}
         </div>
+
+        {/* Mobile: the side banners have no room next to the logo/search, so show them
+            as a compact row underneath instead of hiding the creatives outright. */}
+        {ads.length > 0 && (
+          <div className="flex md:hidden gap-s mt-3">
+            {side1.length > 0 && <AdCarousel ads={side1} className="flex-1 min-w-0 h-[64px]" />}
+            {side2.length > 0 && <AdCarousel ads={side2} intervalMs={6000} className="flex-1 min-w-0 h-[64px]" />}
+          </div>
+        )}
       </div>
 
       <CategoryBar />

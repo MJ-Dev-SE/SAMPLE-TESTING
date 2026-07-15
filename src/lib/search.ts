@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { boardTitles } from '../data/boards'
-import { listAllPhotos, listBusinesses, listNews, listTravelInfo } from './content'
-import { fromDbBoard, toDbBoard } from './posts'
+import { businessPath, listAllPhotos, listBusinesses, listNews, listTravelInfo } from './content'
+import { fromDbBoard, postPath, toDbBoard } from './posts'
 import type { Localized } from '../types'
 
 /**
@@ -54,7 +54,7 @@ function staticPool(): Promise<SearchHit[]> {
           kind: 'business',
           title: same(b.name),
           category: withSub(CHIP.business, b.category),
-          href: b.category ? `/company?category=${encodeURIComponent(b.category)}` : '/company',
+          href: businessPath(b),
           hay: hayOf(b.name, b.region ?? b.location, (b.short_intro ?? b.excerpt).en, (b.short_intro ?? b.excerpt).ko),
         }),
       ),
@@ -93,23 +93,28 @@ function staticPool(): Promise<SearchHit[]> {
 /** Server-side title search over this site's posts, newest first. */
 async function searchPosts(term: string, limit: number): Promise<SearchHit[]> {
   const like = `%${term.replace(/[\\%_]/g, (m) => `\\${m}`)}%`
-  const { data, error } = await supabase
-    .from('posts')
-    .select('id, board_id, category, title')
-    .like('board_id', toDbBoard('%')) // this site's boards only (resort- prefix)
-    .neq('board_id', toDbBoard('photos')) // hidden photo-comment anchor rows
-    .ilike('title', like)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  const query = (cols: string) =>
+    supabase
+      .from('posts')
+      .select(cols)
+      .like('board_id', toDbBoard('%')) // this site's boards only
+      .neq('board_id', toDbBoard('photos')) // hidden photo-comment anchor rows
+      .ilike('title', like)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+  let { data, error } = await query('id, board_id, category, title, slug')
+  // Pre-migration DB (no posts.slug yet — supabase/seo.sql) → retry without it.
+  if (error?.code === '42703') ({ data, error } = await query('id, board_id, category, title'))
   if (error || !data) return []
-  return data.map((p) => {
-    const boardId = fromDbBoard(p.board_id as string)
+  type Row = { id: string; board_id: string; category: string | null; title: string; slug?: string | null }
+  return (data as unknown as Row[]).map((p) => {
+    const boardId = fromDbBoard(p.board_id)
     const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
     return {
       kind: 'post' as const,
-      title: same(p.title as string),
-      category: withSub(board, p.category as string | null),
-      href: `/post/view?id=${p.id}&post_id=${boardId}`,
+      title: same(p.title),
+      category: withSub(board, p.category),
+      href: postPath({ id: p.id, board_id: boardId, slug: p.slug ?? null }),
       hay: '',
     }
   })

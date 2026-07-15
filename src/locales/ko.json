@@ -105,7 +105,15 @@
     "kpiActiveAds": "활성 광고",
     "addExtra": "추가 소재",
     "extraCreative": "추가 소재",
-    "viewImage": "원본 이미지 크게 보기"
+    "viewImage": "원본 이미지 크게 보기",
+    "seoSection": "검색엔진 설정 (SEO)",
+    "seoSectionHint": "모두 선택 사항 — 비워두면 콘텐츠에서 자동 생성됩니다.",
+    "seoPreview": "검색 미리보기",
+    "generateSlug": "제목에서 생성",
+    "slugInvalid": "소문자, 숫자, 한글, 하이픈만 사용할 수 있습니다.",
+    "slugStableHint": "게시 후 슬러그를 바꾸면 URL이 바뀝니다. 이전 URL은 자동 리다이렉트됩니다.",
+    "recommendedLength": "권장 {{min}}–{{max}}자",
+    "indexableLabel": "검색엔진 색인 허용"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."
@@ -319,7 +327,34 @@
   "category": {
     "notFound": "카테고리를 찾을 수 없습니다.",
     "allChildren": "전체 하위 카테고리",
-    "empty": "아직 이 카테고리에 게시글이 없습니다. 첫 글을 남겨보세요!"
+    "empty": "아직 이 카테고리에 게시글이 없습니다. 첫 글을 남겨보세요!",
+    "subcategories": "하위 카테고리",
+    "viewAll": "전체 보기"
+  },
+  "comments": {
+    "commentsHeading": "댓글",
+    "reviewsHeading": "댓글 / 리뷰",
+    "writeComment": "댓글을 작성하세요…",
+    "writeReview": "경험을 공유해 주세요…",
+    "submit": "댓글 등록",
+    "submitReview": "리뷰 등록",
+    "yourRating": "별점",
+    "loginToComment": "로그인하면 본인 이름으로, 아니면 게스트로 작성할 수 있습니다.",
+    "loginRequiredComment": "댓글이나 리뷰를 남기려면 먼저 로그인해야 합니다.",
+    "emptyState": "아직 댓글이나 리뷰가 없습니다. 가장 먼저 의견을 남겨보세요.",
+    "loadMore": "더 보기",
+    "loading": "불러오는 중…",
+    "edit": "수정",
+    "save": "저장",
+    "edited": "수정됨",
+    "updated": "댓글이 수정되었습니다.",
+    "recentTitle": "최근 댓글",
+    "recentSubtitle": "마닐라투어 전체의 최신 댓글과 리뷰입니다.",
+    "on": "·",
+    "typePost": "게시글",
+    "typeBusiness": "업소",
+    "typeAdvertisement": "광고",
+    "typeNews": "뉴스"
   },
   "chat": {
     "searchPlaceholder": "사용자 검색…",
@@ -360,7 +395,11 @@
     "policy": "정책",
     "termsOfUse": "이용약관",
     "privacyPolicy": "개인정보처리방침",
-    "childSafety": "아동 안전 기준"
+    "childSafety": "아동 안전 기준",
+    "showAdvertisements": "광고 보기",
+    "showLinks": "링크 보기",
+    "showPolicies": "정책 보기",
+    "nextCard": "다음"
   },
   "list": {
     "author": "작성자",
@@ -378,5 +417,11 @@
     "koreanAssociation": "한인회",
     "consularCallCenter": "영사 콜센터",
     "24h": "24시간"
+  },
+  "notFound": {
+    "title": "페이지를 찾을 수 없습니다",
+    "text": "찾으시는 페이지가 존재하지 않거나 이동 또는 삭제되었습니다.",
+    "backHome": "홈으로 돌아가기",
+    "browse": "둘러보기:"
   }
 }

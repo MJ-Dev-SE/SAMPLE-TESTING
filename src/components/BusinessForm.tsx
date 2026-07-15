@@ -5,6 +5,7 @@ import { createBusiness } from '../lib/content'
 import { uploadToMedia } from '../lib/media'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import { alertError, errText, toast } from '../lib/alert'
+import Tooltip from './Tooltip'
 import type { BusinessRec, CategoryRec } from '../types'
 
 /**
@@ -219,9 +220,10 @@ export default function BusinessForm({
                 type="button"
                 onClick={() => gallery.removeAt(i)}
                 aria-label={t('post.removePhoto')}
-                className="absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] opacity-90 hover:opacity-100"
+                className="group absolute -right-1.5 -top-1.5 h-5 w-5 rounded-full bg-red-500 text-white text-[10px] opacity-90 hover:opacity-100"
               >
                 <i className="fa-solid fa-xmark" aria-hidden="true" />
+                <Tooltip label={t('post.removePhoto')} />
               </button>
             </span>
           ))}

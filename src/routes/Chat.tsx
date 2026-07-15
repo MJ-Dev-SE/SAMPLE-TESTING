@@ -1,6 +1,7 @@
 import { Link, Navigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import ChatPanel from '../components/ChatPanel'
 import { useAuth } from '../lib/auth'
 
@@ -14,6 +15,7 @@ export default function Chat() {
   if (loading) {
     return (
       <Layout>
+        <Seo title="Chat" noindex />
         <p className="text-sm text-subtlest">…</p>
       </Layout>
     )
@@ -23,6 +25,7 @@ export default function Chat() {
 
   return (
     <Layout>
+      <Seo title="Chat" noindex />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

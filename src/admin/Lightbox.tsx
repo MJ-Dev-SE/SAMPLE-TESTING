@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { publicUrl } from '../lib/media'
+import Tooltip from '../components/Tooltip'
 
 /**
  * Full-size image viewer for the admin console — click any small table/slot
@@ -31,9 +32,10 @@ export default function Lightbox({ src, alt = '', onClose }: { src: string | nul
         type="button"
         onClick={onClose}
         aria-label="Close"
-        className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 grid place-items-center transition-colors"
+        className="group absolute top-4 right-4 h-10 w-10 rounded-full bg-white/10 text-white hover:bg-white/20 grid place-items-center transition-colors"
       >
         <i className="fa-solid fa-xmark text-lg" aria-hidden="true" />
+        <Tooltip label="Close" position="bottom" />
       </button>
       <img
         src={publicUrl(src)}

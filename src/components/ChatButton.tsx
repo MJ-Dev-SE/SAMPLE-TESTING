@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth'
 import { requireLogin } from '../lib/alert'
 import { unreadCount } from '../lib/chat'
 import ChatDrawer from './ChatDrawer'
+import Tooltip from './Tooltip'
 
 const POLL_MS = 20_000 // lightweight badge refresh; the open thread itself updates live via Realtime
 
@@ -62,7 +63,7 @@ export default function ChatButton({ className = '' }: { className?: string }) {
         onClick={handleClick}
         aria-label={t('nav.chatting')}
         aria-expanded={open}
-        className={`relative shrink-0 h-8 w-8 grid place-items-center rounded-m transition-colors ${
+        className={`group relative shrink-0 h-8 w-8 grid place-items-center rounded-m transition-colors ${
           open ? 'bg-chip-blue text-accent-blue' : 'text-[#333] hover:text-accent-blue hover:bg-neutral-97'
         } ${className}`}
       >
@@ -72,6 +73,7 @@ export default function ChatButton({ className = '' }: { className?: string }) {
             {unread > 99 ? '99+' : unread}
           </span>
         )}
+        <Tooltip label={t('nav.chatting')} position="bottom" />
       </button>
       <ChatDrawer open={open} onClose={close} />
     </>

@@ -105,7 +105,15 @@
     "kpiActiveAds": "Active ads",
     "addExtra": "Add extra",
     "extraCreative": "Extra creative",
-    "viewImage": "View full-size image"
+    "viewImage": "View full-size image",
+    "seoSection": "Search engine settings (SEO)",
+    "seoSectionHint": "All optional — blank fields are derived from the content automatically.",
+    "seoPreview": "Search preview",
+    "generateSlug": "Generate from title",
+    "slugInvalid": "Only lowercase letters, numbers, Korean characters and hyphens.",
+    "slugStableHint": "Changing a published slug changes the URL; the old URL will keep redirecting.",
+    "recommendedLength": "recommended {{min}}–{{max}} characters",
+    "indexableLabel": "Allow search engines to index this page"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
@@ -319,7 +327,34 @@
   "category": {
     "notFound": "This category could not be found.",
     "allChildren": "all sub-categories",
-    "empty": "No posts in this category yet. Be the first!"
+    "empty": "No posts in this category yet. Be the first!",
+    "subcategories": "Sub-categories",
+    "viewAll": "View all"
+  },
+  "comments": {
+    "commentsHeading": "Comments",
+    "reviewsHeading": "Comments / Reviews",
+    "writeComment": "Write a comment…",
+    "writeReview": "Share your experience…",
+    "submit": "Comment",
+    "submitReview": "Post review",
+    "yourRating": "Your rating",
+    "loginToComment": "Log in to post as yourself, or continue as a guest.",
+    "loginRequiredComment": "You need to log in before submitting a comment or review.",
+    "emptyState": "No comments or reviews yet. Be the first to share your feedback.",
+    "loadMore": "Load more",
+    "loading": "Loading…",
+    "edit": "Edit",
+    "save": "Save",
+    "edited": "edited",
+    "updated": "Comment updated.",
+    "recentTitle": "Recent Comments",
+    "recentSubtitle": "The newest comments and reviews across Manila Tour.",
+    "on": "on",
+    "typePost": "Post",
+    "typeBusiness": "Business",
+    "typeAdvertisement": "Ad",
+    "typeNews": "News"
   },
   "chat": {
     "searchPlaceholder": "Search people…",
@@ -360,7 +395,11 @@
     "policy": "POLICY",
     "termsOfUse": "Terms of Use",
     "privacyPolicy": "privacy policy",
-    "childSafety": "Child safety standards"
+    "childSafety": "Child safety standards",
+    "showAdvertisements": "Show Advertisements",
+    "showLinks": "Show Links",
+    "showPolicies": "Show Policies",
+    "nextCard": "Next"
   },
   "list": {
     "author": "author",
@@ -378,5 +417,11 @@
     "koreanAssociation": "Korean Association",
     "consularCallCenter": "Consular Call Center",
     "24h": "24h"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The page you are looking for does not exist, was moved, or was removed.",
+    "backHome": "Back to home",
+    "browse": "Or browse:"
   }
 }

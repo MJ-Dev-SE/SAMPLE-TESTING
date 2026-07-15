@@ -70,7 +70,36 @@ export async function getPhoto(slug: string): Promise<PhotoRec | null> {
 
 /* ------------------------------ Categories ----------------------------- */
 
-const CATEGORY_COLS = 'id, slug, parent_slug, kind, name, icon, sort'
+/* --------------------------- SEO column fallback ------------------------ */
+
+/**
+ * The SEO columns (meta_*, og_image_url, is_indexable, businesses.slug) come
+ * from supabase/seo.sql. Until that migration is applied, selecting them
+ * returns Postgres 42703 (undefined column) — instead of degrading every list
+ * to empty, the queries below retry once with their pre-migration column list
+ * and remember the outcome. Pages simply see records without SEO overrides.
+ */
+let seoColumnsMissing = false
+
+export async function withSeoColumnFallback<T>(
+  run: (cols: string) => Promise<T>,
+  fullCols: string,
+  legacyCols: string,
+): Promise<T> {
+  if (!seoColumnsMissing) {
+    try {
+      return await run(fullCols)
+    } catch (e) {
+      if ((e as { code?: string })?.code !== '42703') throw e
+      seoColumnsMissing = true
+      console.warn('[seo] DB is missing the SEO columns — run supabase/seo.sql. Falling back to legacy columns.')
+    }
+  }
+  return run(legacyCols)
+}
+
+const CATEGORY_COLS = 'id, slug, parent_slug, kind, name, icon, sort, meta_title, meta_description, og_image_url, is_indexable'
+const CATEGORY_COLS_LEGACY = 'id, slug, parent_slug, kind, name, icon, sort'
 
 /**
  * Child categories under one parent, shared by the filter chips, posting form,
@@ -82,39 +111,52 @@ export async function listCategories(
   parentSlug: string | null = 'business-directory',
   kind: CategoryKind = 'business',
 ): Promise<CategoryRec[]> {
-  return cachedQuery(`categories.${kind}.${parentSlug ?? 'root'}`, async () => {
-    let q = supabase
-      .from('categories')
-      .select(CATEGORY_COLS)
-      .eq('kind', kind)
-      .eq('active', true)
-      .order('sort', { ascending: true })
-    q = parentSlug === null ? q.is('parent_slug', null) : q.eq('parent_slug', parentSlug)
-    const { data, error } = await q
-    if (error) throw error
-    return (data ?? []) as unknown as CategoryRec[]
-  })
+  return cachedQuery(`categories.${kind}.${parentSlug ?? 'root'}`, () =>
+    withSeoColumnFallback(
+      async (cols) => {
+        let q = supabase
+          .from('categories')
+          .select(cols)
+          .eq('kind', kind)
+          .eq('active', true)
+          .order('sort', { ascending: true })
+        q = parentSlug === null ? q.is('parent_slug', null) : q.eq('parent_slug', parentSlug)
+        const { data, error } = await q
+        if (error) throw error
+        return (data ?? []) as unknown as CategoryRec[]
+      },
+      CATEGORY_COLS,
+      CATEGORY_COLS_LEGACY,
+    ),
+  )
 }
 
 /** One category row by slug (either a maroon parent or a child), or null. */
 export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'community'): Promise<CategoryRec | null> {
-  return cachedQuery(`categories.${kind}.bySlug.${slug}`, async () => {
-    const { data, error } = await supabase
-      .from('categories')
-      .select(CATEGORY_COLS)
-      .eq('slug', slug)
-      .eq('kind', kind)
-      .eq('active', true)
-      .maybeSingle()
-    if (error) throw error
-    return (data as unknown as CategoryRec) ?? null
-  })
+  return cachedQuery(`categories.${kind}.bySlug.${slug}`, () =>
+    withSeoColumnFallback(
+      async (cols) => {
+        const { data, error } = await supabase
+          .from('categories')
+          .select(cols)
+          .eq('slug', slug)
+          .eq('kind', kind)
+          .eq('active', true)
+          .maybeSingle()
+        if (error) throw error
+        return (data as unknown as CategoryRec) ?? null
+      },
+      CATEGORY_COLS,
+      CATEGORY_COLS_LEGACY,
+    ),
+  )
 }
 
 /* ------------------------------ Businesses ----------------------------- */
 
-const BIZ_COLS =
+const BIZ_COLS_LEGACY =
   'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at'
+const BIZ_COLS = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
 
 /** Businesses change on user registration too, so keep their TTL shorter. */
 const BIZ_TTL_MS = 5 * 60 * 1000
@@ -136,20 +178,25 @@ export async function listBusinesses(
   const pageSize = opts.pageSize ?? 9
   return cachedQuery(
     `biz.list.${category ?? 'all'}.${page}.${pageSize}`,
-    async () => {
-      const from = (page - 1) * pageSize
-      let q = supabase
-        .from('businesses')
-        .select(BIZ_COLS, { count: 'exact' })
-        .eq('status', 'active')
-        .order('display_order', { ascending: true })
-        .order('updated_at', { ascending: false })
-        .range(from, from + pageSize - 1)
-      if (category && category !== 'all') q = q.eq('category', category)
-      const { data, error, count } = await q
-      if (error) throw error
-      return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
-    },
+    () =>
+      withSeoColumnFallback(
+        async (cols) => {
+          const from = (page - 1) * pageSize
+          let q = supabase
+            .from('businesses')
+            .select(cols, { count: 'exact' })
+            .eq('status', 'active')
+            .order('display_order', { ascending: true })
+            .order('updated_at', { ascending: false })
+            .range(from, from + pageSize - 1)
+          if (category && category !== 'all') q = q.eq('category', category)
+          const { data, error, count } = await q
+          if (error) throw error
+          return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
+        },
+        BIZ_COLS,
+        BIZ_COLS_LEGACY,
+      ),
     BIZ_TTL_MS,
   )
 }
@@ -158,16 +205,21 @@ export async function listBusinesses(
 export async function listRecentBusinesses(limit = 6): Promise<BusinessRec[]> {
   return cachedQuery(
     `biz.recent.${limit}`,
-    async () => {
-      const { data, error } = await supabase
-        .from('businesses')
-        .select(BIZ_COLS)
-        .eq('status', 'active')
-        .order('updated_at', { ascending: false })
-        .limit(limit)
-      if (error) throw error
-      return (data ?? []) as unknown as BusinessRec[]
-    },
+    () =>
+      withSeoColumnFallback(
+        async (cols) => {
+          const { data, error } = await supabase
+            .from('businesses')
+            .select(cols)
+            .eq('status', 'active')
+            .order('updated_at', { ascending: false })
+            .limit(limit)
+          if (error) throw error
+          return (data ?? []) as unknown as BusinessRec[]
+        },
+        BIZ_COLS,
+        BIZ_COLS_LEGACY,
+      ),
     BIZ_TTL_MS,
   )
 }
@@ -225,25 +277,60 @@ export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
   return biz
 }
 
+/** Attach the gallery rows to a business record (profile page). */
+async function withGallery(biz: BusinessRec): Promise<BusinessRec> {
+  const { data: imgs } = await supabase
+    .from('business_images')
+    .select('id, image_url, image_type, display_order')
+    .eq('business_id', biz.id)
+    .order('display_order', { ascending: true })
+  biz.images = (imgs ?? []) as unknown as BusinessImage[]
+  return biz
+}
+
 /** One business by id, with its gallery — /company/view profile page. */
 export async function getBusiness(id: string): Promise<BusinessRec | null> {
   return cachedQuery(
     `biz.one.${id}`,
+    () =>
+      withSeoColumnFallback(
+        async (cols) => {
+          const { data, error } = await supabase.from('businesses').select(cols).eq('id', id).maybeSingle()
+          if (error) throw error
+          return data ? withGallery(data as unknown as BusinessRec) : null
+        },
+        BIZ_COLS,
+        BIZ_COLS_LEGACY,
+      ),
+    BIZ_TTL_MS,
+  )
+}
+
+/** One business by URL slug, with its gallery — /business/<slug> profile page.
+ *  (No legacy fallback: the slug column IS the migration.) */
+export async function getBusinessBySlug(slug: string): Promise<BusinessRec | null> {
+  return cachedQuery(
+    `biz.slug.${slug}`,
     async () => {
-      const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('id', id).maybeSingle()
+      const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('slug', slug).maybeSingle()
       if (error) throw error
-      if (!data) return null
-      const biz = data as unknown as BusinessRec
-      const { data: imgs } = await supabase
-        .from('business_images')
-        .select('id, image_url, image_type, display_order')
-        .eq('business_id', id)
-        .order('display_order', { ascending: true })
-      biz.images = (imgs ?? []) as unknown as BusinessImage[]
-      return biz
+      return data ? withGallery(data as unknown as BusinessRec) : null
     },
     BIZ_TTL_MS,
   )
+}
+
+/**
+ * Canonical in-app URL for a business: pretty slug URL when the row has one,
+ * legacy query URL otherwise. Single source of truth for business links.
+ */
+export function businessPath(b: Pick<BusinessRec, 'id'> & { slug?: string | null }): string {
+  return b.slug ? `/business/${encodeURIComponent(b.slug)}` : `/company/view?id=${b.id}`
+}
+
+/** Canonical in-app URL for a news/information article. */
+export function newsArticlePath(article_slug: string): string {
+  return `/news/article/${encodeURIComponent(article_slug)}`
 }
 
 /* --------------------------- Advertisements ---------------------------- */
@@ -347,26 +434,39 @@ export async function getPolicy(slug: string): Promise<PolicyRec | null> {
 
 /* -------------------------------- News --------------------------------- */
 
-const NEWS_COLS = 'tab, kind, title, body, thumb_url, image_url, href, article_slug, comment_count, sort'
+const NEWS_COLS_LEGACY = 'id, tab, kind, title, body, thumb_url, image_url, href, article_slug, comment_count, sort'
+const NEWS_COLS = `${NEWS_COLS_LEGACY}, updated_at, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
 
 export async function listNews(): Promise<NewsItemRec[]> {
-  return cachedQuery('news', async () => {
-    const { data, error } = await supabase
-      .from('news_items')
-      .select(NEWS_COLS)
-      .order('sort', { ascending: true })
-    if (error) throw error
-    return (data ?? []) as unknown as NewsItemRec[]
-  })
+  return cachedQuery('news', () =>
+    withSeoColumnFallback(
+      async (cols) => {
+        const { data, error } = await supabase
+          .from('news_items')
+          .select(cols)
+          .order('sort', { ascending: true })
+        if (error) throw error
+        return (data ?? []) as unknown as NewsItemRec[]
+      },
+      NEWS_COLS,
+      NEWS_COLS_LEGACY,
+    ),
+  )
 }
 
-/** One news/information article by its article_slug — /news/view page. */
+/** One news/information article by its article_slug — /news/article/<slug>. */
 export async function getNewsArticle(slug: string): Promise<NewsItemRec | null> {
-  return cachedQuery(`news.one.${slug}`, async () => {
-    const { data, error } = await supabase.from('news_items').select(NEWS_COLS).eq('article_slug', slug).maybeSingle()
-    if (error) throw error
-    return (data as unknown as NewsItemRec) ?? null
-  })
+  return cachedQuery(`news.one.${slug}`, () =>
+    withSeoColumnFallback(
+      async (cols) => {
+        const { data, error } = await supabase.from('news_items').select(cols).eq('article_slug', slug).maybeSingle()
+        if (error) throw error
+        return (data as unknown as NewsItemRec) ?? null
+      },
+      NEWS_COLS,
+      NEWS_COLS_LEGACY,
+    ),
+  )
 }
 
 /* ----------------------------- Travel info ----------------------------- */

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ChatPanel from './ChatPanel'
+import Tooltip from './Tooltip'
 
 const DURATION = 240 // matches Collapse.tsx, so every slide/reveal in the app feels the same
 
@@ -61,9 +62,10 @@ export default function ChatDrawer({ open, onClose }: { open: boolean; onClose: 
             type="button"
             onClick={onClose}
             aria-label={t('post.cancel')}
-            className="h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
+            className="group relative h-8 w-8 grid place-items-center rounded-m text-muted hover:bg-neutral-97"
           >
             <i className="fa-solid fa-xmark" aria-hidden="true" />
+            <Tooltip label={t('post.cancel')} position="bottom" />
           </button>
         </div>
         <div className="flex-1 min-h-0 p-3">

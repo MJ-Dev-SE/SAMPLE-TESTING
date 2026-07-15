@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
+import Breadcrumbs from '../components/seo/Breadcrumbs'
 import SmartImage from '../components/SmartImage'
-import { getBusiness, listCategories } from '../lib/content'
+import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import { NotFoundBody } from './NotFound'
+import { businessPath, getBusiness, getBusinessBySlug, listCategories } from '../lib/content'
+import { resolveSlugRedirect } from '../lib/slugRedirects'
+import { metaDescription } from '../lib/seo/text'
+import { localBusinessLd } from '../lib/seo/structuredData'
 import { useLocalized } from '../lib/useLocalized'
 import type { BusinessRec, CategoryRec } from '../types'
 
 /**
- * /company/view?id=… — business PROFILE layout (item 10): logo, main image,
- * gallery, name, category, short + detailed intro, region, address, phone and
- * date posted. Deliberately distinct from the advertisement / link / policy pages.
+ * Business profile. Two URL shapes resolve here:
+ *   /business/<slug>     — canonical, slug-based (routes in App.tsx)
+ *   /company/view?id=<uuid> — legacy; still works, canonicalises to the slug URL.
+ * Layout: logo, main image, gallery, name, category, short + detailed intro,
+ * region, address, phone and date posted.
  */
 
 /** One contact fact: icon chip + label over value, so long values never fight a label column. */
@@ -27,23 +36,32 @@ function InfoTile({ icon, label, value }: { icon: string; label: string; value: 
     </div>
   )
 }
+
 export default function BusinessView() {
   const { t, i18n } = useTranslation()
   const L = useLocalized()
+  const { slug } = useParams()
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
 
   const [biz, setBiz] = useState<BusinessRec | null>(null)
   const [cat, setCat] = useState<CategoryRec | null>(null)
   const [loading, setLoading] = useState(true)
+  const [redirectTo, setRedirectTo] = useState<string | null>(null)
   const [hero, setHero] = useState<string>('')
 
   useEffect(() => {
     let alive = true
     setLoading(true)
-    Promise.all([getBusiness(id), listCategories()])
-      .then(([b, cats]) => {
+    const load = slug ? getBusinessBySlug(slug) : getBusiness(id)
+    Promise.all([load, listCategories()])
+      .then(async ([b, cats]) => {
         if (!alive) return
+        if (!b && slug) {
+          const next = await resolveSlugRedirect('business', slug)
+          if (!alive) return
+          if (next) return setRedirectTo(`/business/${encodeURIComponent(next)}`)
+        }
         setBiz(b)
         setHero(b?.main_image_url || b?.thumb_url || (b?.images?.find((i) => i.image_type === 'gallery')?.image_url ?? ''))
         setCat(b ? cats.find((c) => c.id === b.category_id || c.slug === b.category) ?? null : null)
@@ -53,17 +71,17 @@ export default function BusinessView() {
     return () => {
       alive = false
     }
-  }, [id])
+  }, [slug, id])
+
+  if (redirectTo) return <Navigate to={redirectTo} replace />
 
   if (loading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
 
   if (!biz) {
     return (
       <Layout>
-        <div className="border border-neutral-90 rounded-l p-2xl text-center">
-          <p className="text-sm text-muted mb-3">{t('company.notFound')}</p>
-          <Link to="/company" className="text-sm text-link font-medium hover:underline">{t('company.back')}</Link>
-        </div>
+        <Seo title={t('notFound.title')} noindex />
+        <NotFoundBody />
       </Layout>
     )
   }
@@ -76,21 +94,39 @@ export default function BusinessView() {
     ? new Date(posted).toLocaleDateString(i18n.resolvedLanguage === 'ko' ? 'ko-KR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })
     : null
 
+  // DB-driven metadata with safe fallbacks (meta_* columns are admin-editable).
+  const canonicalPath = biz.canonical_url || businessPath(biz)
+  const shortIntro = L(biz.short_intro) || L(biz.excerpt)
+  const description = metaDescription(biz.meta_description, shortIntro, detailed, biz.name)
+  const catHref = cat ? `/business-directory/${cat.slug}` : '/business-directory'
+  const inactive = biz.status !== 'active'
+
   return (
     <Layout>
-      <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
-        <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
-        <span className="mx-1 text-subtlest">›</span>
-        <Link to="/company" className="text-link">{t('home.businessDirectory')}</Link>
-        {cat && (
-          <>
-            <span className="mx-1 text-subtlest">›</span>
-            <Link to={`/company?category=${cat.slug}`} className="text-link">{L(cat.name)}</Link>
-          </>
-        )}
-        <span className="mx-1 text-subtlest">›</span>
-        <span className="text-muted">{biz.name}</span>
-      </nav>
+      <Seo
+        title={biz.meta_title || `${biz.name}${cat ? ` — ${L(cat.name)}` : ''}`}
+        description={description}
+        path={canonicalPath}
+        image={biz.og_image_url || biz.main_image_url || biz.thumb_url}
+        noindex={biz.is_indexable === false || inactive}
+        jsonLd={localBusinessLd({
+          name: biz.name,
+          description,
+          image: biz.og_image_url || biz.main_image_url || biz.thumb_url,
+          url: canonicalPath,
+          telephone: biz.phone,
+          streetAddress: biz.address,
+          addressLocality: biz.region || biz.location,
+        })}
+      />
+      <Breadcrumbs
+        items={[
+          { label: t('menuPage.breadcrumbHome'), href: '/' },
+          { label: t('home.businessDirectory'), href: '/business-directory' },
+          ...(cat ? [{ label: L(cat.name), href: catHref }] : []),
+          { label: biz.name },
+        ]}
+      />
 
       {/* Profile header: hero image + logo + identity */}
       <div className="border border-neutral-90 rounded-l overflow-hidden mb-l">
@@ -107,15 +143,13 @@ export default function BusinessView() {
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-text-normal">{biz.name}</h1>
               {cat && (
-                <Link to={`/company?category=${cat.slug}`} className="inline-flex items-center gap-1 rounded-full bg-chip-green px-2 py-0.5 text-[11px] font-semibold text-accent-green hover:underline">
+                <Link to={catHref} className="inline-flex items-center gap-1 rounded-full bg-chip-green px-2 py-0.5 text-[11px] font-semibold text-accent-green hover:underline">
                   {cat.icon && <i className={`fa-solid ${cat.icon}`} aria-hidden="true" />}
                   {L(cat.name)}
                 </Link>
               )}
             </div>
-            {(L(biz.short_intro) || L(biz.excerpt)) && (
-              <p className="text-sm text-muted">{L(biz.short_intro) || L(biz.excerpt)}</p>
-            )}
+            {shortIntro && <p className="text-sm text-muted">{shortIntro}</p>}
           </div>
         </div>
       </div>
@@ -160,10 +194,17 @@ export default function BusinessView() {
           </section>
         )}
 
-        <Link to="/company" className="inline-flex items-center gap-2 text-sm text-link font-medium hover:underline">
+        <Link to="/business-directory" className="inline-flex items-center gap-2 text-sm text-link font-medium hover:underline">
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           {t('company.back')}
         </Link>
+
+        <CommentsReviewsSection
+          contentType="business"
+          contentId={biz.id}
+          allowRating
+          highlightedCommentId={params.get('comment')}
+        />
       </div>
     </Layout>
   )

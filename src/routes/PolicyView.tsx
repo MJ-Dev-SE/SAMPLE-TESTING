@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import ArticleBody from '../components/ArticleBody'
+import { metaDescription } from '../lib/seo/text'
 import { getPolicy } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import type { PolicyRec } from '../types'
@@ -30,6 +32,7 @@ export default function PolicyView({ slug: fixedSlug }: { slug?: string }) {
   if (!rec) {
     return (
       <Layout>
+        <Seo title={t('content.notFound')} noindex />
         <div className="border border-neutral-90 rounded-l p-2xl text-center">
           <p className="text-sm text-muted mb-3">{t('content.notFound')}</p>
           <Link to="/" className="text-sm text-link font-medium hover:underline">{t('menuPage.breadcrumbHome')}</Link>
@@ -38,8 +41,22 @@ export default function PolicyView({ slug: fixedSlug }: { slug?: string }) {
     )
   }
 
+  // The fixed /help/* URLs are the canonical homes for the three core policies;
+  // /policy/view?slug=<slug> canonicalises onto them (duplicate-URL cleanup).
+  const HELP_PATHS: Record<string, string> = {
+    'terms-of-use': '/help/terms',
+    'privacy-policy': '/help/privacy',
+    'child-safety-standards': '/help/safety',
+  }
+  const canonicalPath = HELP_PATHS[rec.slug] ?? `/policy/view?slug=${encodeURIComponent(rec.slug)}`
+
   return (
     <Layout>
+      <Seo
+        title={L(rec.title)}
+        description={metaDescription(L(rec.summary), L(rec.body), L(rec.title))}
+        path={canonicalPath}
+      />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

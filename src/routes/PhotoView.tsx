@@ -1,9 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, Navigate, useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
+import Breadcrumbs from '../components/seo/Breadcrumbs'
+import { NotFoundBody } from './NotFound'
+import { metaDescription } from '../lib/seo/text'
+import { touristAttractionLd } from '../lib/seo/structuredData'
 import { listAllPhotos } from '../lib/content'
 import SmartImage from '../components/SmartImage'
+import Tooltip from '../components/Tooltip'
 import { useAuth } from '../lib/auth'
 import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
@@ -196,16 +202,40 @@ function PhotoPage({ photoId }: { photoId: string }) {
     }
   }
 
-  if (notFound) return <Navigate to="/" replace />
+  if (notFound) {
+    return (
+      <Layout>
+        <Seo title={t('notFound.title')} noindex />
+        <NotFoundBody />
+      </Layout>
+    )
+  }
   if (!photo) return <Layout><p className="text-sm text-muted">…</p></Layout>
+
+  const photoPath = `/photo/view?id=${encodeURIComponent(photo.slug)}`
+  const photoDescription = metaDescription(L(photo.description), L(photo.title))
 
   return (
     <Layout>
-      <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
-        <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
-        <span className="mx-1 text-subtlest">›</span>
-        <span className="text-text-muted">{L(PHOTOS_CRUMB)}</span>
-      </nav>
+      <Seo
+        title={L(photo.title)}
+        description={photoDescription}
+        path={photoPath}
+        image={photo.src}
+        jsonLd={touristAttractionLd({
+          name: L(photo.title),
+          description: photoDescription,
+          image: photo.src,
+          url: photoPath,
+        })}
+      />
+      <Breadcrumbs
+        items={[
+          { label: t('menuPage.breadcrumbHome'), href: '/' },
+          { label: L(PHOTOS_CRUMB) },
+          { label: L(photo.title) },
+        ]}
+      />
 
       {/* UPPER-PART posting area for THIS category — button first, then the inline form */}
       <section className="mb-l">
@@ -283,10 +313,11 @@ function PhotoPage({ photoId }: { photoId: string }) {
                     <button
                       type="button"
                       onClick={() => removeFeedPost(p)}
-                      className="ml-auto shrink-0 text-subtlest hover:text-accent-pink"
+                      className="group relative ml-auto shrink-0 text-subtlest hover:text-accent-pink"
                       aria-label={t('post.delete')}
                     >
                       <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
+                      <Tooltip label={t('post.delete')} />
                     </button>
                   )}
                 </div>

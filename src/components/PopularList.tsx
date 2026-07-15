@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { formatDate, listPopularPosts, type DbPost } from '../lib/posts'
+import { formatDate, listPopularPosts, postPath, type DbPost } from '../lib/posts'
 
 /** Popular Posts (Last 30 days): ranked by views, from the `popular_posts` Supabase view. */
 export default function PopularList() {
@@ -35,7 +35,7 @@ export default function PopularList() {
             return (
               <li key={p.id} className="border-t border-neutral-90 first:border-t-0">
                 <Link
-                  to={`/post/view?id=${p.id}&post_id=${p.board_id}`}
+                  to={postPath(p)}
                   className="flex items-center gap-s px-s py-2 text-sm hover:bg-neutral-97"
                 >
                   <span

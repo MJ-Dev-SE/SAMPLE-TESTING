@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import type { Localized } from '../types'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import { useLocalized } from '../lib/useLocalized'
 
 /**
@@ -14,6 +15,7 @@ export default function Placeholder({ title, icon }: { title: Localized; icon: s
   const L = useLocalized()
   return (
     <Layout>
+      <Seo title={L(title)} noindex />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>

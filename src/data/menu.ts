@@ -17,7 +17,7 @@ export const menuSections: MenuSectionData[] = [
       {
         icon: 'fa-store',
         iconColor: 'green',
-        href: '/company',
+        href: '/business-directory',
         title: { en: 'Business Directory', ko: '업소록' },
         desc: { en: 'Check business information', ko: '[KO: Check business information]' },
       },

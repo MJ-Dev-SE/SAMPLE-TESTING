@@ -4,6 +4,9 @@ import { alertError, errText } from '../lib/alert'
 import { listCategories } from '../lib/content'
 import { publicUrl, uploadToMedia } from '../lib/media'
 import { useLocalized } from '../lib/useLocalized'
+import { isValidSlug, slugify } from '../lib/seo/slug'
+import { DESCRIPTION_MAX, DESCRIPTION_MIN, TITLE_MAX, TITLE_MIN } from '../lib/seo/text'
+import { SITE_URL } from '../config/site'
 import type { CategoryRec } from '../types'
 import type { AdminRow, FieldDef, TableDef } from './registry'
 
@@ -13,6 +16,19 @@ const inputCls =
 const areaCls =
   'p-3 bg-white border border-[#e7ddca] rounded-xl text-sm text-[#3f382f] outline-none focus:border-[#a98c5a] focus:ring-2 focus:ring-[#a98c5a]/15 resize-y w-full'
 const thumbCls = 'w-28 h-28 object-cover rounded-xl border border-[#e7ddca] bg-[#f5efe4]'
+
+/** Live char counter under seo-title / seo-description inputs — warns (amber)
+ *  outside the recommended window, never blocks saving. */
+function CharCounter({ value, min, max }: { value: string; min: number; max: number }) {
+  const { t } = useTranslation()
+  const len = value.length
+  const outside = len > 0 && (len < min || len > max)
+  return (
+    <span className={`text-xs tabular-nums ${outside ? 'text-amber-600' : 'text-[#8a8072]'}`}>
+      {len} · {t('admin.recommendedLength', { min, max })}
+    </span>
+  )
+}
 
 /** Build the form's initial values from an existing row (or field defaults). */
 function initialValues(def: TableDef, row: AdminRow | null): AdminRow {
@@ -111,6 +127,13 @@ export default function RecordForm({
       // An untouched optional date input keeps its initial '' value (from
       // initialValues) — Postgres rejects "" for a date column, so blank → null.
       if (f.type === 'date' && !val) val = null
+      // SEO fields: blank means "derive from content" → store null, not ''.
+      // A blank slug on INSERT lets the DB trigger generate one; on UPDATE the
+      // trigger keeps the old slug (slugs are never removed, only changed).
+      if ((f.type === 'slug' || f.type === 'seo-title' || f.type === 'seo-description') && !String(val ?? '').trim()) {
+        val = null
+      }
+      if (f.type === 'slug' && val) val = slugify(String(val)) || null
       out[f.key] = val
     }
     // Upload newly picked images, then store their media-bucket paths.
@@ -197,11 +220,63 @@ export default function RecordForm({
     )
   }
 
+  /** Best-effort plain string for a form value (localized objects → EN side). */
+  const textOf = (v: unknown): string =>
+    typeof v === 'string' ? v : v && typeof v === 'object' ? String((v as { en?: string }).en ?? '') : ''
+
   const renderField = (f: FieldDef) => {
     const val = values[f.key]
     switch (f.type) {
       case 'image':
         return renderImage(f)
+      case 'slug': {
+        const text = String(val ?? '')
+        const invalid = !!text && !isValidSlug(text)
+        const source = f.slugSource ? textOf(values[f.slugSource]) : ''
+        return (
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={text}
+                onChange={(e) => set(f.key, e.target.value)}
+                placeholder="my-page-url"
+                className={`${inputCls} font-mono text-xs`}
+              />
+              {source && (
+                <button
+                  type="button"
+                  onClick={() => set(f.key, slugify(source))}
+                  className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-[18px] border border-[#e7ddca] bg-white text-xs font-medium text-[#8a8072] hover:text-[#a98c5a] hover:bg-[#efe7d5] transition-colors"
+                >
+                  <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" />
+                  {t('admin.generateSlug')}
+                </button>
+              )}
+            </div>
+            {invalid && <span className="text-xs text-amber-600">{t('admin.slugInvalid')}</span>}
+            {row && <span className="text-xs text-[#8a8072]">{t('admin.slugStableHint')}</span>}
+          </div>
+        )
+      }
+      case 'seo-title': {
+        const text = String(val ?? '')
+        return (
+          <div className="flex flex-col gap-1">
+            <input type="text" value={text} onChange={(e) => set(f.key, e.target.value)} className={inputCls} />
+            <CharCounter value={text} min={TITLE_MIN} max={TITLE_MAX} />
+          </div>
+        )
+      }
+      case 'seo-description': {
+        const text = String(val ?? '')
+        return (
+          <div className="flex flex-col gap-1">
+            <textarea rows={3} value={text} onChange={(e) => set(f.key, e.target.value)} className={areaCls} />
+            <CharCounter value={text} min={DESCRIPTION_MIN} max={DESCRIPTION_MAX} />
+          </div>
+        )
+      }
       case 'localized':
       case 'localized-textarea':
         return (
@@ -305,14 +380,50 @@ export default function RecordForm({
       )}
 
       {def.fields.map((f) => (
-        <label key={f.key} className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-[#57503f]">
-            {L(f.label)}
-            {f.required && <span className="text-red-500 ml-0.5">*</span>}
-          </span>
-          {renderField(f)}
-          {f.hint && <span className="text-xs text-[#8a8072]">{L(f.hint)}</span>}
-        </label>
+        <div key={f.key} className="contents">
+          {/* SEO section divider + live search preview, once before the first SEO field */}
+          {f.seo && f.key === def.fields.find((x) => x.seo)?.key && (
+            <div className="mt-2 border-t border-[#e7ddca] pt-4 flex flex-col gap-3">
+              <div>
+                <h4 className="text-sm font-semibold text-[#3f382f]">
+                  <i className="fa-solid fa-magnifying-glass-chart mr-2 text-[#a98c5a]" aria-hidden="true" />
+                  {t('admin.seoSection')}
+                </h4>
+                <p className="text-xs text-[#8a8072] mt-0.5">{t('admin.seoSectionHint')}</p>
+              </div>
+              {(() => {
+                // Google-style snippet preview from the live form values.
+                const slugField = def.fields.find((x) => x.type === 'slug')
+                const slugVal = slugField ? String(values[slugField.key] ?? '') : ''
+                const fallbackTitle = textOf(values.name) || textOf(values.title)
+                const previewTitle = String(values.meta_title ?? '') || fallbackTitle || L(def.title)
+                const previewDesc = String(values.meta_description ?? '')
+                return (
+                  <figure className="rounded-xl border border-[#e7ddca] bg-white px-4 py-3">
+                    <figcaption className="text-[11px] uppercase tracking-wide text-[#8a8072] mb-1.5">
+                      {t('admin.seoPreview')}
+                    </figcaption>
+                    <p className="text-xs text-[#0a6a30] truncate">
+                      {SITE_URL}{slugVal ? `/…/${slugVal}` : ''}
+                    </p>
+                    <p className="text-[15px] leading-5 text-[#1a0dab] truncate">{previewTitle}</p>
+                    <p className="text-xs text-[#57503f] line-clamp-2">
+                      {previewDesc || <span className="italic text-[#8a8072]">{t('admin.seoSectionHint')}</span>}
+                    </p>
+                  </figure>
+                )
+              })()}
+            </div>
+          )}
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-[#57503f]">
+              {L(f.label)}
+              {f.required && <span className="text-red-500 ml-0.5">*</span>}
+            </span>
+            {renderField(f)}
+            {f.hint && <span className="text-xs text-[#8a8072]">{L(f.hint)}</span>}
+          </label>
+        </div>
       ))}
       <div className="flex items-center gap-2">
         <button

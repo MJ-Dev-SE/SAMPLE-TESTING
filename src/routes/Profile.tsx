@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
@@ -9,6 +10,7 @@ import { supabase } from '../lib/supabase'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { deletePost, formatDate, listUserComments, listUserPosts, type DbComment, type DbPost } from '../lib/posts'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
+import Tooltip from '../components/Tooltip'
 
 /**
  * Profile page (/user/profile, also served at /user/settings) — ONE place for
@@ -117,6 +119,7 @@ export default function Profile() {
 
   return (
     <Layout>
+      <Seo title={t('profile.title')} noindex />
       {/* Header */}
       <div className="flex items-center gap-3 mb-l">
         {profile?.avatar_url ? (
@@ -207,12 +210,12 @@ export default function Profile() {
                   <button
                     type="button"
                     aria-label={t('post.delete')}
-                    title={t('post.delete')}
                     disabled={busyId === p.id}
                     onClick={() => removePost(p)}
-                    className="shrink-0 h-8 w-8 mx-2 grid place-items-center rounded-m text-subtlest hover:text-white hover:bg-accent-pink disabled:opacity-50"
+                    className="group relative shrink-0 h-8 w-8 mx-2 grid place-items-center rounded-m text-subtlest hover:text-white hover:bg-accent-pink disabled:opacity-50"
                   >
                     <i className={`fa-solid ${busyId === p.id ? 'fa-spinner fa-spin' : 'fa-trash-can'}`} aria-hidden="true" />
+                    <Tooltip label={t('post.delete')} />
                   </button>
                 </li>
               ))

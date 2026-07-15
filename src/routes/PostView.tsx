@@ -1,7 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
+import Breadcrumbs from '../components/seo/Breadcrumbs'
+import { NotFoundBody } from './NotFound'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useIsAdmin } from '../admin/useIsAdmin'
@@ -14,59 +17,92 @@ import {
   deletePost,
   formatDate,
   getPost,
+  getPostBySlug,
   isGuest,
   listComments,
+  postPath,
   recordPostView,
   type DbComment,
   type DbPost,
 } from '../lib/posts'
+import { resolveSlugRedirect } from '../lib/slugRedirects'
+import { metaDescription } from '../lib/seo/text'
+import { articleLd } from '../lib/seo/structuredData'
 import { saveGuestCommentToken } from '../lib/guestTokens'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 
-/** Post view (/post/view?id=<uuid>&post_id=<board>). All posts are Supabase-backed. */
+/**
+ * Post view. Two URL shapes resolve here:
+ *   /posts/<slug>                — canonical, slug-based (routes in App.tsx)
+ *   /post/view?id=<uuid>&post_id=<board> — legacy; still works, canonicalises
+ *                                  to the slug URL via <link rel=canonical>.
+ * Renamed slugs are looked up in slug_redirects and client-redirected.
+ */
 export default function PostView() {
+  const { slug } = useParams()
   const [params] = useSearchParams()
   const id = params.get('id')
-  const postId = params.get('post_id') || 'freetalk'
-  if (!id) return <Navigate to="/" replace />
-  return <RealPostView id={id} boardId={postId} />
+  const queryBoard = params.get('post_id')
+  if (!slug && !id) return <Navigate to="/" replace />
+  return <RealPostView key={slug ?? id} slug={slug ?? null} id={id} queryBoard={queryBoard} />
 }
 
-function RealPostView({ id, boardId }: { id: string; boardId: string }) {
+function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: string | null; queryBoard: string | null }) {
   const { t } = useTranslation()
   const L = useLocalized()
   const navigate = useNavigate()
   const { user } = useAuth()
   const isAdmin = useIsAdmin()
-  const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
 
   const [post, setPost] = useState<DbPost | null>(null)
+  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading')
+  const [redirectTo, setRedirectTo] = useState<string | null>(null)
   const [comments, setComments] = useState<DbComment[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     let alive = true
-    getPost(id).then((p) => alive && setPost(p)).catch(() => {})
-    listComments(id).then((c) => alive && setComments(c)).catch(() => {})
-    // Fire-and-forget: dedup happens server-side, so this is safe to call on
-    // every mount (including StrictMode's double-invoke in dev) without
-    // inflating the count — a repeat call within 24h just re-reads the total.
-    recordPostView(id)
-      .then((views) => alive && setPost((prev) => (prev ? { ...prev, views } : prev)))
-      .catch(() => {})
+    setState('loading')
+    const load = slug ? getPostBySlug(slug) : getPost(id!)
+    load
+      .then(async (p) => {
+        if (!alive) return
+        if (!p && slug) {
+          // Slug miss → maybe it was renamed; follow the redirect table.
+          const next = await resolveSlugRedirect('post', slug)
+          if (!alive) return
+          if (next) return setRedirectTo(`/posts/${encodeURIComponent(next)}`)
+        }
+        setPost(p)
+        setState(p ? 'ready' : 'missing')
+        if (!p) return
+        listComments(p.id).then((c) => alive && setComments(c)).catch(() => {})
+        // Fire-and-forget: dedup happens server-side, so this is safe to call on
+        // every mount (including StrictMode's double-invoke in dev) without
+        // inflating the count — a repeat call within 24h just re-reads the total.
+        recordPostView(p.id)
+          .then((views) => alive && setPost((prev) => (prev ? { ...prev, views } : prev)))
+          .catch(() => {})
+      })
+      .catch(() => alive && setState('missing'))
     return () => {
       alive = false
     }
-  }, [id])
+  }, [slug, id])
+
+  if (redirectTo) return <Navigate to={redirectTo} replace />
+
+  const boardId = post?.board_id ?? queryBoard ?? 'freetalk'
+  const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
 
   const submitComment = async (e: FormEvent) => {
     e.preventDefault()
-    if (!body.trim()) return
+    if (!body.trim() || !post) return
     setBusy(true)
     try {
       const created = await createComment({
-        postId: id,
+        postId: post.id,
         boardId,
         body: body.trim(),
         authorId: user?.id ?? null,
@@ -88,6 +124,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
   const canDelete = (!!user && !!post && post.author_id === user.id) || (!!post && isAdmin === true)
 
   const removePost = async () => {
+    if (!post) return
     const ok = await alertConfirm(
       t('post.deleteConfirmTitle'),
       t('post.deleteConfirmText'),
@@ -97,7 +134,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
     if (!ok) return
     setBusy(true)
     try {
-      await deletePost(id)
+      await deletePost(post.id)
       toast(t('post.deleted'))
       navigate(`/post/list?post_id=${boardId}`, { replace: true })
     } catch (err) {
@@ -107,13 +144,51 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
     }
   }
 
+  if (state === 'missing') {
+    return (
+      <Layout>
+        <Seo title={t('notFound.title')} noindex />
+        <NotFoundBody />
+      </Layout>
+    )
+  }
+
+  // DB-driven metadata with safe fallbacks: meta_title → title,
+  // meta_description → excerpt(body), OG image → first attached photo,
+  // canonical → slug URL, index → is_indexable.
+  const canonicalPath = post ? post.canonical_url || postPath(post) : undefined
+  const seo = post ? (
+    <Seo
+      title={post.meta_title || post.title}
+      description={metaDescription(post.meta_description, post.body, post.title)}
+      path={canonicalPath}
+      image={post.og_image_url || images[0] || null}
+      type="article"
+      publishedTime={post.created_at}
+      noindex={post.is_indexable === false}
+      jsonLd={articleLd({
+        headline: post.title,
+        description: metaDescription(post.meta_description, post.body),
+        image: post.og_image_url || images[0] || null,
+        url: canonicalPath!,
+        datePublished: post.created_at,
+        authorName: authorName(post),
+      })}
+    />
+  ) : (
+    <Seo noindex />
+  )
+
   return (
     <Layout>
-      <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
-        <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
-        <span className="mx-1 text-subtlest">›</span>
-        <Link to={`/post/list?post_id=${boardId}`} className="text-link">{L(board)}</Link>
-      </nav>
+      {seo}
+      <Breadcrumbs
+        items={[
+          { label: t('menuPage.breadcrumbHome'), href: '/' },
+          { label: L(board), href: `/post/list?post_id=${boardId}` },
+          ...(post ? [{ label: post.title }] : []),
+        ]}
+      />
 
       <article className="border border-neutral-90 rounded-l overflow-hidden">
         <header className="p-l border-b border-neutral-90">
@@ -189,7 +264,7 @@ function RealPostView({ id, boardId }: { id: string; boardId: string }) {
           />
           <button
             type="submit"
-            disabled={busy || !body.trim()}
+            disabled={busy || !body.trim() || !post}
             className="self-end h-9 px-4 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4] disabled:opacity-60"
           >
             {busy ? t('auth.working') : t('post.commentSubmit')}

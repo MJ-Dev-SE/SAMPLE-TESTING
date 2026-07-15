@@ -3,6 +3,7 @@ import { useAuth } from '../lib/auth'
 import { authorName, deleteComment, deleteGuestComment, formatDate, isGuest, type DbComment } from '../lib/posts'
 import { clearGuestCommentToken, getGuestCommentToken } from '../lib/guestTokens'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
+import Tooltip from './Tooltip'
 
 /**
  * One comment row, with a Delete button when the current visitor is allowed to
@@ -70,11 +71,11 @@ export default function CommentItem({
           <button
             type="button"
             onClick={remove}
-            className="shrink-0 text-subtlest hover:text-accent-pink"
+            className="group relative shrink-0 text-subtlest hover:text-accent-pink"
             aria-label={t('post.delete')}
-            title={isAdmin && !ownedByMember && !guestToken ? t('post.delete') : undefined}
           >
             <i className="fa-solid fa-trash-can text-xs" aria-hidden="true" />
+            <Tooltip label={t('post.delete')} />
           </button>
         )}
       </div>

@@ -1,46 +1,89 @@
-import { useEffect } from 'react'
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import Seo from './components/seo/Seo'
+// Home stays eager: it's the most common entry and the LCP-critical page.
 import Home from './routes/Home'
-import Menu from './routes/Menu'
-import PostList from './routes/PostList'
-import PostView from './routes/PostView'
-import Company from './routes/Company'
-import Chat from './routes/Chat'
-import Login from './routes/Login'
-import Register from './routes/Register'
-import Profile from './routes/Profile'
-import PostWrite from './routes/PostWrite'
-import PhotoView from './routes/PhotoView'
-import BusinessRegister from './routes/BusinessRegister'
-import BusinessView from './routes/BusinessView'
-import AdvertisementView from './routes/AdvertisementView'
-import LinkView from './routes/LinkView'
-import PolicyView from './routes/PolicyView'
-import NewsArticleView from './routes/NewsArticleView'
 import Placeholder from './routes/Placeholder'
-import AdminPage from './admin/AdminPage'
+import NotFound from './routes/NotFound'
+
+// Route-level code splitting (Core Web Vitals): every other page loads its own
+// chunk on demand. The Suspense fallback is a stable full-height shell so
+// switching routes never causes layout shift.
+const Menu = lazy(() => import('./routes/Menu'))
+const PostList = lazy(() => import('./routes/PostList'))
+const PostView = lazy(() => import('./routes/PostView'))
+const CategoryPage = lazy(() => import('./routes/CategoryPage'))
+const Company = lazy(() => import('./routes/Company'))
+const CompanyRedirect = lazy(() => import('./routes/Company').then((m) => ({ default: m.CompanyRedirect })))
+const Chat = lazy(() => import('./routes/Chat'))
+const Login = lazy(() => import('./routes/Login'))
+const Register = lazy(() => import('./routes/Register'))
+const Profile = lazy(() => import('./routes/Profile'))
+const PostWrite = lazy(() => import('./routes/PostWrite'))
+const PhotoView = lazy(() => import('./routes/PhotoView'))
+const BusinessRegister = lazy(() => import('./routes/BusinessRegister'))
+const BusinessView = lazy(() => import('./routes/BusinessView'))
+const AdvertisementView = lazy(() => import('./routes/AdvertisementView'))
+const LinkView = lazy(() => import('./routes/LinkView'))
+const PolicyView = lazy(() => import('./routes/PolicyView'))
+const NewsArticleView = lazy(() => import('./routes/NewsArticleView'))
+const RecentCommentsView = lazy(() => import('./routes/RecentCommentsView'))
+const AdminPage = lazy(() => import('./admin/AdminPage'))
+
+/**
+ * Maroon-bar parent categories (community tree, supabase/community.sql).
+ * Each gets a stable landing URL (/information) plus child URLs
+ * (/information/weather). Kept in code because the maroon bar itself
+ * (src/data/categoryBar.ts) is code too — adding a parent means touching both.
+ */
+const COMMUNITY_PARENTS = [
+  'information',
+  'news',
+  'qna',
+  'community',
+  'marketplace',
+  'travel',
+  'jobs',
+  'immigration',
+] as const
 
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */
 function PageRoutes() {
   return (
-    <Routes>
+    <Suspense fallback={<div className="min-h-screen bg-page" aria-busy="true" />}>
+      <Routes>
       <Route index element={<Home />} />
       <Route path="menu" element={<Menu />} />
 
-      {/* Board list + post view (real PhilGo query-param routes) */}
+      {/* Board list + post view. /posts/<slug> is the canonical post URL;
+          the query-param routes remain for old links. */}
+      <Route path="posts/:slug" element={<PostView />} />
       <Route path="post/list" element={<PostList />} />
       <Route path="post/latest" element={<PostList />} />
       <Route path="post/region" element={<PostList />} />
       <Route path="post/view" element={<PostView />} />
       <Route path="post/write" element={<PostWrite />} />
-      <Route path="post/comments" element={<Placeholder title={{ en: 'Recent Comments', ko: '최근 댓글' }} icon="fa-comment-dots" />} />
+      <Route path="post/comments" element={<RecentCommentsView />} />
+
+      {/* Community category landing pages: /information, /information/weather, …
+          NOTE: /news/article/<slug> (static segment) outranks /news/:childSlug. */}
+      {COMMUNITY_PARENTS.map((p) => (
+        <Route key={p} path={p} element={<CategoryPage parentSlug={p} />} />
+      ))}
+      {COMMUNITY_PARENTS.map((p) => (
+        <Route key={`${p}-child`} path={`${p}/:childSlug`} element={<CategoryPage parentSlug={p} />} />
+      ))}
 
       {/* Resort photo pages — pic centered + caption/info + comment thread */}
       <Route path="photo/view" element={<PhotoView />} />
 
-      {/* Business directory */}
-      <Route path="company" element={<Company />} />
+      {/* Business directory — /business-directory[/<category>] is canonical;
+          /business/<slug> is the profile page; /company/* stays alive. */}
+      <Route path="business-directory" element={<Company />} />
+      <Route path="business-directory/:categorySlug" element={<Company />} />
+      <Route path="business/:slug" element={<BusinessView />} />
+      <Route path="company" element={<CompanyRedirect />} />
       <Route path="company/register" element={<BusinessRegister />} />
       <Route path="company/view" element={<BusinessView />} />
       <Route path="real_estate/list.php" element={<Placeholder title={{ en: 'Real Estate', ko: '부동산' }} icon="fa-building" />} />
@@ -64,10 +107,11 @@ function PageRoutes() {
       <Route path="admin" element={<AdminPage />} />
       <Route path="point/history" element={<Placeholder title={{ en: 'Point history', ko: '포인트 내역' }} icon="fa-clock-rotate-left" />} />
 
-      {/* Content-type-specific detail pages (item 12): each renders its own layout. */}
+      {/* Content-type-specific detail pages: each renders its own layout. */}
       <Route path="ad/view" element={<AdvertisementView />} />
       <Route path="link/view" element={<LinkView />} />
       <Route path="policy/view" element={<PolicyView />} />
+      <Route path="news/article/:slug" element={<NewsArticleView />} />
       <Route path="news/view" element={<NewsArticleView />} />
 
       {/* Fixed footer URLs → their content-type page */}
@@ -78,9 +122,11 @@ function PageRoutes() {
       <Route path="help/privacy" element={<PolicyView slug="privacy-policy" />} />
       <Route path="help/safety" element={<PolicyView slug="child-safety-standards" />} />
 
-      {/* Unknown routes fall back to home */}
-      <Route path="*" element={<Navigate to="" replace />} />
-    </Routes>
+      {/* Unknown routes render an honest 404 (noindex) instead of silently
+          redirecting home — dead links must not look like duplicate homepages. */}
+      <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   )
 }
 
@@ -95,12 +141,16 @@ function LocalePrefix({ lng }: { lng: 'en' | 'ko' }) {
 
 export default function App() {
   return (
-    <Routes>
-      {/* locale-prefixed routes: /en/*, /ko/* */}
-      <Route path="en/*" element={<LocalePrefix lng="en" />} />
-      <Route path="ko/*" element={<LocalePrefix lng="ko" />} />
-      {/* default (no prefix) */}
-      <Route path="/*" element={<PageRoutes />} />
-    </Routes>
+    <>
+      {/* Site-wide head defaults — every page's own <Seo> overrides these. */}
+      <Seo />
+      <Routes>
+        {/* locale-prefixed routes: /en/*, /ko/* */}
+        <Route path="en/*" element={<LocalePrefix lng="en" />} />
+        <Route path="ko/*" element={<LocalePrefix lng="ko" />} />
+        {/* default (no prefix) */}
+        <Route path="/*" element={<PageRoutes />} />
+      </Routes>
+    </>
   )
 }

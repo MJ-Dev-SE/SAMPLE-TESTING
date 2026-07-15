@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useLocation, useNavigate, type Location } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
+import Seo from '../components/seo/Seo'
 import { useAuth } from '../lib/auth'
 import { alertError, errText, toast } from '../lib/alert'
 import GoogleButton from '../components/GoogleButton'
@@ -43,6 +44,7 @@ export default function Login() {
 
   return (
     <Layout>
+      <Seo title={t('auth.loginTitle')} noindex />
       <div className="max-w-[420px] mx-auto">
         <h1 className="text-xl font-bold text-text-normal mb-l">
           <i className="fa-solid fa-right-to-bracket mr-2 text-accent-blue" />

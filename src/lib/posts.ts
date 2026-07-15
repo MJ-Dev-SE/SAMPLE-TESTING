@@ -23,6 +23,14 @@ export interface DbPost {
   category: string | null
   /** Maroon-bar child category id, or null (posts outside the maroon feed system). */
   category_id: string | null
+  /** URL slug (/posts/<slug>) — auto-generated on insert (supabase/seo.sql). */
+  slug?: string | null
+  /** SEO overrides (admin-editable; null → derive from title/body). */
+  meta_title?: string | null
+  meta_description?: string | null
+  og_image_url?: string | null
+  canonical_url?: string | null
+  is_indexable?: boolean
   title: string
   body: string
   author_id: string | null
@@ -50,7 +58,7 @@ export interface DbComment {
   created_at: string
   author?: AuthorLite | null
   /** Parent post (embedded for the "recent comments" widget). */
-  post?: { id: string; title: string; board_id: string } | null
+  post?: { id: string; title: string; board_id: string; slug?: string | null } | null
   /**
    * Only present in the response right after THIS browser creates a guest comment —
    * used once to remember (localStorage) that this browser may delete it later.
@@ -176,7 +184,7 @@ export async function listPopularPosts(): Promise<DbPost[]> {
 export async function listRecentComments(limit = 8): Promise<DbComment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select(`${COMMENT_COLS}, ${AUTHOR_SELECT}, post:posts(id, title, board_id)`)
+    .select(`${COMMENT_COLS}, ${AUTHOR_SELECT}, post:posts(id, title, board_id, slug)`)
     .not('body', 'eq', '')
     .order('created_at', { ascending: false })
     .limit(limit)
@@ -197,6 +205,26 @@ export async function getPost(id: string): Promise<DbPost | null> {
     .maybeSingle()
   if (error) throw error
   return data ? stripPost(data as unknown as DbPost) : null
+}
+
+/** A single post by its URL slug (for /posts/<slug>). */
+export async function getPostBySlug(slug: string): Promise<DbPost | null> {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`*, ${AUTHOR_SELECT}`)
+    .eq('slug', slug)
+    .maybeSingle()
+  if (error) throw error
+  return data ? stripPost(data as unknown as DbPost) : null
+}
+
+/**
+ * Canonical in-app URL for a post: pretty slug URL when the row has one,
+ * legacy query URL otherwise (pre-migration rows / photo anchors).
+ * Single source of truth for every post link on the site.
+ */
+export function postPath(p: Pick<DbPost, 'id' | 'board_id'> & { slug?: string | null }): string {
+  return p.slug ? `/posts/${encodeURIComponent(p.slug)}` : `/post/view?id=${p.id}&post_id=${p.board_id}`
 }
 
 /**
