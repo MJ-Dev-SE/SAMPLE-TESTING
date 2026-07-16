@@ -102,11 +102,16 @@ on conflict (user_id) do nothing;
 --   SECURITY DEFINER function reads it and returns rows only for an admin caller.
 --   Ordered by most-recent login first. Read-only; exposes no passwords/tokens.
 -- =============================================================================
+-- Return type is growing an avatar_url column — CREATE OR REPLACE can't change
+-- a function's return signature, so drop first if an older version exists.
+drop function if exists public.admin_recent_logins(int);
+
 create or replace function public.admin_recent_logins(p_limit int default 50)
 returns table (
   id              uuid,
   email           text,
   username        text,
+  avatar_url      text,
   last_sign_in_at timestamptz,
   created_at      timestamptz,
   is_admin        boolean
@@ -123,6 +128,7 @@ begin
     select u.id,
            u.email::text,
            coalesce(p.username, u.raw_user_meta_data ->> 'username') as username,
+           p.avatar_url,
            u.last_sign_in_at,
            u.created_at,
            exists (select 1 from public.admins a where a.user_id = u.id) as is_admin

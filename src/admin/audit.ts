@@ -5,6 +5,7 @@ export interface LoginRow {
   id: string
   email: string | null
   username: string | null
+  avatar_url: string | null
   last_sign_in_at: string | null
   created_at: string
   is_admin: boolean

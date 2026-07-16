@@ -572,9 +572,13 @@ function AuditPanel() {
                   <tr key={r.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
                     <td className="px-4 py-3 max-w-[320px]">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center text-[10px] font-bold text-white ${AVATAR}`}>
-                          {(r.username || r.email || '?').replace(/[^a-zA-Z0-9가-힣]/g, '').slice(0, 2).toUpperCase() || '?'}
-                        </span>
+                        {r.avatar_url ? (
+                          <img src={r.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center text-[10px] font-bold text-white ${AVATAR}`}>
+                            {(r.username || r.email || '?').replace(/[^a-zA-Z0-9가-힣]/g, '').slice(0, 2).toUpperCase() || '?'}
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <div className={`font-medium truncate flex items-center gap-2 ${INK}`}>
                             {r.username || r.email || '—'}
