@@ -30,6 +30,9 @@ import { metaDescription } from '../lib/seo/text'
 import { articleLd } from '../lib/seo/structuredData'
 import { saveGuestCommentToken } from '../lib/guestTokens'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
+import AiAssistantButton from '../components/ai/AiAssistantButton'
+import AiAssistantSection from '../components/ai/AiAssistantSection'
+import { useAiAssistant } from '../components/ai/useAiAssistant'
 
 /**
  * Post view. Two URL shapes resolve here:
@@ -60,6 +63,7 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
   const [comments, setComments] = useState<DbComment[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+  const ai = useAiAssistant('post', post?.id ?? '')
 
   useEffect(() => {
     let alive = true
@@ -194,17 +198,20 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
         <header className="p-l border-b border-neutral-90">
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-lg font-bold text-text-normal min-w-0">{post?.title ?? '…'}</h1>
-            {canDelete && (
-              <button
-                type="button"
-                onClick={removePost}
-                disabled={busy}
-                className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold text-accent-pink border border-accent-pink/40 rounded-m hover:bg-accent-pink hover:text-white disabled:opacity-60"
-              >
-                <i className="fa-solid fa-trash-can" aria-hidden="true" />
-                {t('post.delete')}
-              </button>
-            )}
+            <div className="shrink-0 flex items-center gap-2">
+              {post && <AiAssistantButton open={ai.open} onClick={ai.toggle} />}
+              {canDelete && (
+                <button
+                  type="button"
+                  onClick={removePost}
+                  disabled={busy}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold text-accent-pink border border-accent-pink/40 rounded-m hover:bg-accent-pink hover:text-white disabled:opacity-60"
+                >
+                  <i className="fa-solid fa-trash-can" aria-hidden="true" />
+                  {t('post.delete')}
+                </button>
+              )}
+            </div>
           </div>
           {post && (
             <div className="mt-2 flex items-center gap-l text-xs text-subtlest tabular-nums">
@@ -229,6 +236,9 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
           </div>
         )}
       </article>
+
+      {/* Private AI assistant for this post — see components/ai */}
+      <AiAssistantSection ai={ai} />
 
       {/* Comments */}
       <section className="mt-l">

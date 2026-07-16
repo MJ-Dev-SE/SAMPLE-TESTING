@@ -143,6 +143,23 @@ export async function updateComment(id: string, patch: { body?: string; rating?:
   if (error) throw error
 }
 
+/** Active comment counts for many records of one content_type in a single query (list-row badges). */
+export async function countCommentsFor(contentType: ContentType, contentIds: string[]): Promise<Record<string, number>> {
+  if (contentIds.length === 0) return {}
+  const { data, error } = await supabase
+    .from('comments')
+    .select('content_id')
+    .eq('content_type', contentType)
+    .eq('status', 'active')
+    .in('content_id', contentIds)
+  if (error) return {}
+  const counts: Record<string, number> = {}
+  for (const row of (data ?? []) as { content_id: string }[]) {
+    counts[row.content_id] = (counts[row.content_id] ?? 0) + 1
+  }
+  return counts
+}
+
 /* ------------------------------- Recent ------------------------------- */
 
 /** A row from the public.recent_comments_mt view (unified across all types). */

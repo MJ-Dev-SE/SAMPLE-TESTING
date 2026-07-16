@@ -1,9 +1,11 @@
 # Testing Strategy — Manila Tour / PhilGo Clone
 
-Status: **planning only**. Nothing in this document has been installed, wired into CI, or executed.
-It defines *what* tests this project should eventually have and *where they'd live*, so that when the
-team is ready to implement, the shape is already agreed. Use `/ctest` to extend this plan feature-by-
-feature as new code lands; it never writes test files or runs anything on its own.
+Status: **live, incremental**. This document is still the source of truth for *what* tests each
+feature should have and *where they'd live*, but as of 2026-07-16 `/ctest <target>` implements and
+runs real test files against the plan (bootstrapping Vitest/Testing Library/Playwright wiring on its
+first call) instead of only recording intent. Entries under §8 and `## Planned Test Backlog` without a
+"Run result" line are still just planned; a "Run result" line means a real test executed (or was
+explicitly skipped with a stated reason — see that entry).
 
 ## 1. Current state (reviewed 2026-07-15)
 
@@ -131,11 +133,50 @@ Grounded in `supabase/comments.sql` and `src/lib/comments.ts`. These are the **p
 
 ## 9. Deliverables checklist (tracked here, not yet built)
 
-- [ ] Vitest + Testing Library config
+- [x] Vitest + Testing Library config — `vitest.config.ts`, `tests/setup.ts`, `playwright.config.ts`
+      bootstrapped by `/ctest` on 2026-07-16 (jsdom env; `@testing-library/react` + `jest-dom` +
+      `user-event`; `@playwright/test` added alongside the existing `playwright` devDependency).
 - [ ] ESLint + Prettier config and `lint` / `format:check` scripts
-- [ ] `test:unit`, `test:integration`, `test:coverage` scripts
+- [x] `test`, `test:watch`, `test:coverage`, `test:e2e` scripts added to `package.json` (2026-07-16).
+      No separate `test:unit`/`test:integration` scripts — `test`/`test:coverage` cover
+      `tests/unit`, `tests/component`, `tests/integration` via one Vitest `include` glob.
 - [ ] Migrate `tests/verify-*.mjs` into a structured Playwright `test:e2e` suite
 - [ ] `.github/workflows/ci.yml`
 - [ ] Supabase test-project fixtures (users, categories, posts, comments, businesses, ads)
 - [ ] Coverage config + first coverage report
 - [ ] Documented list of tested vs. untested features (this file, kept current via `/ctest`)
+
+## Planned Test Backlog
+
+### 2026-07-16 — Comments/Reviews: polymorphic migration (`supabase/comments.sql`)
+
+App-layer cases for `src/lib/comments.ts` (`createComment` validation, `commentTargetPath` routing,
+insert → `recent_comments_mt` integration, business-review E2E) are already logged in §8 — not
+repeated here. This entry covers the SQL-level surface added by `comments.sql` that §8 doesn't
+enumerate as discrete cases: the RLS policy's condition combinations, the DB constraint, the
+backfill trigger, and the view's join/filter logic.
+
+1. **MC/DC** — `comments` SELECT RLS policy (comments.sql §5): `status = 'active' OR author_id =
+   auth.uid() OR public.is_admin()`. Each condition must independently flip visibility:
+   - status='hidden', author_id ≠ viewer, not admin → row **hidden** (baseline false).
+   - status='hidden', author_id = viewer, not admin → row **visible** (author-override flips it).
+   - status='hidden', author_id ≠ viewer, is_admin()=true → row **visible** (admin-override flips it).
+   - status='active', author_id ≠ viewer, not admin → row **visible** (status condition alone flips it).
+2. **Unit/Constraint** — `comments_rating_range` check constraint (rating null or 1..5), tested at the
+   DB layer independent of the app-side clamp in `createComment`: insert rating=0 → rejected;
+   rating=6 → rejected; rating=null → accepted; rating=3 → accepted.
+3. **Integration** — `comments_fill_polymorphic()` BEFORE INSERT trigger: a legacy/PhilGo-style insert
+   that sets only `post_id` ends up with `content_type='post'` and `content_id=post_id::text` after
+   insert; an insert that already sets `content_type='business'` explicitly is left untouched (trigger
+   only fills, never overwrites).
+4. **Integration** — `public.recent_comments_mt` view (comments.sql §6): (a) a comment on a post whose
+   `board_id` does NOT match `mt-%` is excluded (keeps PhilGo-only content out of the Manila Tour feed);
+   (b) a comment on `board_id='mt-photos'` sets `is_photo=true` and `photo_slug=po.category`; (c) a
+   `status <> 'active'` or empty-body comment is excluded regardless of `content_type`.
+5. **E2E/Acceptance** — admin hides a comment (`status='hidden'`) via moderation → it disappears from
+   the public Recent Comments feed and from the content's own thread for a non-author/non-admin
+   visitor, but stays visible to the comment's author and to an admin. Exercises RLS case 1 end-to-end
+   through the UI instead of raw SQL.
+
+**Coverage note:** no existing test touches `comments.sql` directly — `tests/verify-*.mjs` drive the
+UI, not RLS/triggers/constraints, so cases 1-4 above are net-new surface, not duplicates.

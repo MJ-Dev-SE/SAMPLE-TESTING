@@ -258,6 +258,36 @@
     "loading": "날씨 불러오는 중…",
     "unavailable": "날씨 정보를 일시적으로 사용할 수 없습니다."
   },
+  "weatherNews": {
+    "title": "날씨",
+    "subtitle": "필리핀 현재 상태·전망·특보 — Open-Meteo, NASA EONET 실시간 데이터.",
+    "loading": "날씨 소식 불러오는 중…",
+    "empty": "현재 날씨 소식이 없습니다."
+  },
+  "ads": {
+    "galleryTitle": "광고",
+    "gallerySubtitle": "현재 사이트에 노출 중인 모든 광고를 위치별로 모았습니다.",
+    "galleryEmpty": "현재 진행 중인 광고가 없습니다."
+  },
+  "aiAssistant": {
+    "buttonLabel": "AI",
+    "buttonTooltip": "이 게시글에 대해 AI 어시스턴트에게 물어보기",
+    "panelHeading": "AI 어시스턴트 (비공개)",
+    "analysisHeading": "게시글 분석",
+    "summary": "요약",
+    "mainPoints": "핵심 내용",
+    "importantDetails": "중요 세부사항",
+    "issues": "불명확한 부분 / 문제점",
+    "suggestions": "제안",
+    "followUpQuestions": "추가 질문",
+    "askPlaceholder": "이 게시글에 대해 질문해 보세요…",
+    "send": "보내기",
+    "thinking": "생각 중…",
+    "analyzing": "게시글 분석 중…",
+    "privacyNote": "이 대화는 본인만 볼 수 있습니다.",
+    "loginRequiredText": "AI 어시스턴트를 사용하려면 로그인하세요 — 대화 내용은 본인만 볼 수 있습니다.",
+    "unavailable": "AI 어시스턴트를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요."
+  },
   "currency": {
     "title": "환율 계산기",
     "subtitle": "필리핀 페소 ↔ 한국 원 ↔ 미국 달러",

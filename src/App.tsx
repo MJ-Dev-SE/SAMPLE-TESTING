@@ -31,6 +31,9 @@ const NewsArticleView = lazy(() => import('./routes/NewsArticleView'))
 const RecentCommentsView = lazy(() => import('./routes/RecentCommentsView'))
 const WeatherView = lazy(() => import('./routes/WeatherView'))
 const CurrencyView = lazy(() => import('./routes/CurrencyView'))
+const AdGalleryView = lazy(() => import('./routes/AdGalleryView'))
+const WeatherNewsView = lazy(() => import('./routes/WeatherNewsView'))
+const WeatherNewsArticleView = lazy(() => import('./routes/WeatherNewsArticleView'))
 const AdminPage = lazy(() => import('./admin/AdminPage'))
 
 /**
@@ -68,8 +71,15 @@ function PageRoutes() {
       <Route path="post/write" element={<PostWrite />} />
       <Route path="post/comments" element={<RecentCommentsView />} />
 
-      {/* Community category landing pages: /information, /information/weather, …
-          NOTE: /news/article/<slug> (static segment) outranks /news/:childSlug. */}
+      {/* Information → Weather is a PAGASA-style live weather-news feed (Open-Meteo +
+          NASA EONET), not a generic community board — these static routes outrank
+          the /information/:childSlug fallback below regardless of declaration order
+          (React Router ranks static segments over dynamic ones), same as
+          /news/article/<slug> already outranks /news/:childSlug. */}
+      <Route path="information/weather" element={<WeatherNewsView />} />
+      <Route path="information/weather/:id" element={<WeatherNewsArticleView />} />
+
+      {/* Community category landing pages: /information, /information/experiences, … */}
       {COMMUNITY_PARENTS.map((p) => (
         <Route key={p} path={p} element={<CategoryPage parentSlug={p} />} />
       ))}
@@ -117,7 +127,7 @@ function PageRoutes() {
       <Route path="news/view" element={<NewsArticleView />} />
 
       {/* Fixed footer URLs → their content-type page */}
-      <Route path="adv/banner" element={<LinkView />} />
+      <Route path="adv/banner" element={<AdGalleryView />} />
       <Route path="help/guideline" element={<LinkView />} />
       <Route path="help/about" element={<LinkView />} />
       <Route path="help/terms" element={<PolicyView slug="terms-of-use" />} />

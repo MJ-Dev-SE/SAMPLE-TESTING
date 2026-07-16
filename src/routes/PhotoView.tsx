@@ -36,6 +36,9 @@ import ImageCarousel from '../components/ImageCarousel'
 import CommentItem from '../components/CommentItem'
 import Collapse from '../components/Collapse'
 import { saveGuestCommentToken } from '../lib/guestTokens'
+import AiAssistantButton from '../components/ai/AiAssistantButton'
+import AiAssistantSection from '../components/ai/AiAssistantSection'
+import { useAiAssistant } from '../components/ai/useAiAssistant'
 import type { PhotoRec } from '../types'
 
 const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
@@ -57,6 +60,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const L = useLocalized()
   const { user, profile } = useAuth()
   const isAdmin = useIsAdmin()
+  const ai = useAiAssistant('photo', photoId)
 
   const [all, setAll] = useState<PhotoRec[]>([])
   const [notFound, setNotFound] = useState(false)
@@ -336,13 +340,16 @@ function PhotoPage({ photoId }: { photoId: string }) {
       <article className="border border-neutral-90 rounded-l overflow-hidden">
         {/* Title header, philgo post style */}
         <header className="p-l border-b border-neutral-90">
-          <div className="flex items-center gap-2">
-            <span className="rounded-m bg-chip-blue px-2 py-0.5 text-[11px] font-semibold text-accent-blue">
-              {L(photo.tag)}
-            </span>
-            <span className="text-[11px] text-subtlest tabular-nums">
-              {idx + 1} / {all.length}
-            </span>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <span className="rounded-m bg-chip-blue px-2 py-0.5 text-[11px] font-semibold text-accent-blue">
+                {L(photo.tag)}
+              </span>
+              <span className="text-[11px] text-subtlest tabular-nums">
+                {idx + 1} / {all.length}
+              </span>
+            </div>
+            <AiAssistantButton open={ai.open} onClick={ai.toggle} />
           </div>
           <h1 className="mt-1 text-lg font-bold text-text-normal">{L(photo.title)}</h1>
           {anchor && (
@@ -387,6 +394,9 @@ function PhotoPage({ photoId }: { photoId: string }) {
           </div>
         )}
       </article>
+
+      {/* Private AI assistant for this photo — see components/ai */}
+      <AiAssistantSection ai={ai} />
 
       {/* Comments — same real (Supabase) thread as board posts */}
       <section className="mt-l">

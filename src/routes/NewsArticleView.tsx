@@ -7,6 +7,9 @@ import Breadcrumbs from '../components/seo/Breadcrumbs'
 import SmartImage from '../components/SmartImage'
 import ArticleBody from '../components/ArticleBody'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import AiAssistantButton from '../components/ai/AiAssistantButton'
+import AiAssistantSection from '../components/ai/AiAssistantSection'
+import { useAiAssistant } from '../components/ai/useAiAssistant'
 import { NotFoundBody } from './NotFound'
 import { getNewsArticle, newsArticlePath } from '../lib/content'
 import { resolveSlugRedirect } from '../lib/slugRedirects'
@@ -30,6 +33,7 @@ export default function NewsArticleView() {
   const [rec, setRec] = useState<NewsItemRec | null>(null)
   const [loading, setLoading] = useState(true)
   const [redirectTo, setRedirectTo] = useState<string | null>(null)
+  const ai = useAiAssistant('news', rec?.id ?? '')
 
   useEffect(() => {
     let alive = true
@@ -95,10 +99,13 @@ export default function NewsArticleView() {
 
       <article className="border border-neutral-90 rounded-l overflow-hidden">
         <div className="px-l pt-l">
-          <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isInfo ? 'bg-chip-purple text-accent-purple' : 'bg-chip-indigo text-accent-indigo'}`}>
-            <i className={`fa-solid ${isInfo ? 'fa-circle-info' : 'fa-newspaper'}`} aria-hidden="true" />
-            {sectionLabel}
-          </span>
+          <div className="flex items-center justify-between gap-2">
+            <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold ${isInfo ? 'bg-chip-purple text-accent-purple' : 'bg-chip-indigo text-accent-indigo'}`}>
+              <i className={`fa-solid ${isInfo ? 'fa-circle-info' : 'fa-newspaper'}`} aria-hidden="true" />
+              {sectionLabel}
+            </span>
+            <AiAssistantButton open={ai.open} onClick={ai.toggle} />
+          </div>
           <h1 className="text-2xl font-bold text-text-normal mt-2 mb-3 leading-8">{L(rec.title)}</h1>
         </div>
         {hero && <SmartImage src={hero} alt={L(rec.title)} className="w-full" />}
@@ -106,6 +113,8 @@ export default function NewsArticleView() {
           {L(rec.body) ? <ArticleBody text={L(rec.body)} /> : <p className="text-sm text-muted">{L(rec.title)}</p>}
         </div>
       </article>
+
+      {rec.id && <AiAssistantSection ai={ai} />}
 
       {rec.id && (
         <CommentsReviewsSection

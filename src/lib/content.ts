@@ -354,6 +354,23 @@ export async function listAdvertisements(position: AdPosition): Promise<Advertis
   })
 }
 
+/** Every active advertisement, across every placement, within its date window — the /adv/banner gallery. */
+export async function listAllAdvertisements(): Promise<AdvertisementRec[]> {
+  return cachedQuery('ads.all', async () => {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select(AD_COLS)
+      .eq('active', true)
+      .order('position', { ascending: true })
+      .order('sort', { ascending: true })
+    if (error) throw error
+    const today = new Date().toISOString().slice(0, 10)
+    return ((data ?? []) as unknown as AdvertisementRec[]).filter(
+      (a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today),
+    )
+  })
+}
+
 /** One advertisement by id — /ad/view promotional page. */
 export async function getAdvertisement(id: string): Promise<AdvertisementRec | null> {
   return cachedQuery(`ads.one.${id}`, async () => {

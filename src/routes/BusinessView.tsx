@@ -6,6 +6,9 @@ import Seo from '../components/seo/Seo'
 import Breadcrumbs from '../components/seo/Breadcrumbs'
 import SmartImage from '../components/SmartImage'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import AiAssistantButton from '../components/ai/AiAssistantButton'
+import AiAssistantSection from '../components/ai/AiAssistantSection'
+import { useAiAssistant } from '../components/ai/useAiAssistant'
 import { NotFoundBody } from './NotFound'
 import { businessPath, getBusiness, getBusinessBySlug, listCategories } from '../lib/content'
 import { resolveSlugRedirect } from '../lib/slugRedirects'
@@ -49,6 +52,7 @@ export default function BusinessView() {
   const [loading, setLoading] = useState(true)
   const [redirectTo, setRedirectTo] = useState<string | null>(null)
   const [hero, setHero] = useState<string>('')
+  const ai = useAiAssistant('business', biz?.id ?? '')
 
   useEffect(() => {
     let alive = true
@@ -140,14 +144,17 @@ export default function BusinessView() {
             <SmartImage src={biz.logo_url} cover className="w-[84px] h-[84px] rounded-l border-2 border-white shadow shrink-0 -mt-12 bg-white" />
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-text-normal">{biz.name}</h1>
-              {cat && (
-                <Link to={catHref} className="inline-flex items-center gap-1 rounded-full bg-chip-green px-2 py-0.5 text-[11px] font-semibold text-accent-green hover:underline">
-                  {cat.icon && <i className={`fa-solid ${cat.icon}`} aria-hidden="true" />}
-                  {L(cat.name)}
-                </Link>
-              )}
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold text-text-normal">{biz.name}</h1>
+                {cat && (
+                  <Link to={catHref} className="inline-flex items-center gap-1 rounded-full bg-chip-green px-2 py-0.5 text-[11px] font-semibold text-accent-green hover:underline">
+                    {cat.icon && <i className={`fa-solid ${cat.icon}`} aria-hidden="true" />}
+                    {L(cat.name)}
+                  </Link>
+                )}
+              </div>
+              <AiAssistantButton open={ai.open} onClick={ai.toggle} />
             </div>
             {shortIntro && <p className="text-sm text-muted">{shortIntro}</p>}
           </div>
@@ -198,6 +205,8 @@ export default function BusinessView() {
           <i className="fa-solid fa-arrow-left" aria-hidden="true" />
           {t('company.back')}
         </Link>
+
+        <AiAssistantSection ai={ai} />
 
         <CommentsReviewsSection
           contentType="business"

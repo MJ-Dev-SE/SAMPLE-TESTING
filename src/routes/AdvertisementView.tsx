@@ -6,6 +6,9 @@ import Seo from '../components/seo/Seo'
 import SmartImage from '../components/SmartImage'
 import ArticleBody from '../components/ArticleBody'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import AiAssistantButton from '../components/ai/AiAssistantButton'
+import AiAssistantSection from '../components/ai/AiAssistantSection'
+import { useAiAssistant } from '../components/ai/useAiAssistant'
 import { metaDescription } from '../lib/seo/text'
 import { getAdvertisement } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
@@ -22,6 +25,7 @@ export default function AdvertisementView() {
   const id = params.get('id') ?? ''
   const [rec, setRec] = useState<AdvertisementRec | null>(null)
   const [loading, setLoading] = useState(true)
+  const ai = useAiAssistant('advertisement', id)
 
   useEffect(() => {
     let alive = true
@@ -72,9 +76,12 @@ export default function AdvertisementView() {
 
       {/* Sponsored banner */}
       <div className="rounded-l overflow-hidden border border-accent-pink/30">
-        <div className="bg-chip-pink px-l py-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-accent-pink">
-          <i className="fa-solid fa-bullhorn" aria-hidden="true" />
-          {t('content.sponsored')}
+        <div className="bg-chip-pink px-l py-1.5 flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-accent-pink">
+            <i className="fa-solid fa-bullhorn" aria-hidden="true" />
+            {t('content.sponsored')}
+          </span>
+          <AiAssistantButton open={ai.open} onClick={ai.toggle} />
         </div>
         {rec.image_url && <SmartImage src={rec.image_url} alt={L(rec.title)} className="w-full" />}
         <div className="p-l">
@@ -84,6 +91,8 @@ export default function AdvertisementView() {
           {cta}
         </div>
       </div>
+
+      <AiAssistantSection ai={ai} />
 
       <CommentsReviewsSection
         contentType="advertisement"

@@ -258,6 +258,36 @@
     "loading": "Loading weather…",
     "unavailable": "Weather is temporarily unavailable."
   },
+  "weatherNews": {
+    "title": "Weather",
+    "subtitle": "Current status, outlook, and advisories for the Philippines — live data from Open-Meteo and NASA EONET.",
+    "loading": "Loading weather updates…",
+    "empty": "No weather updates right now."
+  },
+  "ads": {
+    "galleryTitle": "Advertisements",
+    "gallerySubtitle": "Every advertisement currently shown on the site, grouped by placement.",
+    "galleryEmpty": "No advertisements are currently running."
+  },
+  "aiAssistant": {
+    "buttonLabel": "AI",
+    "buttonTooltip": "Ask the AI assistant about this post",
+    "panelHeading": "AI assistant (private to you)",
+    "analysisHeading": "Post analysis",
+    "summary": "Summary",
+    "mainPoints": "Main points",
+    "importantDetails": "Important details",
+    "issues": "Possible issues / unclear parts",
+    "suggestions": "Suggestions",
+    "followUpQuestions": "Follow-up questions",
+    "askPlaceholder": "Ask a question about this post…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "analyzing": "Analyzing this post…",
+    "privacyNote": "Only you can see this conversation.",
+    "loginRequiredText": "Sign in to use the AI assistant — your conversation is private to you.",
+    "unavailable": "The AI assistant is temporarily unavailable. Please try again in a moment."
+  },
   "currency": {
     "title": "Exchange rate calculator",
     "subtitle": "Philippine peso ↔ Korean won ↔ US dollar",

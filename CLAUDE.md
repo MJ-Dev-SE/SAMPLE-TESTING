@@ -18,10 +18,15 @@ npm run preview          # serve the production build
 npm run generate:sitemap # (re)write public/sitemap.xml + robots.txt from Supabase + VITE_SITE_URL
 npm run test:seo         # SEO utility unit tests (esbuild + node, no server needed)
 node tests/seo-render.mjs # SEO head-tag render checks (needs `npm run dev` running)
+npm run test              # Vitest — unit/MC-DC/component/integration (tests/unit, tests/component, tests/integration)
+npm run test:watch        # Vitest in watch mode
+npm run test:coverage     # Vitest with v8 coverage report
+npm run test:e2e          # Playwright — tests/e2e (auto-starts the dev server if not already running)
 ```
 
-There is no linter configured. Type-checking via `tsc -b` (run by `build`) plus the two SEO test
-scripts above are the automated checks. `tsconfig.json` is strict and uses
+There is no linter configured. Type-checking via `tsc -b` (run by `build`), the two SEO test scripts
+above, and the Vitest/Playwright suites (`test`, `test:coverage`, `test:e2e` — wired up via `/ctest`,
+see `docs/TESTING_STRATEGY.md`) are the automated checks. `tsconfig.json` is strict and uses
 `noUnusedLocals`/`noUnusedParameters`, so unused imports/vars fail the build.
 
 In VS Code this project is launched via the `philgo` launch config (port 5175).
