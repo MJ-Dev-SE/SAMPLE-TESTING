@@ -11,6 +11,7 @@ import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
 import { adminI18n, setAdminLanguage } from './i18n'
 import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
+import { listRecentVisits, getVisitStats, getTopPages, visitorLabel, type VisitRow, type VisitStats, type TopPage } from './visits'
 import RecordForm from './RecordForm'
 import AdSlotsPanel from './AdSlotsPanel'
 import Lightbox from './Lightbox'
@@ -19,6 +20,7 @@ import Seo from '../components/seo/Seo'
 import { AVATAR, BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN, shortDate } from './ui'
 
 const AUDIT_ICON = 'fa-clock-rotate-left'
+const VISITS_ICON = 'fa-chart-line'
 
 /**
  * /admin — the DBMS. A STANDALONE console, deliberately not part of the website.
@@ -61,9 +63,10 @@ function AdminConsole() {
   const L = useLocalized()
   const { user, loading } = useAuth()
   const isAdmin = useIsAdmin()
-  const [active, setActive] = useState<TableDef | 'audit'>(ADMIN_TABLES[0])
+  const [active, setActive] = useState<TableDef | 'audit' | 'visits'>(ADMIN_TABLES[0])
   const [open, setOpen] = useState(true)
   const isAudit = active === 'audit'
+  const isVisits = active === 'visits'
 
   if (!PREVIEW_OPEN) {
     if (loading || (user && isAdmin === null)) {
@@ -121,7 +124,7 @@ function AdminConsole() {
         <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 flex flex-col gap-1">
           <NavLabel open={open}>{t('admin.navData')}</NavLabel>
           {ADMIN_TABLES.map((d) => {
-            const activeTab = active !== 'audit' && active.table === d.table
+            const activeTab = active !== 'audit' && active !== 'visits' && active.table === d.table
             return (
               <button
                 key={d.table}
@@ -138,7 +141,7 @@ function AdminConsole() {
             )
           })}
 
-          {/* Audit (read-only, not a table) */}
+          {/* Audit + Visits (read-only, not tables) */}
           <NavLabel open={open}>{t('admin.navSystem')}</NavLabel>
           <button
             type="button"
@@ -150,6 +153,17 @@ function AdminConsole() {
               {t('admin.audit')}
             </span>
             {!open && <Tooltip label={t('admin.audit')} />}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActive('visits')}
+            className={navCls(isVisits)}
+          >
+            <i className={`fa-solid ${VISITS_ICON} w-5 text-center shrink-0`} aria-hidden="true" />
+            <span className={`truncate min-w-0 flex-1 text-left transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}>
+              {t('admin.visits')}
+            </span>
+            {!open && <Tooltip label={t('admin.visits')} />}
           </button>
         </nav>
 
@@ -170,8 +184,13 @@ function AdminConsole() {
         {/* Frosted header (Flux: white/80 + blur + bottom border) */}
         <header className="sticky top-0 z-10 h-16 bg-white/80 backdrop-blur border-b border-[#e7ddca] flex items-center justify-between gap-3 px-6">
           <h1 className={`text-base font-semibold truncate min-w-0 ${INK}`}>
-            <i className={`fa-solid ${active === 'audit' ? AUDIT_ICON : active.icon} mr-2 text-[#a98c5a]`} aria-hidden="true" />
-            {active === 'audit' ? t('admin.audit') : L(active.title)}
+            <i
+              className={`fa-solid ${
+                active === 'audit' ? AUDIT_ICON : active === 'visits' ? VISITS_ICON : active.icon
+              } mr-2 text-[#a98c5a]`}
+              aria-hidden="true"
+            />
+            {active === 'audit' ? t('admin.audit') : active === 'visits' ? t('admin.visits') : L(active.title)}
           </h1>
           <div className="flex items-center gap-3 min-w-0">
             <AdminLangToggle />
@@ -185,6 +204,8 @@ function AdminConsole() {
         <main className="flex-1 w-full max-w-[1280px] mx-auto p-6">
           {active === 'audit' ? (
             <AuditPanel />
+          ) : active === 'visits' ? (
+            <VisitsPanel />
           ) : active.table === 'advertisements' ? (
             <AdSlotsPanel def={active} />
           ) : (
@@ -593,6 +614,136 @@ function AuditPanel() {
                         <span className={MUTED}>{t('admin.neverLoggedIn')}</span>
                       )}
                     </td>
+                    <td className={`px-4 py-3 whitespace-nowrap ${MUTED}`}>{formatDateTime(r.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * Read-only site-visits log — every page view, logged-in or anonymous (admin-only
+ * RPCs + RLS, see supabase/page_visits.sql). Anonymous visitors are identified by
+ * a per-browser id (src/lib/visitorId.ts), not by name — there's nothing to show
+ * for them but a short id and, if captured, a privacy-masked IP.
+ */
+function VisitsPanel() {
+  const { t } = useTranslation()
+  const [rows, setRows] = useState<VisitRow[]>([])
+  const [stats, setStats] = useState<VisitStats | null>(null)
+  const [topPages, setTopPages] = useState<TopPage[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    Promise.all([listRecentVisits(50), getVisitStats(), getTopPages(5)])
+      .then(([visits, s, pages]) => {
+        setRows(visits)
+        setStats(s)
+        setTopPages(pages)
+      })
+      .catch(() => {
+        setRows([])
+        setStats(null)
+        setTopPages([])
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    load()
+  }, [load])
+
+  return (
+    <section>
+      {/* HERO — gradient banner + glass KPI stats */}
+      <div className={HERO}>
+        <h1 className="text-3xl font-bold leading-9">{t('admin.visits')}</h1>
+        <p className="mt-2 text-sm text-white/80 max-w-2xl">{t('admin.visitsUsedIn')}</p>
+        <div className="mt-6 grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Kpi label={t('admin.kpiTotalVisits')} value={loading || !stats ? '…' : String(stats.total_visits)} />
+          <Kpi label={t('admin.kpiUniqueVisitors')} value={loading || !stats ? '…' : String(stats.unique_visitors)} />
+          <Kpi label={t('admin.kpiVisitsToday')} value={loading || !stats ? '…' : String(stats.visits_today)} />
+          <Kpi label={t('admin.kpiLoggedInVisits')} value={loading || !stats ? '…' : String(stats.logged_in_visits)} />
+        </div>
+      </div>
+
+      {/* Toolbar */}
+      <div className="mt-6 flex items-center justify-between gap-3">
+        <p className={`text-xs ${MUTED}`}>{t('admin.visitsSubtitle')}</p>
+        <button type="button" onClick={load} disabled={loading} className={GHOST_BTN}>
+          <i className={`fa-solid fa-rotate-right ${loading ? 'fa-spin' : ''}`} aria-hidden="true" />
+          {t('admin.refresh')}
+        </button>
+      </div>
+
+      {/* Top pages */}
+      {topPages.length > 0 && (
+        <div className={`mt-4 p-5 ${CARD}`}>
+          <h2 className={`text-sm font-semibold mb-3 ${INK}`}>{t('admin.topPages')}</h2>
+          <div className="flex flex-col gap-2">
+            {topPages.map((p) => (
+              <div key={p.path} className="flex items-center justify-between gap-3 text-sm">
+                <span className={`truncate ${INK}`}>{p.path}</span>
+                <span className={`shrink-0 ${MUTED}`}>{p.visits}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Content card */}
+      <div className={`mt-4 overflow-hidden ${CARD}`}>
+        <div className="px-5 py-4 border-b border-[#e7ddca] flex items-center gap-2">
+          <h2 className={`text-base font-semibold ${INK}`}>{t('admin.recentVisits')}</h2>
+          <span className={`text-xs ${MUTED}`}>({rows.length})</span>
+        </div>
+        {loading ? (
+          <p className={`p-8 text-center text-sm ${MUTED}`}>
+            <i className="fa-solid fa-spinner fa-spin mr-2 text-[#a98c5a]" aria-hidden="true" />…
+          </p>
+        ) : rows.length === 0 ? (
+          <p className={`p-8 text-center text-sm ${MUTED}`}>{t('admin.empty')}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className={`bg-[#f5efe4] text-left text-[11px] uppercase tracking-wide border-b border-[#e7ddca] ${MUTED}`}>
+                  <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.visitor')}</th>
+                  <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.page')}</th>
+                  <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.referrer')}</th>
+                  <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.ipAddress')}</th>
+                  <th className="px-4 py-2.5 font-semibold whitespace-nowrap">{t('admin.visitedAt')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.id} className="border-t border-[#eee6d6] align-top hover:bg-[#efe7d5]/50 transition-colors">
+                    <td className="px-4 py-3 max-w-[240px]">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {r.visitor?.avatar_url ? (
+                          <img src={r.visitor.avatar_url} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                        ) : (
+                          <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center text-[10px] font-bold text-white ${AVATAR}`}>
+                            <i className="fa-solid fa-user-secret text-xs" aria-hidden="true" />
+                          </span>
+                        )}
+                        <div className="min-w-0">
+                          <div className={`font-medium truncate ${INK}`}>{visitorLabel(r)}</div>
+                          <div className={`text-xs truncate ${MUTED}`}>
+                            {r.user_id ? t('admin.loggedIn') : t('admin.anonymous')}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={`px-4 py-3 max-w-[220px] truncate ${INK}`}>{r.path}</td>
+                    <td className={`px-4 py-3 max-w-[200px] truncate ${MUTED}`}>{r.referrer || '—'}</td>
+                    <td className={`px-4 py-3 whitespace-nowrap ${MUTED}`}>{r.ip_masked || '—'}</td>
                     <td className={`px-4 py-3 whitespace-nowrap ${MUTED}`}>{formatDateTime(r.created_at)}</td>
                   </tr>
                 ))}

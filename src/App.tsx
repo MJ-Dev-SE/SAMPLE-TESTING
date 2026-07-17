@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Seo from './components/seo/Seo'
+import { trackPageVisit } from './lib/trackVisit'
 // Home stays eager: it's the most common entry and the LCP-critical page.
 import Home from './routes/Home'
 import Placeholder from './routes/Placeholder'
@@ -151,7 +152,21 @@ function LocalePrefix({ lng }: { lng: 'en' | 'ko' }) {
   return <PageRoutes />
 }
 
+/**
+ * Fires one page-view record per navigation (see lib/trackVisit.ts). The admin
+ * console (/admin*) is excluded so an admin's own dashboard browsing never
+ * mixes into the site's visitor stats.
+ */
+function usePageViewTracking() {
+  const location = useLocation()
+  useEffect(() => {
+    if (location.pathname.replace(/^\/(en|ko)(?=\/|$)/, '').startsWith('/admin')) return
+    trackPageVisit(location.pathname + location.search)
+  }, [location.pathname, location.search])
+}
+
 export default function App() {
+  usePageViewTracking()
   return (
     <>
       {/* Site-wide head defaults — every page's own <Seo> overrides these. */}

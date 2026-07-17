@@ -113,7 +113,23 @@
     "slugInvalid": "Only lowercase letters, numbers, Korean characters and hyphens.",
     "slugStableHint": "Changing a published slug changes the URL; the old URL will keep redirecting.",
     "recommendedLength": "recommended {{min}}–{{max}} characters",
-    "indexableLabel": "Allow search engines to index this page"
+    "indexableLabel": "Allow search engines to index this page",
+    "visits": "Visits",
+    "visitsUsedIn": "Every page view across the site, logged-in or not (admins only). Anonymous visitors are identified by a per-browser id, not by name.",
+    "visitsSubtitle": "IP addresses are shown partially masked (privacy-reduced) — good for a rough area, not a precise location.",
+    "recentVisits": "Recent visits",
+    "topPages": "Most-visited pages",
+    "kpiTotalVisits": "Total visits",
+    "kpiUniqueVisitors": "Unique visitors",
+    "kpiVisitsToday": "Visits today",
+    "kpiLoggedInVisits": "Logged-in visits",
+    "visitor": "Visitor",
+    "page": "Page",
+    "referrer": "Referrer",
+    "ipAddress": "IP (masked)",
+    "visitedAt": "Visited",
+    "loggedIn": "Logged in",
+    "anonymous": "Anonymous"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
