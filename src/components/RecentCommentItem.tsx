@@ -31,7 +31,13 @@ export default function RecentCommentItem({ row, compact = false }: { row: Recen
   return (
     <li className="border-t border-neutral-90 first:border-t-0">
       <Link to={commentTargetPath(row)} className={`flex gap-2.5 group ${compact ? 'px-s py-2' : 'px-l py-3 hover:bg-neutral-97'}`}>
-        <img src={row.avatar_url || avatar(name)} alt="" className="w-9 h-9 rounded-full shrink-0 object-cover" />
+        <img
+          src={row.avatar_url || avatar(name)}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="w-9 h-9 rounded-full shrink-0 object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 text-xs flex-wrap">
             <span className="font-medium text-text-normal truncate">{name}</span>

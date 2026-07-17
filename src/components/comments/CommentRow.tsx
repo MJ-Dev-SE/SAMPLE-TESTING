@@ -91,7 +91,13 @@ export default function CommentRow({
         highlighted ? 'bg-chip-blue/40 rounded-m' : ''
       }`}
     >
-      <img src={comment.author?.avatar_url || avatar(name)} alt="" className="w-9 h-9 rounded-full shrink-0 object-cover" />
+      <img
+        src={comment.author?.avatar_url || avatar(name)}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className="w-9 h-9 rounded-full shrink-0 object-cover"
+      />
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
           <div className="text-xs min-w-0 flex items-center gap-2 flex-wrap">
