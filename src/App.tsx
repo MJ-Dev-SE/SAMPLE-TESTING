@@ -80,6 +80,12 @@ function PageRoutes() {
       <Route path="information/weather" element={<WeatherNewsView />} />
       <Route path="information/weather/:id" element={<WeatherNewsArticleView />} />
 
+      {/* Members' Marketplace → Peso exchange is the same live currency calculator
+          as the sidebar Exchange card's "calculator" link (/currency), not a
+          generic community board — there's nothing to post/browse here, just the
+          converter itself. */}
+      <Route path="marketplace/peso-exchange" element={<CurrencyView />} />
+
       {/* Community category landing pages: /information, /information/experiences, … */}
       {COMMUNITY_PARENTS.map((p) => (
         <Route key={p} path={p} element={<CategoryPage parentSlug={p} />} />
