@@ -1,334 +1,334 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://example.com/</loc>
+    <loc>https://manilatour.com/</loc>
+    <lastmod>2026-07-18</lastmod>
+  </url>
+  <url>
+    <loc>https://manilatour.com/menu</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/help/terms</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/help/privacy</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/help/safety</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/post/list?post_id=freetalk</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/post/list?post_id=qna</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/post/list?post_id=buyandsell</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/post/list?post_id=wanted</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/business-directory</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/information</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/government</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/immigration/passport-visa</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/jobs/new-member-greetings</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/travel/tours-itineraries</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/marketplace/cell-phone</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/community/manila</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/qna/free-discussion</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/information/weather</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/news/notices</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/immigration/boarding-house</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/education</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/news</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/information/experiences</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/news/life-tips</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/qna/chit-chat</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/community/angeles</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/marketplace/peso-exchange</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/travel/food-trips</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/jobs/people-search</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/food</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/qna</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/traffic</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/community</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/hospital</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/marketplace</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/mart</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/jobs</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/bank</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/electronics</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/immigration</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/travel</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/hotel</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/rentcar</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/beauty</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/realestate</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/ktv</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/spa</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/etc</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/posts/sample</loc>
     <lastmod>2026-07-17</lastmod>
   </url>
   <url>
-    <loc>https://example.com/menu</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory</loc>
-  </url>
-  <url>
-    <loc>https://example.com/help/terms</loc>
-  </url>
-  <url>
-    <loc>https://example.com/help/privacy</loc>
-  </url>
-  <url>
-    <loc>https://example.com/help/safety</loc>
-  </url>
-  <url>
-    <loc>https://example.com/post/list?post_id=freetalk</loc>
-  </url>
-  <url>
-    <loc>https://example.com/post/list?post_id=qna</loc>
-  </url>
-  <url>
-    <loc>https://example.com/post/list?post_id=buyandsell</loc>
-  </url>
-  <url>
-    <loc>https://example.com/post/list?post_id=wanted</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/business-directory</loc>
-  </url>
-  <url>
-    <loc>https://example.com/information</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/government</loc>
-  </url>
-  <url>
-    <loc>https://example.com/immigration/passport-visa</loc>
-  </url>
-  <url>
-    <loc>https://example.com/jobs/new-member-greetings</loc>
-  </url>
-  <url>
-    <loc>https://example.com/travel/tours-itineraries</loc>
-  </url>
-  <url>
-    <loc>https://example.com/marketplace/cell-phone</loc>
-  </url>
-  <url>
-    <loc>https://example.com/community/manila</loc>
-  </url>
-  <url>
-    <loc>https://example.com/qna/free-discussion</loc>
-  </url>
-  <url>
-    <loc>https://example.com/information/weather</loc>
-  </url>
-  <url>
-    <loc>https://example.com/news/notices</loc>
-  </url>
-  <url>
-    <loc>https://example.com/immigration/boarding-house</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/education</loc>
-  </url>
-  <url>
-    <loc>https://example.com/news</loc>
-  </url>
-  <url>
-    <loc>https://example.com/information/experiences</loc>
-  </url>
-  <url>
-    <loc>https://example.com/news/life-tips</loc>
-  </url>
-  <url>
-    <loc>https://example.com/qna/chit-chat</loc>
-  </url>
-  <url>
-    <loc>https://example.com/community/angeles</loc>
-  </url>
-  <url>
-    <loc>https://example.com/marketplace/peso-exchange</loc>
-  </url>
-  <url>
-    <loc>https://example.com/travel/food-trips</loc>
-  </url>
-  <url>
-    <loc>https://example.com/jobs/people-search</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/food</loc>
-  </url>
-  <url>
-    <loc>https://example.com/qna</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/traffic</loc>
-  </url>
-  <url>
-    <loc>https://example.com/community</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/hospital</loc>
-  </url>
-  <url>
-    <loc>https://example.com/marketplace</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/mart</loc>
-  </url>
-  <url>
-    <loc>https://example.com/jobs</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/bank</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/electronics</loc>
-  </url>
-  <url>
-    <loc>https://example.com/immigration</loc>
-  </url>
-  <url>
-    <loc>https://example.com/travel</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/hotel</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/rentcar</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/beauty</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/realestate</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/ktv</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/spa</loc>
-  </url>
-  <url>
-    <loc>https://example.com/business-directory/etc</loc>
-  </url>
-  <url>
-    <loc>https://example.com/posts/sample</loc>
-    <lastmod>2026-07-17</lastmod>
-  </url>
-  <url>
-    <loc>https://example.com/business/manila-bay-tours-travel</loc>
+    <loc>https://manilatour.com/business/manila-bay-tours-travel</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/seoul-garden-korean-bbq</loc>
+    <loc>https://manilatour.com/business/seoul-garden-korean-bbq</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/grand-ermita-hotel</loc>
+    <loc>https://manilatour.com/business/grand-ermita-hotel</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/woori-remittance-center</loc>
+    <loc>https://manilatour.com/business/woori-remittance-center</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/st-grace-medical-clinic</loc>
+    <loc>https://manilatour.com/business/st-grace-medical-clinic</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/k-mart-korean-grocery</loc>
+    <loc>https://manilatour.com/business/k-mart-korean-grocery</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/clark-angeles-rent-a-car</loc>
+    <loc>https://manilatour.com/business/clark-angeles-rent-a-car</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/hana-spa-wellness</loc>
+    <loc>https://manilatour.com/business/hana-spa-wellness</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/manila-k-language-academy</loc>
+    <loc>https://manilatour.com/business/manila-k-language-academy</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/bgc-nail-hair-lounge</loc>
+    <loc>https://manilatour.com/business/bgc-nail-hair-lounge</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/mabuhay-realty-leasing</loc>
+    <loc>https://manilatour.com/business/mabuhay-realty-leasing</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/business/star-ktv-lounge</loc>
+    <loc>https://manilatour.com/business/star-ktv-lounge</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/manila-sim-data</loc>
+    <loc>https://manilatour.com/news/article/manila-sim-data</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/naia-terminal-guide</loc>
+    <loc>https://manilatour.com/news/article/naia-terminal-guide</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/manila-mrt-lrt</loc>
+    <loc>https://manilatour.com/news/article/manila-mrt-lrt</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/peso-exchange-tips</loc>
+    <loc>https://manilatour.com/news/article/peso-exchange-tips</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/manila-rainy-season</loc>
+    <loc>https://manilatour.com/news/article/manila-rainy-season</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/news/article/manila-safety-basics</loc>
+    <loc>https://manilatour.com/news/article/manila-safety-basics</loc>
     <lastmod>2026-07-14</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=logo-mark</loc>
+    <loc>https://manilatour.com/photo/view?id=logo-mark</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=bamboo-deluxe</loc>
+    <loc>https://manilatour.com/photo/view?id=bamboo-deluxe</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=bamboo-suite</loc>
+    <loc>https://manilatour.com/photo/view?id=bamboo-suite</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=executive-room</loc>
+    <loc>https://manilatour.com/photo/view?id=executive-room</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=pension-house</loc>
+    <loc>https://manilatour.com/photo/view?id=pension-house</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=villa-room</loc>
+    <loc>https://manilatour.com/photo/view?id=villa-room</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=cottages</loc>
+    <loc>https://manilatour.com/photo/view?id=cottages</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=daytour-2026</loc>
+    <loc>https://manilatour.com/photo/view?id=daytour-2026</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=promo-30-off</loc>
+    <loc>https://manilatour.com/photo/view?id=promo-30-off</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=events-place</loc>
+    <loc>https://manilatour.com/photo/view?id=events-place</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=garden-room</loc>
+    <loc>https://manilatour.com/photo/view?id=garden-room</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=tour-itineraries</loc>
+    <loc>https://manilatour.com/photo/view?id=tour-itineraries</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=ihawan-garden</loc>
+    <loc>https://manilatour.com/photo/view?id=ihawan-garden</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=guide-map</loc>
+    <loc>https://manilatour.com/photo/view?id=guide-map</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=brochure</loc>
+    <loc>https://manilatour.com/photo/view?id=brochure</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=manila-tour</loc>
+    <loc>https://manilatour.com/photo/view?id=manila-tour</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=pet-policy</loc>
+    <loc>https://manilatour.com/photo/view?id=pet-policy</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=resort-rules</loc>
+    <loc>https://manilatour.com/photo/view?id=resort-rules</loc>
     <lastmod>2026-07-10</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=intramuros</loc>
+    <loc>https://manilatour.com/photo/view?id=intramuros</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=rizal-park</loc>
+    <loc>https://manilatour.com/photo/view?id=rizal-park</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=manila-bay-sunset</loc>
+    <loc>https://manilatour.com/photo/view?id=manila-bay-sunset</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=binondo-food</loc>
+    <loc>https://manilatour.com/photo/view?id=binondo-food</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=national-museum</loc>
+    <loc>https://manilatour.com/photo/view?id=national-museum</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=tagaytay-daytrip</loc>
+    <loc>https://manilatour.com/photo/view?id=tagaytay-daytrip</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=corregidor</loc>
+    <loc>https://manilatour.com/photo/view?id=corregidor</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
   <url>
-    <loc>https://example.com/photo/view?id=manila-ocean-park</loc>
+    <loc>https://manilatour.com/photo/view?id=manila-ocean-park</loc>
     <lastmod>2026-07-13</lastmod>
   </url>
 </urlset>
