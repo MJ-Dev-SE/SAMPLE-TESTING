@@ -52,6 +52,7 @@ const COMMUNITY_PARENTS = [
   'travel',
   'jobs',
   'immigration',
+  'golf',
 ] as const
 
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */

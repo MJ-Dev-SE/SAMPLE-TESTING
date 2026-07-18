@@ -29,12 +29,6 @@ export interface CategoryColumn {
   nav: NavLink[]
 }
 
-/** One category column: a parent header (maroon row) + its child links (2 rows below). */
-export interface CategoryGroup {
-  parent: NavLink
-  children: NavLink[]
-}
-
 export interface Banner {
   imageUrl: string
   href: string

@@ -4,15 +4,17 @@ import { useLocalized } from '../lib/useLocalized'
 import { stripLocalePrefix } from '../lib/seo/url'
 
 /**
- * Maroon category bar (#7f1d1d) — Manila Tour taxonomy (Information, News,
- * Business Directory, Q&A, Community, Marketplace, Travel, Jobs, Immigration,
- * Real estate). Layout: ONE continuous maroon parent row + 2 child rows below,
- * columns aligned. Horizontally scrollable — parents that overflow can be
- * reached by scrolling right.
+ * Maroon category bar (#7f1d1d) — Manila Tour taxonomy. One row, 12
+ * parent-only columns: Business Directory, Travel, Golf, Famous Restaurants,
+ * Members' Marketplace, Information, News, Community, Rent Car, Academy,
+ * Q&A, Real Estate (src/data/categoryBar.ts — order is authoritative there).
+ * Horizontally scrollable — columns that overflow can be reached by
+ * scrolling right; when they all fit, the row centers instead of hugging left.
  *
- * Parents/children now link to the stable category landing pages
- * (/information, /information/weather — see src/data/categoryBar.ts); the one
- * matching the current URL path gets a visible active state.
+ * Each links to its stable landing page (/information, /business-directory/food,
+ * …); the one matching the current URL path gets a visible active state. Every
+ * category's own sub-navigation (children, if it has any) lives on that
+ * landing page itself, not in this bar.
  */
 export default function CategoryBar() {
   const L = useLocalized()
@@ -29,39 +31,19 @@ export default function CategoryBar() {
               gap on the right); when columns overflow (English) this has no visual effect other
               than the scrollable area growing symmetrically, so scroll-to-see-more still works. */}
           <div className="flex min-w-max justify-center">
-            {categoryGroups.map((g, i) => {
-              const parentActive = activePath === g.parent.href.split('?')[0]
+            {categoryGroups.map((item) => {
+              const active = activePath === item.href.split('?')[0]
               return (
-                <div key={i} className="flex flex-col shrink-0">
-                  {/* Parent (maroon row) */}
-                  <Link
-                    to={g.parent.href}
-                    aria-current={parentActive ? 'page' : undefined}
-                    className={`text-[12.5px] font-bold text-center px-3 py-2 whitespace-nowrap border-r border-white/15 transition-colors ${
-                      parentActive ? 'bg-[#5a1212] text-white' : 'bg-[#7f1d1d] text-white hover:bg-[#6a1818]'
-                    }`}
-                  >
-                    {L(g.parent.label)}
-                  </Link>
-                  {/* Children (2 rows) — aligned to the parent column width */}
-                  <div className="bg-[#fcecec] flex-1 flex flex-col items-center px-3 py-1.5 gap-0.5 border-r border-neutral-90">
-                    {g.children.map((c) => {
-                      const childActive = activePath === c.href.split('?')[0]
-                      return (
-                        <Link
-                          key={c.label.en}
-                          to={c.href}
-                          aria-current={childActive ? 'page' : undefined}
-                          className={`text-[12px] whitespace-nowrap hover:underline ${
-                            childActive ? 'font-bold text-[#5a1212] underline' : 'text-[#7f1d1d]'
-                          }`}
-                        >
-                          {L(c.label)}
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`text-[12.5px] font-bold text-center px-3 py-2 whitespace-nowrap border-r border-white/15 transition-colors ${
+                    active ? 'bg-[#5a1212] text-white' : 'bg-[#7f1d1d] text-white hover:bg-[#6a1818]'
+                  }`}
+                >
+                  {L(item.label)}
+                </Link>
               )
             })}
           </div>

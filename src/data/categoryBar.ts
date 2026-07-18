@@ -1,67 +1,36 @@
-import type { CategoryGroup, NavLink } from '../types'
+import type { NavLink } from '../types'
 
-// DATA SLOT: the maroon scrolling category bar — Manila Tour taxonomy.
-// Parents Information / News / Business Directory (+ Q&A, Community, Marketplace …)
-// with two child rows each. One continuous parent strip, horizontally scrollable.
+// DATA SLOT: the maroon category bar — Manila Tour taxonomy. One row, 12
+// parent-only columns (no child rows) — same dense/compact styling as before,
+// just flattened. Order below is authoritative.
 //
-// Labels/order are unchanged. The 8 non-Business-Directory groups point at the
-// stable category landing pages — /<parent> and /<parent>/<child> (SEO-clean
-// URLs; routes/CategoryPage.tsx) — backed by public.categories kind='community'
-// (supabase/community.sql). Parent click = combined feed of all its children;
-// child click = just that child. Old /post/list?maroon=<slug> URLs redirect.
-// "Business Directory" and "Real estate" link into /business-directory —
-// that tree has its own categories (kind='business') and posting flow.
-export const categoryGroups: CategoryGroup[] = [
-  { parent: { label: { en: 'Information', ko: '정보' }, href: '/information' },
-    children: [
-      { label: { en: 'Weather', ko: '날씨' }, href: '/information/weather' },
-      { label: { en: 'Experiences', ko: '경험담' }, href: '/information/experiences' },
-    ] },
-  { parent: { label: { en: 'News', ko: '뉴스' }, href: '/news' },
-    children: [
-      { label: { en: 'Notices', ko: '공지사항' }, href: '/news/notices' },
-      { label: { en: 'Life Tips', ko: '생활의 팁' }, href: '/news/life-tips' },
-    ] },
-  { parent: { label: { en: 'Business Directory', ko: '업소록' }, href: '/business-directory' },
-    children: [
-      { label: { en: 'Restaurants', ko: '음식점' }, href: '/business-directory/food' },
-      { label: { en: 'Hotels', ko: '호텔' }, href: '/business-directory/hotel' },
-    ] },
-  { parent: { label: { en: 'Q&A', ko: '질문답변' }, href: '/qna' },
-    children: [
-      { label: { en: 'Free discussion', ko: '자유게시판' }, href: '/qna/free-discussion' },
-      { label: { en: 'Chit-chat', ko: '잡담' }, href: '/qna/chit-chat' },
-    ] },
-  { parent: { label: { en: 'Community', ko: '커뮤니티' }, href: '/community' },
-    children: [
-      { label: { en: 'Manila', ko: '마닐라' }, href: '/community/manila' },
-      { label: { en: 'Angeles', ko: '앙헬레스' }, href: '/community/angeles' },
-    ] },
-  { parent: { label: { en: "Members' Marketplace", ko: '회원장터' }, href: '/marketplace' },
-    children: [
-      { label: { en: 'Cell phone', ko: '핸드폰' }, href: '/marketplace/cell-phone' },
-      { label: { en: 'Peso exchange', ko: '페소환전' }, href: '/marketplace/peso-exchange' },
-    ] },
-  { parent: { label: { en: 'Travel', ko: '여행' }, href: '/travel' },
-    children: [
-      { label: { en: 'Tours & itineraries', ko: '투어·일정' }, href: '/travel/tours-itineraries' },
-      { label: { en: 'Food trips', ko: '먹방' }, href: '/travel/food-trips' },
-    ] },
-  { parent: { label: { en: 'Jobs', ko: '구인구직' }, href: '/jobs' },
-    children: [
-      { label: { en: 'New member greetings', ko: '신입인사' }, href: '/jobs/new-member-greetings' },
-      { label: { en: 'People search', ko: '사람찾기' }, href: '/jobs/people-search' },
-    ] },
-  { parent: { label: { en: 'Immigration', ko: '이민' }, href: '/immigration' },
-    children: [
-      { label: { en: 'Passport / Visa', ko: '여권/비자' }, href: '/immigration/passport-visa' },
-      { label: { en: 'Boarding house', ko: '하숙집' }, href: '/immigration/boarding-house' },
-    ] },
-  { parent: { label: { en: 'Real estate', ko: '부동산' }, href: '/business-directory/realestate' },
-    children: [
-      { label: { en: 'Rental car', ko: '렌트카' }, href: '/business-directory/rentcar' },
-      { label: { en: 'Massage / Spa', ko: '마사지' }, href: '/business-directory/spa' },
-    ] },
+// Every item still has real content behind it, just not a visible child strip
+// in the bar itself:
+//  - Information / News / Community / Q&A / Travel / Members' Marketplace /
+//    Golf are community categories (kind='community', supabase/community.sql +
+//    golf_category.sql) — each still HAS child categories in the DB (e.g.
+//    Information → Weather/Experiences) for routing, the posting form's
+//    required parent→child picker, and CategoryPage's own "chip" sub-nav; they
+//    just aren't listed here anymore. /jobs and /immigration keep working the
+//    same way — only removed from this bar, not from the app (routes/App.tsx).
+//  - Business Directory / Famous Restaurants / Rent Car / Academy / Real
+//    Estate all resolve through the existing /business-directory[/<slug>]
+//    route (kind='business' categories) — Famous Restaurants = the "food"
+//    category, Rent Car = "rentcar", Academy = "education", Real Estate =
+//    "realestate" (all already seeded with real listings, see manilaSeed.json).
+export const categoryGroups: NavLink[] = [
+  { label: { en: 'Business Directory', ko: '업소록' }, href: '/business-directory' },
+  { label: { en: 'Travel', ko: '여행' }, href: '/travel' },
+  { label: { en: 'Golf', ko: '골프' }, href: '/golf' },
+  { label: { en: 'Famous Restaurants', ko: '맛집' }, href: '/business-directory/food' },
+  { label: { en: "Members' Marketplace", ko: '회원장터' }, href: '/marketplace' },
+  { label: { en: 'Information', ko: '정보' }, href: '/information' },
+  { label: { en: 'News', ko: '뉴스' }, href: '/news' },
+  { label: { en: 'Community', ko: '커뮤니티' }, href: '/community' },
+  { label: { en: 'Rent Car', ko: '렌트카' }, href: '/business-directory/rentcar' },
+  { label: { en: 'Academy', ko: '학원' }, href: '/business-directory/education' },
+  { label: { en: 'Q&A', ko: '질문답변' }, href: '/qna' },
+  { label: { en: 'Real Estate', ko: '부동산' }, href: '/business-directory/realestate' },
 ]
 
 // DATA SLOT: thin top utility bar (left + right link clusters)
