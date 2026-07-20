@@ -106,15 +106,15 @@ const HANIN: BrandConfig = {
   siteName: 'Hanin TV', // [HANIN: display name]
   siteUrl: 'https://hanin.tv',
   defaultTitle: {
-    en: 'Hanin TV — Korean community & travel guide for the Philippines', // [HANIN: default title EN]
-    ko: '하닌 TV — 필리핀 한인 커뮤니티 & 여행 가이드', // [HANIN: default title KO]
+    en: '', // [HANIN: default title EN]
+    ko: '', // [HANIN: default title KO]
   },
   defaultDescription: {
     en: 'Hanin TV is a Korean–Philippines community portal: travel information, news, Q&A, a business directory and tips for life in the Philippines.', // [HANIN: description EN]
     ko: '하닌 TV는 한국–필리핀 커뮤니티 포털입니다. 여행 정보, 뉴스, 질문답변, 업소록, 생활 정보를 제공합니다.', // [HANIN: description KO]
   },
   ogImage: '/brand-logo-hanin.png', // [HANIN: /public social-share image]
-  favicon: '/favicon-hanin.png', // [HANIN: /public tab icon]
+  favicon: '/brand-logo-hanin.png', // [HANIN: /public tab icon]
   documentTitle: 'Hanin TV', // [HANIN: pre-hydration tab title]
   logo: {
     src: '/brand-logo-hanin.png', // [HANIN: /public horizontal logo]
