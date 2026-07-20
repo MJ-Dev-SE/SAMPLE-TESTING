@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listCategories } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { CategoryRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * Sidebar Business Directory widget — category chips loaded from public.categories
@@ -12,17 +12,12 @@ import type { CategoryRec } from '../types'
 export default function BusinessDirectoryWidget() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [categories, setCategories] = useState<CategoryRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listCategories()
-      .then((c) => alive && setCategories(c))
-      .catch(() => alive && setCategories([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories(),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
 
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">

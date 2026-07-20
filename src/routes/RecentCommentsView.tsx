@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
 import RecentCommentItem from '../components/RecentCommentItem'
+import { STALE } from '../lib/queryClient'
 import { listRecentComments, type RecentCommentRec } from '../lib/comments'
 
 const PAGE_SIZE = 20
@@ -15,29 +17,50 @@ const PAGE_SIZE = 20
  */
 export default function RecentCommentsView() {
   const { t } = useTranslation()
+  const queryClient = useQueryClient()
   const [rows, setRows] = useState<RecentCommentRec[]>([])
-  const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [errored, setErrored] = useState(false)
   const [done, setDone] = useState(false)
 
-  const load = useCallback((offset: number) => {
-    offset === 0 ? setLoading(true) : setLoadingMore(true)
-    listRecentComments(PAGE_SIZE, offset)
+  // First page — backed by a real useQuery so repeat visits within staleTime are
+  // served from cache instead of hitting Supabase again.
+  const {
+    data: firstPage,
+    isLoading: loading,
+    isError: firstPageErrored,
+  } = useQuery({
+    queryKey: ['recentComments', 0, PAGE_SIZE],
+    queryFn: () => listRecentComments(PAGE_SIZE, 0),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 2,
+  })
+
+  useEffect(() => {
+    if (!firstPage) return
+    setRows(firstPage)
+    if (firstPage.length < PAGE_SIZE) setDone(true)
+  }, [firstPage])
+
+  // "Load More" clicks — imperative fetches through the same query cache (dedup +
+  // staleTime apply), appended onto the existing accumulated list.
+  const loadMore = () => {
+    const offset = rows.length
+    setLoadingMore(true)
+    queryClient
+      .fetchQuery({
+        queryKey: ['recentComments', offset, PAGE_SIZE],
+        queryFn: () => listRecentComments(PAGE_SIZE, offset),
+        staleTime: STALE.comments,
+        gcTime: STALE.comments * 2,
+      })
       .then((got) => {
-        setRows((prev) => (offset === 0 ? got : [...prev, ...got.filter((g) => !prev.some((x) => x.id === g.id))]))
+        setRows((prev) => [...prev, ...got.filter((g) => !prev.some((x) => x.id === g.id))])
         if (got.length < PAGE_SIZE) setDone(true)
       })
       .catch(() => setErrored(true))
-      .finally(() => {
-        setLoading(false)
-        setLoadingMore(false)
-      })
-  }, [])
-
-  useEffect(() => {
-    load(0)
-  }, [load])
+      .finally(() => setLoadingMore(false))
+  }
 
   return (
     <Layout>
@@ -61,7 +84,7 @@ export default function RecentCommentsView() {
           <p className="p-l text-sm text-subtlest text-center">
             <i className="fa-solid fa-spinner fa-spin mr-2 text-accent-blue" aria-hidden="true" />…
           </p>
-        ) : errored ? (
+        ) : errored || firstPageErrored ? (
           <p className="p-l text-sm text-subtlest text-center">{t('content.notFound')}</p>
         ) : rows.length === 0 ? (
           <p className="p-l text-sm text-subtlest text-center">{t('comments.emptyState')}</p>
@@ -76,7 +99,7 @@ export default function RecentCommentsView() {
               <div className="p-3 text-center border-t border-neutral-90">
                 <button
                   type="button"
-                  onClick={() => load(rows.length)}
+                  onClick={loadMore}
                   disabled={loadingMore}
                   className="inline-flex items-center gap-1.5 rounded-full border border-neutral-90 bg-white px-4 py-1.5 text-xs font-medium text-muted hover:border-accent-blue hover:text-accent-blue disabled:opacity-60 transition-colors"
                 >

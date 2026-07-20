@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -6,7 +6,7 @@ import Seo from '../components/seo/Seo'
 import BusinessForm from '../components/BusinessForm'
 import { listCategories } from '../lib/content'
 import { useAuth } from '../lib/auth'
-import type { CategoryRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /** Register a business listing (/company/register) — members only. Full-page form. */
 export default function BusinessRegister() {
@@ -14,11 +14,12 @@ export default function BusinessRegister() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const { user, loading } = useAuth()
-  const [categories, setCategories] = useState<CategoryRec[]>([])
-
-  useEffect(() => {
-    listCategories().then(setCategories).catch(() => setCategories([]))
-  }, [])
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories(),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
 
   if (loading) return <Layout><p className="text-sm text-muted">…</p></Layout>
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -16,7 +16,7 @@ import { resolveSlugRedirect } from '../lib/slugRedirects'
 import { metaDescription } from '../lib/seo/text'
 import { articleLd } from '../lib/seo/structuredData'
 import { useLocalized } from '../lib/useLocalized'
-import type { NewsItemRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * News / information article. Two URL shapes resolve here:
@@ -30,28 +30,25 @@ export default function NewsArticleView() {
   const { slug: pathSlug } = useParams()
   const [params] = useSearchParams()
   const slug = pathSlug ?? params.get('slug') ?? ''
-  const [rec, setRec] = useState<NewsItemRec | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [redirectTo, setRedirectTo] = useState<string | null>(null)
-  const ai = useAiAssistant('news', rec?.id ?? '')
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    getNewsArticle(slug)
-      .then(async (r) => {
-        if (!alive) return
-        if (!r && slug) {
-          const next = await resolveSlugRedirect('news', slug)
-          if (!alive) return
-          if (next) return setRedirectTo(newsArticlePath(next))
-        }
-        setRec(r)
-      })
-      .catch(() => alive && setRec(null))
-      .finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [slug])
+  // One cached lookup resolves both outcomes: the article itself, or (when the
+  // slug has been renamed) the redirect target from slug_redirects.
+  const { data: resolved, isLoading: loading } = useQuery({
+    queryKey: ['news-article', slug],
+    queryFn: async () => {
+      const r = await getNewsArticle(slug)
+      if (!r && slug) {
+        const next = await resolveSlugRedirect('news', slug)
+        if (next) return { rec: null, redirectTo: newsArticlePath(next) }
+      }
+      return { rec: r, redirectTo: null as string | null }
+    },
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
+  const rec = resolved?.rec ?? null
+  const redirectTo = resolved?.redirectTo ?? null
+  const ai = useAiAssistant('news', rec?.id ?? '')
 
   if (redirectTo) return <Navigate to={redirectTo} replace />
   if (loading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>

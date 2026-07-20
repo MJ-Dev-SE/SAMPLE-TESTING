@@ -82,6 +82,10 @@ const AUTHOR_SELECT = 'author:profiles(username, display_name, avatar_url)'
 // Explicit column list for reading comments — deliberately excludes delete_token so
 // it's never exposed to anyone but the creator's own insert response (see createComment).
 const COMMENT_COLS = 'id, post_id, board_id, author_id, guest_name, body, created_at'
+// Explicit column list for reading posts — was `select('*')` everywhere; every field
+// actually used by list rows, detail pages and SEO tags is named here instead.
+const POST_COLS =
+  'id, board_id, category, category_id, slug, meta_title, meta_description, og_image_url, canonical_url, is_indexable, title, body, author_id, guest_name, views, created_at, images'
 
 // -----------------------------------------------------------------------------
 // Board-id separation: this Manila Tour site shares the same Supabase project as
@@ -106,7 +110,7 @@ const stripPost = <T extends { board_id: string }>(row: T): T => ({
 export async function listPosts(boardId: string, limit?: number, category?: string): Promise<DbPost[]> {
   let q = supabase
     .from('posts')
-    .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count)`)
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count)`)
     .eq('board_id', toDbBoard(boardId))
     .order('created_at', { ascending: false })
   if (category) q = q.eq('category', category)
@@ -119,6 +123,26 @@ export async function listPosts(boardId: string, limit?: number, category?: stri
 export interface PostPage {
   rows: DbPost[]
   total: number
+}
+
+/**
+ * Paginated newest-first posts for one board (default 20/page) — the /post/list
+ * board view. Same shape as listPostsByCategory/listPostsByParentCategory below.
+ */
+export async function listPostsPage(boardId: string, opts: { page?: number; pageSize?: number; category?: string } = {}): Promise<PostPage> {
+  const page = Math.max(1, opts.page ?? 1)
+  const pageSize = opts.pageSize ?? 20
+  const from = (page - 1) * pageSize
+  let q = supabase
+    .from('posts')
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count)`, { count: 'exact' })
+    .eq('board_id', toDbBoard(boardId))
+    .order('created_at', { ascending: false })
+    .range(from, from + pageSize - 1)
+  if (opts.category) q = q.eq('category', opts.category)
+  const { data, error, count } = await q
+  if (error) throw error
+  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
 }
 
 const CATEGORY_EMBED = 'category_row:categories(id, slug, name, icon)'
@@ -137,7 +161,7 @@ export async function listPostsByCategory(
   const from = (page - 1) * pageSize
   const { data, error, count } = await supabase
     .from('posts')
-    .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
     .eq('category_id', categoryId)
     .order('created_at', { ascending: false })
     .range(from, from + pageSize - 1)
@@ -160,7 +184,7 @@ export async function listPostsByParentCategory(
   const from = (page - 1) * pageSize
   const { data, error, count } = await supabase
     .from('posts')
-    .select(`*, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
     .in('category_id', childIds)
     .order('created_at', { ascending: false })
     .range(from, from + pageSize - 1)
@@ -175,7 +199,7 @@ export async function listPostsByParentCategory(
 export async function listPopularPosts(): Promise<DbPost[]> {
   const { data, error } = await supabase
     .from('popular_posts')
-    .select(`*, ${AUTHOR_SELECT}`)
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
   if (error) throw error
   return ((data ?? []) as unknown as DbPost[]).map(stripPost)
 }
@@ -200,7 +224,7 @@ export async function listRecentComments(limit = 8): Promise<DbComment[]> {
 export async function getPost(id: string): Promise<DbPost | null> {
   const { data, error } = await supabase
     .from('posts')
-    .select(`*, ${AUTHOR_SELECT}`)
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
     .eq('id', id)
     .maybeSingle()
   if (error) throw error
@@ -211,7 +235,7 @@ export async function getPost(id: string): Promise<DbPost | null> {
 export async function getPostBySlug(slug: string): Promise<DbPost | null> {
   const { data, error } = await supabase
     .from('posts')
-    .select(`*, ${AUTHOR_SELECT}`)
+    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
@@ -334,24 +358,26 @@ export async function deleteGuestComment(id: string, token: string): Promise<boo
   return !!data
 }
 
-/** A member's own posts (newest first) — for the activity/profile page. */
+/** A member's own posts (newest first, capped at 50) — for the activity/profile page. */
 export async function listUserPosts(userId: string): Promise<DbPost[]> {
   const { data, error } = await supabase
     .from('posts')
-    .select('*')
+    .select(POST_COLS)
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
+    .limit(50)
   if (error) throw error
   return ((data ?? []) as unknown as DbPost[]).map(stripPost)
 }
 
-/** A member's own comments (newest first) — for the activity/profile page. */
+/** A member's own comments (newest first, capped at 50) — for the activity/profile page. */
 export async function listUserComments(userId: string): Promise<DbComment[]> {
   const { data, error } = await supabase
     .from('comments')
-    .select('*')
+    .select(COMMENT_COLS)
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
+    .limit(50)
   if (error) throw error
   return ((data ?? []) as unknown as DbComment[]).map(stripPost)
 }
@@ -366,7 +392,7 @@ export async function listUserComments(userId: string): Promise<DbComment[]> {
 export async function getPhotoPost(photoId: string): Promise<DbPost | null> {
   const { data, error } = await supabase
     .from('posts')
-    .select('*')
+    .select(POST_COLS)
     .eq('board_id', toDbBoard('photos'))
     .eq('category', photoId)
     .order('created_at', { ascending: true })

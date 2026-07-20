@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocalized } from '../lib/useLocalized'
 import { createBusiness } from '../lib/content'
@@ -30,6 +31,7 @@ export default function BusinessForm({
 }) {
   const { t } = useTranslation()
   const L = useLocalized()
+  const queryClient = useQueryClient()
 
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState(lockedCategory?.id ?? categories[0]?.id ?? '')
@@ -99,6 +101,8 @@ export default function BusinessForm({
         galleryUrls,
         ownerId,
       })
+      // The new listing must show up in the directory + widgets right away.
+      queryClient.invalidateQueries({ queryKey: ['businesses'] })
       toast(t('business.created'))
       onCreated(biz)
     } catch (err) {

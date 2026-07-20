@@ -23,7 +23,16 @@ import type { Profile } from '../lib/auth'
 function Avatar({ profile, size = 36 }: { profile: Profile | null | undefined; size?: number }) {
   const style = { width: size, height: size }
   if (profile?.avatar_url) {
-    return <img src={profile.avatar_url} alt="" style={style} className="rounded-full object-cover shrink-0" />
+    return (
+      <img
+        src={profile.avatar_url}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        style={style}
+        className="rounded-full object-cover shrink-0"
+      />
+    )
   }
   const initial = (profile?.display_name || profile?.username || '?').charAt(0).toUpperCase()
   return (

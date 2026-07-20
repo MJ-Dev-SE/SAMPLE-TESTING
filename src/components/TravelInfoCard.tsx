@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listTravelInfo } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { TravelInfo } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * Travel Information card (right sidebar, between Weather and Business Directory).
@@ -12,17 +12,12 @@ import type { TravelInfo } from '../types'
 export default function TravelInfoCard() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [items, setItems] = useState<TravelInfo[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listTravelInfo()
-      .then((r) => alive && setItems(r))
-      .catch(() => alive && setItems([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: items = [] } = useQuery({
+    queryKey: ['travel-info'],
+    queryFn: () => listTravelInfo(),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (items.length === 0) return null
 

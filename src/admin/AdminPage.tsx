@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { publicUrl } from '../lib/media'
-import { bustContentCache } from '../lib/contentCache'
+import { useQueryClient } from '@tanstack/react-query'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
@@ -298,6 +298,7 @@ function NotAuthorized({ email, uid }: { email: string; uid: string }) {
 function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
   const { t } = useTranslation()
   const L = useLocalized()
+  const queryClient = useQueryClient()
   const [rows, setRows] = useState<AdminRow[]>([])
   const [loading, setLoading] = useState(true)
   /** null = closed · 'new' = creating · row = editing that row */
@@ -330,7 +331,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
         const { error } = await supabase.from(def.table).update(values).eq('id', editing.id)
         if (error) throw error
       }
-      bustContentCache() // the site's content cache must reflect this edit immediately
+      queryClient.invalidateQueries() // the site's cached reads must reflect this edit immediately
       toast(t('admin.saved'))
       setEditing(null)
       load()
@@ -353,7 +354,7 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
     try {
       const { error } = await supabase.from(def.table).delete().eq('id', row.id)
       if (error) throw error
-      bustContentCache()
+      queryClient.invalidateQueries()
       toast(t('admin.deleted'))
       setRows((prev) => prev.filter((r) => r.id !== row.id))
     } catch (err) {

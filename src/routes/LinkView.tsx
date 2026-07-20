@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -8,7 +8,7 @@ import ArticleBody from '../components/ArticleBody'
 import { metaDescription } from '../lib/seo/text'
 import { getLink } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { LinkRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * /link/view?slug=… — recommended-resource / PARTNER presentation: a resource
@@ -20,15 +20,13 @@ export default function LinkView() {
   const L = useLocalized()
   const [params] = useSearchParams()
   const slug = params.get('slug') ?? ''
-  const [rec, setRec] = useState<LinkRec | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    getLink(slug).then((r) => alive && setRec(r)).catch(() => alive && setRec(null)).finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [slug])
+  const { data: rec = null, isLoading: loading } = useQuery({
+    queryKey: ['link', slug],
+    queryFn: () => getLink(slug),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (loading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
   if (!rec) {

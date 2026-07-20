@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -9,7 +10,8 @@ import { NotFoundBody } from './NotFound'
 import { boardTitles } from '../data/boards'
 import { getCategoryBySlug } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import { authorName, commentCountOf, formatDate, isGuest, listPosts, postPath, type DbPost } from '../lib/posts'
+import { STALE } from '../lib/queryClient'
+import { authorName, commentCountOf, formatDate, isGuest, listPostsPage, postPath } from '../lib/posts'
 
 /**
  * LIST / BOARD PAGE (/post/list?post_id=…&category=…) — real posts from Supabase.
@@ -71,20 +73,20 @@ function BoardList() {
   const category = params.get('category')
 
   const title = boardTitles[postId] ?? { en: 'Board', ko: '게시판' }
+  const pageSize = 20
 
-  const [posts, setPosts] = useState<DbPost[]>([])
-  const [loading, setLoading] = useState(true)
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    listPosts(postId)
-      .then((rows) => alive && setPosts(rows))
-      .catch(() => alive && setPosts([]))
-      .finally(() => alive && setLoading(false))
-    return () => {
-      alive = false
-    }
-  }, [postId])
+  const [page, setPage] = useState(1)
+  useEffect(() => setPage(1), [postId, category])
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['posts', postId, category ?? null, page, pageSize],
+    queryFn: () => listPostsPage(postId, { page, pageSize, category: category ?? undefined }),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+  })
+  const posts = data?.rows ?? []
+  const loading = isLoading
+  const pageCount = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))
 
   const writeHref = `/post/write?post_id=${postId}${category ? `&category=${encodeURIComponent(category)}` : ''}`
 
@@ -161,7 +163,7 @@ function BoardList() {
         </ul>
       )}
 
-      <Pagination />
+      <Pagination page={page} pageCount={pageCount} onChange={setPage} />
     </Layout>
   )
 }

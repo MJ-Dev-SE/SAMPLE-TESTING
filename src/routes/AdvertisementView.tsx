@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -12,7 +12,7 @@ import { useAiAssistant } from '../components/ai/useAiAssistant'
 import { metaDescription } from '../lib/seo/text'
 import { getAdvertisement } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { AdvertisementRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * /ad/view?id=… — promotional / SPONSORED presentation: a "Sponsored" banner
@@ -23,16 +23,15 @@ export default function AdvertisementView() {
   const L = useLocalized()
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
-  const [rec, setRec] = useState<AdvertisementRec | null>(null)
-  const [loading, setLoading] = useState(true)
   const ai = useAiAssistant('advertisement', id)
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    getAdvertisement(id).then((r) => alive && setRec(r)).catch(() => alive && setRec(null)).finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [id])
+  const { data: rec = null, isLoading: loading } = useQuery({
+    queryKey: ['ad', id],
+    queryFn: () => getAdvertisement(id),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+    enabled: !!id,
+  })
 
   if (loading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
   if (!rec) {

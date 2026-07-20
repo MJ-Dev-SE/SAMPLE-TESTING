@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -6,6 +7,7 @@ import Seo from '../components/seo/Seo'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 import { supabase } from '../lib/supabase'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { deletePost, formatDate, listUserComments, listUserPosts, type DbComment, type DbPost } from '../lib/posts'
@@ -21,6 +23,7 @@ export default function Profile() {
   const { t } = useTranslation()
   const L = useLocalized()
   const { user, profile, loading, updateAvatar } = useAuth()
+  const queryClient = useQueryClient()
 
   // --- settings: avatar upload ---
   const [file, setFile] = useState<File | null>(null)
@@ -32,9 +35,22 @@ export default function Profile() {
   const [pw2, setPw2] = useState('')
   const [savingPw, setSavingPw] = useState(false)
 
-  const [posts, setPosts] = useState<DbPost[]>([])
-  const [comments, setComments] = useState<DbComment[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  const { data: posts = [] } = useQuery({
+    queryKey: ['posts', 'user', user?.id ?? null],
+    queryFn: () => listUserPosts(user!.id),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+    enabled: !!user,
+  })
+  const { data: comments = [] } = useQuery({
+    queryKey: ['comments', 'user', user?.id ?? null],
+    queryFn: () => listUserComments(user!.id),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 2,
+    enabled: !!user,
+  })
 
   /** 🗑 on a history row — confirm, delete, drop it from the list. */
   const removePost = async (p: DbPost) => {
@@ -48,8 +64,13 @@ export default function Profile() {
     setBusyId(p.id)
     try {
       await deletePost(p.id)
-      setPosts((prev) => prev.filter((x) => x.id !== p.id))
-      setComments((prev) => prev.filter((c) => c.post_id !== p.id)) // its comments cascade away too
+      queryClient.setQueryData<DbPost[]>(['posts', 'user', user?.id ?? null], (prev) =>
+        (prev ?? []).filter((x) => x.id !== p.id),
+      )
+      // its comments cascade away too
+      queryClient.setQueryData<DbComment[]>(['comments', 'user', user?.id ?? null], (prev) =>
+        (prev ?? []).filter((c) => c.post_id !== p.id),
+      )
       toast(t('post.deleted'))
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
@@ -57,16 +78,6 @@ export default function Profile() {
       setBusyId(null)
     }
   }
-
-  useEffect(() => {
-    if (!user) return
-    let alive = true
-    listUserPosts(user.id).then((p) => alive && setPosts(p)).catch(() => {})
-    listUserComments(user.id).then((c) => alive && setComments(c)).catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [user])
 
   if (loading) return <Layout><p className="text-sm text-muted">…</p></Layout>
   if (!user) return <Navigate to="/user/login" replace />

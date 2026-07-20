@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { listNews } from '../lib/content'
 import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
-import type { Localized, NewsItemRec } from '../types'
+import { STALE } from '../lib/queryClient'
+import type { Localized } from '../types'
 
 /** Tab bar config (labels/icons are UI chrome; the items come from Supabase). */
 const TABS: { key: string; label: Localized; icon: string }[] = [
@@ -18,17 +20,12 @@ const TABS: { key: string; label: Localized; icon: string }[] = [
 export default function NewsTabs() {
   const L = useLocalized()
   const [active, setActive] = useState(0)
-  const [items, setItems] = useState<NewsItemRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listNews()
-      .then((n) => alive && setItems(n))
-      .catch(() => alive && setItems([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: items = [] } = useQuery({
+    queryKey: ['news'],
+    queryFn: () => listNews(),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   const tabKey = TABS[active].key
   const { featured, headlines } = useMemo(() => {

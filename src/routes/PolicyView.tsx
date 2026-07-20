@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -7,7 +7,7 @@ import ArticleBody from '../components/ArticleBody'
 import { metaDescription } from '../lib/seo/text'
 import { getPolicy } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { PolicyRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * /policy/view?slug=… (and the fixed /help/{terms,privacy,safety} routes) —
@@ -18,15 +18,13 @@ export default function PolicyView({ slug: fixedSlug }: { slug?: string }) {
   const L = useLocalized()
   const [params] = useSearchParams()
   const slug = fixedSlug ?? params.get('slug') ?? ''
-  const [rec, setRec] = useState<PolicyRec | null>(null)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    getPolicy(slug).then((r) => alive && setRec(r)).catch(() => alive && setRec(null)).finally(() => alive && setLoading(false))
-    return () => { alive = false }
-  }, [slug])
+  const { data: rec = null, isLoading: loading } = useQuery({
+    queryKey: ['policy', slug],
+    queryFn: () => getPolicy(slug),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (loading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
   if (!rec) {

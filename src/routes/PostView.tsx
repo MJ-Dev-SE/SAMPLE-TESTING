@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -9,6 +10,7 @@ import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 import ImageCarousel from '../components/ImageCarousel'
 import CommentItem from '../components/CommentItem'
 import {
@@ -56,44 +58,61 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
   const navigate = useNavigate()
   const { user } = useAuth()
   const isAdmin = useIsAdmin()
+  const queryClient = useQueryClient()
 
-  const [post, setPost] = useState<DbPost | null>(null)
-  const [state, setState] = useState<'loading' | 'ready' | 'missing'>('loading')
+  const postKey = slug ?? id
   const [redirectTo, setRedirectTo] = useState<string | null>(null)
-  const [comments, setComments] = useState<DbComment[]>([])
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+  const recordedViewFor = useRef<string | null>(null)
+
+  const { data: post = null, isLoading } = useQuery({
+    queryKey: ['post', postKey],
+    queryFn: () => (slug ? getPostBySlug(slug) : getPost(id!)),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+    enabled: !!(slug || id),
+  })
+  const state: 'loading' | 'ready' | 'missing' = isLoading ? 'loading' : post ? 'ready' : 'missing'
+
+  const { data: comments = [] } = useQuery({
+    queryKey: ['comments', post?.id ?? null],
+    queryFn: () => listComments(post!.id),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 2,
+    enabled: !!post?.id,
+  })
+
   const ai = useAiAssistant('post', post?.id ?? '')
 
+  // Slug miss → maybe it was renamed; follow the redirect table (once per key).
   useEffect(() => {
+    if (isLoading || post || !slug) return
     let alive = true
-    setState('loading')
-    const load = slug ? getPostBySlug(slug) : getPost(id!)
-    load
-      .then(async (p) => {
-        if (!alive) return
-        if (!p && slug) {
-          // Slug miss → maybe it was renamed; follow the redirect table.
-          const next = await resolveSlugRedirect('post', slug)
-          if (!alive) return
-          if (next) return setRedirectTo(`/posts/${encodeURIComponent(next)}`)
-        }
-        setPost(p)
-        setState(p ? 'ready' : 'missing')
-        if (!p) return
-        listComments(p.id).then((c) => alive && setComments(c)).catch(() => {})
-        // Fire-and-forget: dedup happens server-side, so this is safe to call on
-        // every mount (including StrictMode's double-invoke in dev) without
-        // inflating the count — a repeat call within 24h just re-reads the total.
-        recordPostView(p.id)
-          .then((views) => alive && setPost((prev) => (prev ? { ...prev, views } : prev)))
-          .catch(() => {})
+    resolveSlugRedirect('post', slug)
+      .then((next) => {
+        if (alive && next) setRedirectTo(`/posts/${encodeURIComponent(next)}`)
       })
-      .catch(() => alive && setState('missing'))
+      .catch(() => {})
     return () => {
       alive = false
     }
-  }, [slug, id])
+  }, [isLoading, post, slug])
+
+  // Fire-and-forget: dedup happens server-side, so this is safe to call on every
+  // mount (including StrictMode's double-invoke in dev) without inflating the
+  // count — a repeat call within 24h just re-reads the total. Guarded by a ref
+  // (rather than an effect dep on `post`) so a later cache update to `post`
+  // doesn't re-trigger it.
+  useEffect(() => {
+    if (!post || recordedViewFor.current === postKey) return
+    recordedViewFor.current = postKey
+    recordPostView(post.id)
+      .then((views) => {
+        queryClient.setQueryData<DbPost | null>(['post', postKey], (prev) => (prev ? { ...prev, views } : prev))
+      })
+      .catch(() => {})
+  }, [post, postKey, queryClient])
 
   if (redirectTo) return <Navigate to={redirectTo} replace />
 
@@ -112,7 +131,8 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
         authorId: user?.id ?? null,
       })
       if (!user && created.delete_token) saveGuestCommentToken(created.id, created.delete_token)
-      setComments((prev) => [...prev, created])
+      queryClient.setQueryData<DbComment[]>(['comments', post.id], (prev) => [...(prev ?? []), created])
+      queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
       setBody('')
       toast(t('post.commentAdded'))
     } catch (err) {
@@ -256,7 +276,12 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
                 key={c.id}
                 comment={c}
                 isAdmin={isAdmin === true}
-                onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+                onDeleted={(cid) => {
+                  if (!post) return
+                  queryClient.setQueryData<DbComment[]>(['comments', post.id], (prev) =>
+                    (prev ?? []).filter((x) => x.id !== cid),
+                  )
+                }}
               />
             ))
           )}

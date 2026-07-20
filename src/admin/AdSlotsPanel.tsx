@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { supabase } from '../lib/supabase'
 import { useLocalized } from '../lib/useLocalized'
 import { publicUrl } from '../lib/media'
-import { bustContentCache } from '../lib/contentCache'
+import { useQueryClient } from '@tanstack/react-query'
 import { alertConfirm, alertError, errText, toast } from '../lib/alert'
 import type { Localized } from '../types'
 import type { AdminRow, TableDef } from './registry'
@@ -50,10 +50,24 @@ const GROUPS: SlotGroup[] = [
   {
     position: 'header',
     icon: 'fa-window-maximize',
-    title: { en: 'Header banner', ko: '헤더 배너' },
+    title: { en: 'Header banner — manilatour.com', ko: '헤더 배너 — manilatour.com' },
     hint: {
-      en: 'Two spots beside the logo — LEFT and RIGHT — each now crossfades between 2 creatives (4 total). Use "+ Add extra" for an even longer rotation.',
-      ko: '로고 왼쪽·오른쪽 자리 각각 소재 2개씩(총 4개) 교차 노출됩니다. "+ 추가 소재"로 더 늘릴 수 있습니다.',
+      en: 'Two spots beside the logo — LEFT and RIGHT — each crossfades between 2 creatives (4 total); "+ Add extra" lengthens the rotation. Shows on manilatour.com only — hanin.tv has its own group below.',
+      ko: '로고 왼쪽·오른쪽 자리 각각 소재 2개씩(총 4개) 교차 노출, "+ 추가 소재"로 더 늘릴 수 있습니다. manilatour.com에만 노출 — hanin.tv는 아래 전용 그룹을 사용합니다.',
+    },
+    count: 4,
+    slotName: (i) => HEADER_SLOT_NAMES[i] ?? { en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` },
+    allowExtra: true,
+  },
+  {
+    // hanin.tv's own header inventory (brandedAdPositions in src/config/brand.ts):
+    // rows save under position 'hanin:header' and render ONLY on hanin.tv.
+    position: 'hanin:header',
+    icon: 'fa-tv',
+    title: { en: 'Header banner — hanin.tv', ko: '헤더 배너 — hanin.tv' },
+    hint: {
+      en: 'Same two spots beside the logo, but on hanin.tv only. Creatives uploaded here never appear on manilatour.com (and vice versa).',
+      ko: '로고 옆 동일한 두 자리이지만 hanin.tv에만 노출됩니다. 여기 올린 소재는 manilatour.com에는 나오지 않습니다(반대도 동일).',
     },
     count: 4,
     slotName: (i) => HEADER_SLOT_NAMES[i] ?? { en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` },
@@ -76,8 +90,8 @@ const GROUPS: SlotGroup[] = [
     icon: 'fa-angles-left',
     title: { en: 'Left wing rail', ko: '왼쪽 윙 배너' },
     hint: {
-      en: '4 fixed banners on the LEFT side of the page (WingBanners.tsx). Only these 4 slots are shown.',
-      ko: '페이지 왼쪽의 고정 배너 4개(WingBanners.tsx). 이 4개 슬롯만 표시됩니다.',
+      en: '4 fixed banners on the LEFT side of the page (WingBanners.tsx). Only these 4 slots are shown — on EVERY domain (manilatour.com and hanin.tv share these).',
+      ko: '페이지 왼쪽의 고정 배너 4개(WingBanners.tsx). 이 4개 슬롯만 표시되며 모든 도메인(manilatour.com·hanin.tv 공용)에 노출됩니다.',
     },
     count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
@@ -88,8 +102,8 @@ const GROUPS: SlotGroup[] = [
     icon: 'fa-angles-right',
     title: { en: 'Right wing rail', ko: '오른쪽 윙 배너' },
     hint: {
-      en: '3 fixed banners on the RIGHT side of the page (WingBanners.tsx). Only these 3 slots are shown.',
-      ko: '페이지 오른쪽의 고정 배너 3개(WingBanners.tsx). 이 3개 슬롯만 표시됩니다.',
+      en: '3 fixed banners on the RIGHT side of the page (WingBanners.tsx). Only these 3 slots are shown — on EVERY domain (manilatour.com and hanin.tv share these).',
+      ko: '페이지 오른쪽의 고정 배너 3개(WingBanners.tsx). 이 3개 슬롯만 표시되며 모든 도메인(manilatour.com·hanin.tv 공용)에 노출됩니다.',
     },
     count: 3,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
@@ -119,6 +133,7 @@ interface EditTarget {
 export default function AdSlotsPanel({ def }: { def: TableDef }) {
   const { t } = useTranslation()
   const L = useLocalized()
+  const queryClient = useQueryClient()
   const [rows, setRows] = useState<AdminRow[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<EditTarget | null>(null)
@@ -222,7 +237,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
         const { error } = await supabase.from('advertisements').insert(payload)
         if (error) throw error
       }
-      bustContentCache('ads') // header/homepage/wing ads re-read fresh on the site
+      queryClient.invalidateQueries({ queryKey: ['ads'] }) // header/homepage/wing ads re-read fresh on the site
       toast(t('admin.saved'))
       setEditing(null)
       load()
@@ -245,7 +260,7 @@ export default function AdSlotsPanel({ def }: { def: TableDef }) {
     try {
       const { error } = await supabase.from('advertisements').delete().eq('id', row.id)
       if (error) throw error
-      bustContentCache('ads')
+      queryClient.invalidateQueries({ queryKey: ['ads'] })
       toast(t('admin.deleted'))
       setEditing(null)
       setRows((prev) => prev.filter((r) => r.id !== row.id))

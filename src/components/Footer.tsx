@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listAdvertisements, listLinks, listPolicies } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 import type { AdvertisementRec, LinkRec, PolicyRec } from '../types'
 import Logo from './Logo'
 import MobileFooterContentCard, { type FooterGroup } from './MobileFooterContentCard'
@@ -20,43 +22,40 @@ export default function Footer() {
   const L = useLocalized()
   const isKo = (i18n.resolvedLanguage || i18n.language || '').startsWith('ko')
 
-  const [groups, setGroups] = useState<FooterGroup[]>([])
   // Mobile-only rotating card: which group is shown + a light fade on swap.
   const [cardIdx, setCardIdx] = useState(0)
   const [fading, setFading] = useState(false)
 
-  useEffect(() => {
-    let alive = true
-    Promise.all([
-      listAdvertisements('footer-info').catch((): AdvertisementRec[] => []),
-      listLinks('footer-link').catch((): LinkRec[] => []),
-      listPolicies().catch((): PolicyRec[] => []),
-    ])
-      .then(([ads, links, policies]) => {
-        if (!alive) return
-        const all: FooterGroup[] = [
-          {
-            kind: 'ad',
-            title: { en: 'ADVERTISEMENT', ko: '광고' },
-            links: ads.map((a) => ({ key: a.id, label: a.title, href: `/ad/view?id=${a.id}` })),
-          },
-          {
-            kind: 'link',
-            title: { en: 'LINK', ko: '링크' },
-            links: links.map((l) => ({ key: l.id, label: l.title, href: l.slug ? `/link/view?slug=${l.slug}` : l.url || '#' })),
-          },
-          {
-            kind: 'policy',
-            title: { en: 'POLICY', ko: '정책' },
-            links: policies.map((p) => ({ key: p.id, label: p.title, href: `/policy/view?slug=${p.slug}` })),
-          },
-        ]
-        const next = all.filter((g) => g.links.length > 0)
-        if (next.length) setGroups(next)
-      })
-      .catch(() => {})
-    return () => { alive = false }
-  }, [])
+  const { data: groups = [] } = useQuery({
+    queryKey: ['footer-groups'],
+    queryFn: async () => {
+      const [ads, links, policies] = await Promise.all([
+        listAdvertisements('footer-info').catch((): AdvertisementRec[] => []),
+        listLinks('footer-link').catch((): LinkRec[] => []),
+        listPolicies().catch((): PolicyRec[] => []),
+      ])
+      const all: FooterGroup[] = [
+        {
+          kind: 'ad',
+          title: { en: 'ADVERTISEMENT', ko: '광고' },
+          links: ads.map((a) => ({ key: a.id, label: a.title, href: `/ad/view?id=${a.id}` })),
+        },
+        {
+          kind: 'link',
+          title: { en: 'LINK', ko: '링크' },
+          links: links.map((l) => ({ key: l.id, label: l.title, href: l.slug ? `/link/view?slug=${l.slug}` : l.url || '#' })),
+        },
+        {
+          kind: 'policy',
+          title: { en: 'POLICY', ko: '정책' },
+          links: policies.map((p) => ({ key: p.id, label: p.title, href: `/policy/view?slug=${p.slug}` })),
+        },
+      ]
+      return all.filter((g) => g.links.length > 0)
+    },
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   // Advance the mobile card to the next group (Advertisement → Link → Policy → …).
   const nextIdx = groups.length ? (cardIdx + 1) % groups.length : 0

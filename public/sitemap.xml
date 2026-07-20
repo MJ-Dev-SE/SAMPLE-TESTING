@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://manilatour.com/</loc>
-    <lastmod>2026-07-18</lastmod>
+    <lastmod>2026-07-20</lastmod>
   </url>
   <url>
     <loc>https://manilatour.com/menu</loc>
@@ -41,6 +41,9 @@
     <loc>https://manilatour.com/business-directory/government</loc>
   </url>
   <url>
+    <loc>https://manilatour.com/golf/golf-courses</loc>
+  </url>
+  <url>
     <loc>https://manilatour.com/immigration/passport-visa</loc>
   </url>
   <url>
@@ -65,7 +68,7 @@
     <loc>https://manilatour.com/news/notices</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/immigration/boarding-house</loc>
+    <loc>https://manilatour.com/golf/golf-packages</loc>
   </url>
   <url>
     <loc>https://manilatour.com/business-directory/education</loc>
@@ -95,16 +98,19 @@
     <loc>https://manilatour.com/jobs/people-search</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/business-directory/food</loc>
+    <loc>https://manilatour.com/immigration/boarding-house</loc>
   </url>
   <url>
     <loc>https://manilatour.com/qna</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/business-directory/traffic</loc>
+    <loc>https://manilatour.com/business-directory/food</loc>
   </url>
   <url>
     <loc>https://manilatour.com/community</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/traffic</loc>
   </url>
   <url>
     <loc>https://manilatour.com/business-directory/hospital</loc>
@@ -126,6 +132,9 @@
   </url>
   <url>
     <loc>https://manilatour.com/immigration</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/golf</loc>
   </url>
   <url>
     <loc>https://manilatour.com/travel</loc>

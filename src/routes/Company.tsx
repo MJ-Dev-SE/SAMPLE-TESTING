@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -11,7 +12,7 @@ import { NotFoundBody } from './NotFound'
 import { listBusinesses, listCategories } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import { metaDescription } from '../lib/seo/text'
-import type { BusinessRec, CategoryRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 const PAGE_SIZE = 9 // 3 columns × 3 rows
 
@@ -30,49 +31,31 @@ export default function Company() {
   const category = categorySlug ?? null
   const page = Math.max(1, Number(params.get('page') || 1))
 
-  const [categories, setCategories] = useState<CategoryRec[] | null>(null) // null = loading
-  const [items, setItems] = useState<BusinessRec[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const queryClient = useQueryClient()
+
+  const {
+    data: categoriesData,
+    isLoading: categoriesLoading,
+    isError: categoriesError,
+  } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories(),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
+  const categories = categoriesLoading ? null : categoriesError ? [] : categoriesData ?? []
 
   const activeCat = (categories ?? []).find((c) => c.slug === category) ?? null
 
-  useEffect(() => {
-    listCategories()
-      .then(setCategories)
-      .catch(() => setCategories([]))
-  }, [])
-
-  const load = () => {
-    setLoading(true)
-    listBusinesses(category, { page, pageSize: PAGE_SIZE })
-      .then(({ rows, total }) => {
-        setItems(rows)
-        setTotal(total)
-      })
-      .catch(() => {
-        setItems([])
-        setTotal(0)
-      })
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    listBusinesses(category, { page, pageSize: PAGE_SIZE })
-      .then(({ rows, total }) => {
-        if (!alive) return
-        setItems(rows)
-        setTotal(total)
-      })
-      .catch(() => alive && (setItems([]), setTotal(0)))
-      .finally(() => alive && setLoading(false))
-    return () => {
-      alive = false
-    }
-  }, [category, page])
+  const { data: bizData, isLoading: loading } = useQuery({
+    queryKey: ['businesses', category, page, PAGE_SIZE],
+    queryFn: () => listBusinesses(category, { page, pageSize: PAGE_SIZE }),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
+  const items = bizData?.rows ?? []
+  const total = bizData?.total ?? 0
 
   const pageCount = Math.ceil(total / PAGE_SIZE)
   const catById = new Map((categories ?? []).map((c) => [c.id, c]))
@@ -193,7 +176,7 @@ export default function Company() {
             setModalOpen(false)
             // If a category is active, the new record belongs there; reload the list.
             if (page !== 1) setPage(1)
-            else load()
+            else queryClient.invalidateQueries({ queryKey: ['businesses'] })
           }}
           onClose={() => setModalOpen(false)}
         />

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -6,7 +6,8 @@ import Seo from '../components/seo/Seo'
 import SmartImage from '../components/SmartImage'
 import { listAllAdvertisements } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
-import type { AdPosition, AdvertisementRec, Localized } from '../types'
+import { STALE } from '../lib/queryClient'
+import type { AdPosition, Localized } from '../types'
 
 /** Section grouping + label for each ad placement, in the order shown on the page. */
 const SECTIONS: { position: AdPosition; label: Localized; icon: string }[] = [
@@ -26,17 +27,13 @@ const SECTIONS: { position: AdPosition; label: Localized; icon: string }[] = [
 export default function AdGalleryView() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [ads, setAds] = useState<AdvertisementRec[] | null>(null)
-
-  useEffect(() => {
-    let alive = true
-    listAllAdvertisements()
-      .then((rows) => alive && setAds(rows))
-      .catch(() => alive && setAds([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  // `ads === null` keeps meaning "still loading" for the spinner branch below.
+  const { data: ads = null } = useQuery({
+    queryKey: ['ads', 'all'],
+    queryFn: () => listAllAdvertisements(),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   const groups = SECTIONS.map((s) => ({ ...s, ads: (ads ?? []).filter((a) => a.position === s.position) })).filter(
     (g) => g.ads.length > 0,

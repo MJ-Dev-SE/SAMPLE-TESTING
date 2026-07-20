@@ -1,4 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -8,6 +9,7 @@ import { NotFoundBody } from './NotFound'
 import { metaDescription } from '../lib/seo/text'
 import { touristAttractionLd } from '../lib/seo/structuredData'
 import { listAllPhotos } from '../lib/content'
+import { STALE } from '../lib/queryClient'
 import SmartImage from '../components/SmartImage'
 import Tooltip from '../components/Tooltip'
 import { useAuth } from '../lib/auth'
@@ -39,7 +41,6 @@ import { saveGuestCommentToken } from '../lib/guestTokens'
 import AiAssistantButton from '../components/ai/AiAssistantButton'
 import AiAssistantSection from '../components/ai/AiAssistantSection'
 import { useAiAssistant } from '../components/ai/useAiAssistant'
-import type { PhotoRec } from '../types'
 
 const PHOTOS_CRUMB = { en: 'Resort Photos', ko: '리조트 포토' }
 
@@ -61,23 +62,15 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const { user, profile } = useAuth()
   const isAdmin = useIsAdmin()
   const ai = useAiAssistant('photo', photoId)
+  const queryClient = useQueryClient()
 
-  const [all, setAll] = useState<PhotoRec[]>([])
-  const [notFound, setNotFound] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    listAllPhotos()
-      .then((rows) => {
-        if (!alive) return
-        setAll(rows)
-        if (rows.length > 0 && !rows.some((p) => p.slug === photoId)) setNotFound(true)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [photoId])
+  const { data: all = [] } = useQuery({
+    queryKey: ['photos', 'all'],
+    queryFn: () => listAllPhotos(),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+  })
+  const notFound = all.length > 0 && !all.some((p) => p.slug === photoId)
 
   const idx = all.findIndex((p) => p.slug === photoId)
   const photo = idx >= 0 ? all[idx] : null
@@ -85,28 +78,36 @@ function PhotoPage({ photoId }: { photoId: string }) {
   const next = all.length ? all[(idx + 1) % all.length] : null
 
   // Comments hang off a hidden anchor post (created on first comment).
-  const [anchor, setAnchor] = useState<DbPost | null>(null)
-  const [comments, setComments] = useState<DbComment[]>([])
+  const { data: anchor = null } = useQuery({
+    queryKey: ['photoPost', photoId],
+    queryFn: () => getPhotoPost(photoId),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+    enabled: !!photoId,
+  })
+  const { data: comments = [] } = useQuery({
+    queryKey: ['comments', anchor?.id ?? null],
+    queryFn: () => listComments(anchor!.id),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 2,
+    enabled: !!anchor?.id,
+  })
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
 
   // User posts submitted under THIS category (resort_community board, category = slug).
   // Composed INLINE on this page — no navigation away.
-  const [posts, setPosts] = useState<DbPost[]>([])
+  const { data: posts = [] } = useQuery({
+    queryKey: ['posts', 'resort_community', photoId],
+    queryFn: () => listPosts('resort_community', undefined, photoId),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+    enabled: !!photoId,
+  })
   const [showForm, setShowForm] = useState(false)
   const [pBody, setPBody] = useState('')
   const { picks, addFiles, removeAt, reset } = usePhotoPicker()
   const [pBusy, setPBusy] = useState(false)
-
-  useEffect(() => {
-    let alive = true
-    listPosts('resort_community', undefined, photoId)
-      .then((p) => alive && setPosts(p))
-      .catch(() => alive && setPosts([]))
-    return () => {
-      alive = false
-    }
-  }, [photoId])
 
   // Delete a post from the inline category feed — the authoring member or an admin.
   const removeFeedPost = async (p: DbPost) => {
@@ -119,7 +120,9 @@ function PhotoPage({ photoId }: { photoId: string }) {
     if (!ok) return
     try {
       await deletePost(p.id)
-      setPosts((prev) => prev.filter((x) => x.id !== p.id))
+      queryClient.setQueryData<DbPost[]>(['posts', 'resort_community', photoId], (prev) =>
+        (prev ?? []).filter((x) => x.id !== p.id),
+      )
       toast(t('post.deleted'))
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
@@ -155,7 +158,7 @@ function PhotoPage({ photoId }: { photoId: string }) {
           ? { username: profile.username, display_name: profile.display_name, avatar_url: profile.avatar_url }
           : null,
       }
-      setPosts((prev) => [optimistic, ...prev])
+      queryClient.setQueryData<DbPost[]>(['posts', 'resort_community', photoId], (prev) => [optimistic, ...(prev ?? [])])
       setPBody('')
       reset()
       setShowForm(false)
@@ -167,28 +170,13 @@ function PhotoPage({ photoId }: { photoId: string }) {
     }
   }
 
-  useEffect(() => {
-    let alive = true
-    getPhotoPost(photoId)
-      .then(async (p) => {
-        if (!alive || !p) return
-        setAnchor(p)
-        const c = await listComments(p.id)
-        if (alive) setComments(c)
-      })
-      .catch(() => {})
-    return () => {
-      alive = false
-    }
-  }, [photoId])
-
   const submitComment = async (e: FormEvent) => {
     e.preventDefault()
     if (!body.trim()) return
     setBusy(true)
     try {
       const post = anchor ?? (await getOrCreatePhotoPost(photoId, photo?.title.en ?? photoId))
-      setAnchor(post)
+      queryClient.setQueryData(['photoPost', photoId], post)
       const created = await createComment({
         postId: post.id,
         boardId: 'photos',
@@ -196,7 +184,8 @@ function PhotoPage({ photoId }: { photoId: string }) {
         authorId: user?.id ?? null,
       })
       if (!user && created.delete_token) saveGuestCommentToken(created.id, created.delete_token)
-      setComments((prevList) => [...prevList, created])
+      queryClient.setQueryData<DbComment[]>(['comments', post.id], (prev) => [...(prev ?? []), created])
+      queryClient.invalidateQueries({ queryKey: ['comments', post.id] })
       setBody('')
       toast(t('post.commentAdded'))
     } catch (err) {
@@ -305,7 +294,13 @@ function PhotoPage({ photoId }: { photoId: string }) {
             {posts.map((p) => (
               <li key={p.id} className="border border-neutral-90 rounded-l p-m">
                 <div className="flex items-center gap-2 text-xs mb-1">
-                  <img src={p.author?.avatar_url || avatar(authorName(p))} alt="" className="w-6 h-6 rounded-full object-cover shrink-0" />
+                  <img
+                    src={p.author?.avatar_url || avatar(authorName(p))}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    className="w-6 h-6 rounded-full object-cover shrink-0"
+                  />
                   <span className="font-medium text-text-normal inline-flex items-center gap-1">
                     {authorName(p)}
                     {isGuest(p) && (
@@ -414,7 +409,12 @@ function PhotoPage({ photoId }: { photoId: string }) {
                 key={c.id}
                 comment={c}
                 isAdmin={isAdmin === true}
-                onDeleted={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+                onDeleted={(cid) => {
+                  if (!anchor) return
+                  queryClient.setQueryData<DbComment[]>(['comments', anchor.id], (prev) =>
+                    (prev ?? []).filter((x) => x.id !== cid),
+                  )
+                }}
               />
             ))
           )}

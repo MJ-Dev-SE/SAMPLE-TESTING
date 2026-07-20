@@ -28,6 +28,8 @@ export default function LoginCard() {
         /* Logged-in state */
         <div className="p-m flex flex-col items-center gap-3">
           {profile?.avatar_url ? (
+            // Deliberately eager (no loading="lazy") — this sidebar card renders
+            // above-the-fold on every page, unlike other avatars in the app.
             <img src={profile.avatar_url} alt="" className="w-14 h-14 rounded-full object-cover" />
           ) : (
             <span className="w-14 h-14 rounded-full bg-chip-blue grid place-items-center text-accent-blue">

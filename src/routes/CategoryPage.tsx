@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -9,6 +9,7 @@ import { NotFoundBody } from './NotFound'
 import { getCategoryBySlug, listCategories } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import { metaDescription } from '../lib/seo/text'
+import { STALE } from '../lib/queryClient'
 import {
   authorName,
   commentCountOf,
@@ -17,9 +18,7 @@ import {
   listPostsByCategory,
   listPostsByParentCategory,
   postPath,
-  type DbPost,
 } from '../lib/posts'
-import type { CategoryRec } from '../types'
 
 const PAGE_SIZE = 20
 
@@ -39,62 +38,49 @@ export default function CategoryPage({ parentSlug }: { parentSlug: string }) {
   const page = Math.max(1, Number(params.get('page') || 1))
   const slug = childSlug ?? parentSlug
 
-  const [parent, setParent] = useState<CategoryRec | null | undefined>(undefined) // undefined = loading
-  const [children, setChildren] = useState<CategoryRec[]>([])
-  const [posts, setPosts] = useState<DbPost[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-
   // Resolve the parent + its children (children double as the chip row and the
   // parent feed's id list).
-  useEffect(() => {
-    let alive = true
-    setParent(undefined)
-    Promise.all([getCategoryBySlug(parentSlug, 'community'), listCategories(parentSlug, 'community')])
-      .then(([p, kids]) => {
-        if (!alive) return
-        setParent(p)
-        setChildren(kids)
-      })
-      .catch(() => alive && (setParent(null), setChildren([])))
-    return () => {
-      alive = false
-    }
-  }, [parentSlug])
+  const {
+    data: tree,
+    isLoading: resolving,
+    isError: treeError,
+  } = useQuery({
+    queryKey: ['category-tree', parentSlug],
+    queryFn: async () => {
+      const [p, kids] = await Promise.all([
+        getCategoryBySlug(parentSlug, 'community'),
+        listCategories(parentSlug, 'community'),
+      ])
+      return { parent: p, children: kids }
+    },
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
+  const parent = treeError ? null : tree?.parent ?? null
+  const children = tree?.children ?? []
 
   const child = childSlug ? children.find((c) => c.slug === childSlug) ?? null : null
   const category = childSlug ? child : parent ?? null
-  const resolving = parent === undefined
 
   // Load the feed once the category tree is resolved.
-  useEffect(() => {
-    if (parent === undefined) return
-    if (!parent || (childSlug && !children.some((c) => c.slug === childSlug))) {
-      setPosts([])
-      setTotal(0)
-      setLoading(false)
-      return
-    }
-    let alive = true
-    setLoading(true)
-    setError(false)
-    const target = children.find((c) => c.slug === childSlug)
-    const fetch = target
-      ? listPostsByCategory(target.id, { page, pageSize: PAGE_SIZE })
-      : listPostsByParentCategory(children.map((c) => c.id), { page, pageSize: PAGE_SIZE })
-    fetch
-      .then(({ rows, total }) => {
-        if (!alive) return
-        setPosts(rows)
-        setTotal(total)
-      })
-      .catch(() => alive && (setPosts([]), setTotal(0), setError(true)))
-      .finally(() => alive && setLoading(false))
-    return () => {
-      alive = false
-    }
-  }, [parent, children, childSlug, page])
+  const target = childSlug ? children.find((c) => c.slug === childSlug) : undefined
+  const feedEnabled = !resolving && !!parent && (!childSlug || children.some((c) => c.slug === childSlug))
+  const {
+    data: feed,
+    isLoading: loading,
+    isError: error,
+  } = useQuery({
+    queryKey: ['category-posts', parentSlug, childSlug ?? null, page],
+    queryFn: () =>
+      target
+        ? listPostsByCategory(target.id, { page, pageSize: PAGE_SIZE })
+        : listPostsByParentCategory(children.map((c) => c.id), { page, pageSize: PAGE_SIZE }),
+    enabled: feedEnabled,
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+  })
+  const posts = feed?.rows ?? []
+  const total = feed?.total ?? 0
 
   const setPage = (p: number) => {
     const next = new URLSearchParams(params)

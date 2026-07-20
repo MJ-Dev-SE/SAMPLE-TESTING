@@ -1,24 +1,20 @@
-import { useEffect, useState } from 'react'
-import type { AdPosition, AdvertisementRec } from '../types'
+import { useQuery } from '@tanstack/react-query'
+import type { AdPosition } from '../types'
 import { listAdvertisements } from '../lib/content'
 import AdCarousel from './AdCarousel'
+import { STALE } from '../lib/queryClient'
 
 /**
  * Ad-card row. Fetches the advertisements for a position from Supabase and renders
  * them as two crossfading cards, splitting the creatives between them.
  */
 export default function BannerRow({ position = 'homepage', className = '' }: { position?: AdPosition; className?: string }) {
-  const [ads, setAds] = useState<AdvertisementRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listAdvertisements(position)
-      .then((a) => alive && setAds(a))
-      .catch(() => alive && setAds([]))
-    return () => {
-      alive = false
-    }
-  }, [position])
+  const { data: ads = [] } = useQuery({
+    queryKey: ['ads', position],
+    queryFn: () => listAdvertisements(position),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (ads.length === 0) return null
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -6,13 +7,13 @@ import Seo from '../components/seo/Seo'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 import { createPost } from '../lib/posts'
 import { getCategoryBySlug, listCategories } from '../lib/content'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
-import type { CategoryRec } from '../types'
 
 /**
  * Compose page (/post/write?post_id=…&category=…, or /post/write?maroon=<slug>).
@@ -42,16 +43,17 @@ export default function PostWrite() {
   const [busy, setBusy] = useState(false)
 
   // Community category cascade (only relevant when isCommunityPost).
-  const [parents, setParents] = useState<CategoryRec[]>([])
   const [parentSlug, setParentSlug] = useState<string | null>(null)
-  const [children, setChildren] = useState<CategoryRec[]>([])
   const [childId, setChildId] = useState<string>('')
   const autoFilled = useRef(false)
 
-  useEffect(() => {
-    if (!isCommunityPost) return
-    listCategories(null, 'community').then(setParents).catch(() => setParents([]))
-  }, [isCommunityPost])
+  const { data: parents = [] } = useQuery({
+    queryKey: ['categories', 'community', null],
+    queryFn: () => listCategories(null, 'community'),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+    enabled: isCommunityPost,
+  })
 
   // Auto-detect parent (+ child, if the incoming slug is itself a child) once.
   useEffect(() => {
@@ -71,10 +73,13 @@ export default function PostWrite() {
   }, [isCommunityPost, maroonSlug])
 
   // Reload children whenever the parent changes.
-  useEffect(() => {
-    if (!parentSlug) return setChildren([])
-    listCategories(parentSlug, 'community').then(setChildren).catch(() => setChildren([]))
-  }, [parentSlug])
+  const { data: children = [] } = useQuery({
+    queryKey: ['categories', 'community', parentSlug],
+    queryFn: () => listCategories(parentSlug, 'community'),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+    enabled: !!parentSlug,
+  })
 
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
   const boardOptions = Object.entries(boardTitles).filter(([id]) => id !== 'maroon')

@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import type { AdvertisementRec } from '../types'
 import { listAdvertisements } from '../lib/content'
 import { publicUrl } from '../lib/media'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 
 /**
  * WING (side) AD BANNERS — philgo.com style.
@@ -33,18 +34,19 @@ function Wing({ ads, side }: { ads: AdvertisementRec[]; side: 'left' | 'right' }
 }
 
 export default function WingBanners() {
-  const [left, setLeft] = useState<AdvertisementRec[]>([])
-  const [right, setRight] = useState<AdvertisementRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    // Fixed slot counts (managed per-slot in the admin console): LEFT 4 · RIGHT 3.
-    listAdvertisements('wing-left').then((a) => alive && setLeft(a.slice(0, 4))).catch(() => alive && setLeft([]))
-    listAdvertisements('wing-right').then((a) => alive && setRight(a.slice(0, 3))).catch(() => alive && setRight([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  // Fixed slot counts (managed per-slot in the admin console): LEFT 4 · RIGHT 3.
+  const { data: left = [] } = useQuery({
+    queryKey: ['ads', 'wing-left'],
+    queryFn: async () => (await listAdvertisements('wing-left')).slice(0, 4),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
+  const { data: right = [] } = useQuery({
+    queryKey: ['ads', 'wing-right'],
+    queryFn: async () => (await listAdvertisements('wing-right')).slice(0, 3),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (left.length === 0 && right.length === 0) return null
 

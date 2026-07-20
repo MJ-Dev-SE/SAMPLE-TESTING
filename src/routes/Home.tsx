@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
@@ -13,7 +13,8 @@ import { commentCountOf, listPosts, postPath, type DbPost } from '../lib/posts'
 import { organizationLd, websiteLd } from '../lib/seo/structuredData'
 import { DEFAULT_TITLE } from '../config/site'
 import { useLocalized } from '../lib/useLocalized'
-import type { Board, PhotoRec } from '../types'
+import { STALE } from '../lib/queryClient'
+import type { Board } from '../types'
 
 /** Board ids previewed on the homepage "Latest posts" columns. */
 const HOME_BOARDS = ['freetalk', 'qna'] as const
@@ -35,22 +36,21 @@ function toBoard(boardId: string, posts: DbPost[]): Board {
 export default function Home() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [banner, setBanner] = useState<PhotoRec[]>([])
-  const [boards, setBoards] = useState<Board[]>([])
 
-  useEffect(() => {
-    let alive = true
-    listPhotos('banner')
-      .then((p) => alive && setBanner(p))
-      .catch(() => alive && setBanner([]))
+  const { data: banner = [] } = useQuery({
+    queryKey: ['photos', 'banner'],
+    queryFn: () => listPhotos('banner'),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
-    Promise.all(HOME_BOARDS.map((b) => listPosts(b, 5).catch(() => [] as DbPost[]))).then((lists) => {
-      if (alive) setBoards(HOME_BOARDS.map((b, i) => toBoard(b, lists[i])))
-    })
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: boardLists } = useQuery({
+    queryKey: ['home-boards', HOME_BOARDS],
+    queryFn: () => Promise.all(HOME_BOARDS.map((b) => listPosts(b, 5).catch(() => [] as DbPost[]))),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+  })
+  const boards: Board[] = boardLists ? HOME_BOARDS.map((b, i) => toBoard(b, boardLists[i])) : []
 
   return (
     <Layout>

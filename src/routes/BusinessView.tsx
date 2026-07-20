@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
@@ -15,7 +15,7 @@ import { resolveSlugRedirect } from '../lib/slugRedirects'
 import { metaDescription } from '../lib/seo/text'
 import { localBusinessLd } from '../lib/seo/structuredData'
 import { useLocalized } from '../lib/useLocalized'
-import type { BusinessRec, CategoryRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 /**
  * Business profile. Two URL shapes resolve here:
@@ -47,35 +47,28 @@ export default function BusinessView() {
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
 
-  const [biz, setBiz] = useState<BusinessRec | null>(null)
-  const [cat, setCat] = useState<CategoryRec | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [redirectTo, setRedirectTo] = useState<string | null>(null)
-  const [hero, setHero] = useState<string>('')
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['business', slug ?? null, id],
+    queryFn: async () => {
+      const load = slug ? getBusinessBySlug(slug) : getBusiness(id)
+      const [b, cats] = await Promise.all([load, listCategories()])
+      if (!b && slug) {
+        const next = await resolveSlugRedirect('business', slug)
+        if (next) return { biz: null, cat: null, hero: '', redirectTo: `/business/${encodeURIComponent(next)}` }
+      }
+      const hero = b?.main_image_url || b?.thumb_url || (b?.images?.find((i) => i.image_type === 'gallery')?.image_url ?? '')
+      const cat = b ? cats.find((c) => c.id === b.category_id || c.slug === b.category) ?? null : null
+      return { biz: b, cat, hero, redirectTo: null as string | null }
+    },
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+    enabled: !!(slug || id),
+  })
+  const biz = data?.biz ?? null
+  const cat = data?.cat ?? null
+  const hero = data?.hero ?? ''
+  const redirectTo = data?.redirectTo ?? null
   const ai = useAiAssistant('business', biz?.id ?? '')
-
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    const load = slug ? getBusinessBySlug(slug) : getBusiness(id)
-    Promise.all([load, listCategories()])
-      .then(async ([b, cats]) => {
-        if (!alive) return
-        if (!b && slug) {
-          const next = await resolveSlugRedirect('business', slug)
-          if (!alive) return
-          if (next) return setRedirectTo(`/business/${encodeURIComponent(next)}`)
-        }
-        setBiz(b)
-        setHero(b?.main_image_url || b?.thumb_url || (b?.images?.find((i) => i.image_type === 'gallery')?.image_url ?? ''))
-        setCat(b ? cats.find((c) => c.id === b.category_id || c.slug === b.category) ?? null : null)
-      })
-      .catch(() => alive && setBiz(null))
-      .finally(() => alive && setLoading(false))
-    return () => {
-      alive = false
-    }
-  }, [slug, id])
 
   if (redirectTo) return <Navigate to={redirectTo} replace />
 

@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../../lib/auth'
 import { useIsAdmin } from '../../admin/useIsAdmin'
 import { alertError, errText } from '../../lib/alert'
+import { STALE } from '../../lib/queryClient'
 import { createComment, listComments, type CommentRec, type ContentType } from '../../lib/comments'
 import CommentForm from './CommentForm'
 import CommentRow from './CommentRow'
@@ -33,40 +35,46 @@ export default function CommentsReviewsSection({
   const { t } = useTranslation()
   const { user } = useAuth()
   const isAdmin = useIsAdmin() === true
+  const queryClient = useQueryClient()
 
   const [rows, setRows] = useState<CommentRec[]>([])
   const [total, setTotal] = useState(0)
   const [avgRating, setAvgRating] = useState<number | null>(null)
   const [page, setPage] = useState(1)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [posting, setPosting] = useState(false)
   const scrolledRef = useRef(false)
 
-  const load = useCallback(
-    async (p: number, replace: boolean) => {
-      if (!contentId) return
-      p === 1 ? setLoading(true) : setLoadingMore(true)
-      try {
-        const { rows: got, total: tot, avgRating: avg } = await listComments(contentType, contentId, { page: p, pageSize: PAGE_SIZE })
-        setTotal(tot)
-        if (p === 1) setAvgRating(avg)
-        setRows((prev) => (replace ? got : [...prev, ...got.filter((g) => !prev.some((x) => x.id === g.id))]))
-      } catch {
-        if (replace) setRows([]) // table missing / offline → empty section
-      } finally {
-        setLoading(false)
-        setLoadingMore(false)
-      }
-    },
-    [contentType, contentId],
-  )
+  const commentsKey = (p: number) => ['comments', contentType, contentId, p] as const
 
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: commentsKey(page),
+    queryFn: () => listComments(contentType, contentId, { page, pageSize: PAGE_SIZE }),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 2,
+    enabled: !!contentId,
+  })
+  const loading = page === 1 && isLoading
+  const loadingMore = page > 1 && isFetching
+
+  // Reset the accumulator whenever the target record changes.
   useEffect(() => {
     setPage(1)
+    setRows([])
+    setTotal(0)
+    setAvgRating(null)
     scrolledRef.current = false
-    load(1, true)
-  }, [load])
+  }, [contentType, contentId])
+
+  // Merge each page's fetch into the accumulator — replace on page 1 (matches the
+  // old load(p, replace) local-state pattern), append otherwise. On fetch failure
+  // `data` stays undefined so this is a no-op (table missing / offline → empty
+  // section, same as the old catch-and-clear behavior).
+  useEffect(() => {
+    if (!data) return
+    setTotal(data.total)
+    if (page === 1) setAvgRating(data.avgRating)
+    setRows((prev) => (page === 1 ? data.rows : [...prev, ...data.rows.filter((g) => !prev.some((x) => x.id === g.id))]))
+  }, [data, page])
 
   // Scroll to + flash the deep-linked comment once it's in the list.
   useEffect(() => {
@@ -78,10 +86,13 @@ export default function CommentsReviewsSection({
     }
   }, [highlightedCommentId, rows])
 
-  const loadMore = () => {
-    const next = page + 1
-    setPage(next)
-    load(next, false)
+  const loadMore = () => setPage((p) => p + 1)
+
+  // Re-fetch page 1's aggregate (average) for accuracy — collapses the view back
+  // to just page 1, matching the previous load(1, true) behavior exactly.
+  const refreshPage1 = () => {
+    setPage(1)
+    queryClient.invalidateQueries({ queryKey: commentsKey(1) })
   }
 
   const submit = async (body: string, rating: number | null) => {
@@ -92,7 +103,7 @@ export default function CommentsReviewsSection({
       setRows((prev) => [created, ...prev])
       setTotal((n) => n + 1)
       // A new rating shifts the average — re-fetch page 1's aggregate for accuracy.
-      if (allowRating && created.rating) load(1, true)
+      if (allowRating && created.rating) refreshPage1()
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
     } finally {
@@ -141,11 +152,11 @@ export default function CommentsReviewsSection({
                 onDeleted={(id) => {
                   setRows((prev) => prev.filter((r) => r.id !== id))
                   setTotal((n) => Math.max(0, n - 1))
-                  if (allowRating) load(1, true)
+                  if (allowRating) refreshPage1()
                 }}
                 onUpdated={(u) => {
                   setRows((prev) => prev.map((r) => (r.id === u.id ? u : r)))
-                  if (allowRating) load(1, true)
+                  if (allowRating) refreshPage1()
                 }}
               />
             ))}

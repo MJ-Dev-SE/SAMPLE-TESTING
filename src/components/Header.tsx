@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react'
-import type { AdvertisementRec } from '../types'
+import { useQuery } from '@tanstack/react-query'
 import { listAdvertisements } from '../lib/content'
 import AdCarousel from './AdCarousel'
 import Logo from './Logo'
 import SearchBar from './SearchBar'
 import CategoryBar from './CategoryBar'
+import { STALE } from '../lib/queryClient'
 
 /**
  * HEADER / TOP NAVIGATION (banner):
@@ -14,14 +14,12 @@ import CategoryBar from './CategoryBar'
  * The two side banner ads come from the `header` advertisement position (hidden if none).
  */
 export default function Header() {
-  const [ads, setAds] = useState<AdvertisementRec[]>([])
-  useEffect(() => {
-    let alive = true
-    listAdvertisements('header').then((a) => alive && setAds(a)).catch(() => alive && setAds([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: ads = [] } = useQuery({
+    queryKey: ['ads', 'header'],
+    queryFn: () => listAdvertisements('header'),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   // Split the header creatives into two sides (Ad 1 / Ad 2), each crossfading
   // through its share. Larger, more visible treatment than the old resort header.

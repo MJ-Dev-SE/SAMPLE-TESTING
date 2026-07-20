@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { businessPath, listCategories, listRecentBusinesses } from '../lib/content'
 import BusinessModal from './BusinessModal'
 import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
+import { STALE } from '../lib/queryClient'
 import Tooltip from './Tooltip'
-import type { BusinessRec, CategoryRec } from '../types'
 
 /** Sidebar "Recently updated businesses" widget — newest-updated listings from Supabase.
  *  The "+" in the header opens the new-business modal; on success the list reloads
@@ -14,20 +15,21 @@ import type { BusinessRec, CategoryRec } from '../types'
 export default function RecentBusinessesWidget() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [items, setItems] = useState<BusinessRec[]>([])
-  const [categories, setCategories] = useState<CategoryRec[]>([])
   const [open, setOpen] = useState(false)
 
-  const load = useCallback(() => {
-    listRecentBusinesses(6)
-      .then(setItems)
-      .catch(() => setItems([]))
-  }, [])
+  const { data: items = [], refetch } = useQuery({
+    queryKey: ['recent-businesses', 6],
+    queryFn: () => listRecentBusinesses(6),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
-  useEffect(() => {
-    load()
-    listCategories().then(setCategories).catch(() => setCategories([]))
-  }, [load])
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories(),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
 
   if (items.length === 0) return null
 
@@ -69,7 +71,7 @@ export default function RecentBusinessesWidget() {
           categories={categories}
           onCreated={() => {
             setOpen(false)
-            load()
+            refetch()
           }}
           onClose={() => setOpen(false)}
         />

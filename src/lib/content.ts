@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { bustContentCache, cachedQuery } from './contentCache'
+import { activeBrand } from '../config/brand'
 import { fallbackLinks, fallbackLinkBySlug, fallbackPolicies, fallbackPolicyBySlug } from '../data/siteContent'
 import type {
   AdPosition,
@@ -17,13 +17,11 @@ import type {
 
 /**
  * Content data-access layer: everything that used to live in src/data/{home,photos,sidebar}.ts
- * now comes from Supabase. All reads fail soft (return [] / null / stale cache) so a missing
- * table or an offline client degrades to an empty section instead of crashing.
+ * now comes from Supabase. All reads fail soft (return [] / null) so a missing table or an
+ * offline client degrades to an empty section instead of crashing.
  *
- * Reads are wrapped in cachedQuery (15-min TTL, see contentCache.ts): editorial content
- * changes rarely, but Layout remounts its widgets on every route change — without the cache
- * each click refires ~10 identical queries, which is pure Supabase egress. Community data
- * (posts/comments, posts.ts) is NOT cached. Admin writes bust the cache.
+ * Caching lives at the call site now (React Query, see src/lib/queryClient.ts) — these functions
+ * are plain, uncached reads. Community data (posts/comments, posts.ts) is cached the same way.
  */
 
 /* ------------------------------- Photos -------------------------------- */
@@ -31,41 +29,28 @@ import type {
 const PHOTO_COLS = 'slug, src, section, tag, title, description, details'
 
 export async function listPhotos(section: 'banner' | 'recent'): Promise<PhotoRec[]> {
-  return cachedQuery(`photos.${section}`, async () => {
-    const { data, error } = await supabase
-      .from('photos')
-      .select(PHOTO_COLS)
-      .eq('section', section)
-      .order('sort', { ascending: true })
-    if (error) throw error
-    return (data ?? []) as unknown as PhotoRec[]
-  })
+  const { data, error } = await supabase
+    .from('photos')
+    .select(PHOTO_COLS)
+    .eq('section', section)
+    .order('sort', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as unknown as PhotoRec[]
 }
 
 /** All photos (banner first, then recent), ordered — for the /photo/view walker. */
 export async function listAllPhotos(): Promise<PhotoRec[]> {
-  return cachedQuery('photos.all', async () => {
-    const { data, error } = await supabase
-      .from('photos')
-      .select(PHOTO_COLS)
-      .order('sort', { ascending: true })
-    if (error) throw error
-    const rows = (data ?? []) as unknown as PhotoRec[]
-    // Deterministic order: all banner photos, then all recent photos.
-    return [...rows.filter((r) => r.section === 'banner'), ...rows.filter((r) => r.section === 'recent')]
-  })
+  const { data, error } = await supabase.from('photos').select(PHOTO_COLS).order('sort', { ascending: true })
+  if (error) throw error
+  const rows = (data ?? []) as unknown as PhotoRec[]
+  // Deterministic order: all banner photos, then all recent photos.
+  return [...rows.filter((r) => r.section === 'banner'), ...rows.filter((r) => r.section === 'recent')]
 }
 
 export async function getPhoto(slug: string): Promise<PhotoRec | null> {
-  return cachedQuery(`photos.one.${slug}`, async () => {
-    const { data, error } = await supabase
-      .from('photos')
-      .select(PHOTO_COLS)
-      .eq('slug', slug)
-      .maybeSingle()
-    if (error) throw error
-    return (data as unknown as PhotoRec) ?? null
-  })
+  const { data, error } = await supabase.from('photos').select(PHOTO_COLS).eq('slug', slug).maybeSingle()
+  if (error) throw error
+  return (data as unknown as PhotoRec) ?? null
 }
 
 /* ------------------------------ Categories ----------------------------- */
@@ -111,44 +96,40 @@ export async function listCategories(
   parentSlug: string | null = 'business-directory',
   kind: CategoryKind = 'business',
 ): Promise<CategoryRec[]> {
-  return cachedQuery(`categories.${kind}.${parentSlug ?? 'root'}`, () =>
-    withSeoColumnFallback(
-      async (cols) => {
-        let q = supabase
-          .from('categories')
-          .select(cols)
-          .eq('kind', kind)
-          .eq('active', true)
-          .order('sort', { ascending: true })
-        q = parentSlug === null ? q.is('parent_slug', null) : q.eq('parent_slug', parentSlug)
-        const { data, error } = await q
-        if (error) throw error
-        return (data ?? []) as unknown as CategoryRec[]
-      },
-      CATEGORY_COLS,
-      CATEGORY_COLS_LEGACY,
-    ),
+  return withSeoColumnFallback(
+    async (cols) => {
+      let q = supabase
+        .from('categories')
+        .select(cols)
+        .eq('kind', kind)
+        .eq('active', true)
+        .order('sort', { ascending: true })
+      q = parentSlug === null ? q.is('parent_slug', null) : q.eq('parent_slug', parentSlug)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as unknown as CategoryRec[]
+    },
+    CATEGORY_COLS,
+    CATEGORY_COLS_LEGACY,
   )
 }
 
 /** One category row by slug (either a maroon parent or a child), or null. */
 export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'community'): Promise<CategoryRec | null> {
-  return cachedQuery(`categories.${kind}.bySlug.${slug}`, () =>
-    withSeoColumnFallback(
-      async (cols) => {
-        const { data, error } = await supabase
-          .from('categories')
-          .select(cols)
-          .eq('slug', slug)
-          .eq('kind', kind)
-          .eq('active', true)
-          .maybeSingle()
-        if (error) throw error
-        return (data as unknown as CategoryRec) ?? null
-      },
-      CATEGORY_COLS,
-      CATEGORY_COLS_LEGACY,
-    ),
+  return withSeoColumnFallback(
+    async (cols) => {
+      const { data, error } = await supabase
+        .from('categories')
+        .select(cols)
+        .eq('slug', slug)
+        .eq('kind', kind)
+        .eq('active', true)
+        .maybeSingle()
+      if (error) throw error
+      return (data as unknown as CategoryRec) ?? null
+    },
+    CATEGORY_COLS,
+    CATEGORY_COLS_LEGACY,
   )
 }
 
@@ -157,9 +138,6 @@ export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'comm
 const BIZ_COLS_LEGACY =
   'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at'
 const BIZ_COLS = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
-
-/** Businesses change on user registration too, so keep their TTL shorter. */
-const BIZ_TTL_MS = 5 * 60 * 1000
 
 export interface BusinessPage {
   rows: BusinessRec[]
@@ -176,51 +154,41 @@ export async function listBusinesses(
 ): Promise<BusinessPage> {
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = opts.pageSize ?? 9
-  return cachedQuery(
-    `biz.list.${category ?? 'all'}.${page}.${pageSize}`,
-    () =>
-      withSeoColumnFallback(
-        async (cols) => {
-          const from = (page - 1) * pageSize
-          let q = supabase
-            .from('businesses')
-            .select(cols, { count: 'exact' })
-            .eq('status', 'active')
-            .order('display_order', { ascending: true })
-            .order('updated_at', { ascending: false })
-            .range(from, from + pageSize - 1)
-          if (category && category !== 'all') q = q.eq('category', category)
-          const { data, error, count } = await q
-          if (error) throw error
-          return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
-        },
-        BIZ_COLS,
-        BIZ_COLS_LEGACY,
-      ),
-    BIZ_TTL_MS,
+  return withSeoColumnFallback(
+    async (cols) => {
+      const from = (page - 1) * pageSize
+      let q = supabase
+        .from('businesses')
+        .select(cols, { count: 'exact' })
+        .eq('status', 'active')
+        .order('display_order', { ascending: true })
+        .order('updated_at', { ascending: false })
+        .range(from, from + pageSize - 1)
+      if (category && category !== 'all') q = q.eq('category', category)
+      const { data, error, count } = await q
+      if (error) throw error
+      return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
+    },
+    BIZ_COLS,
+    BIZ_COLS_LEGACY,
   )
 }
 
 /** Compact "recently updated" widget list. */
 export async function listRecentBusinesses(limit = 6): Promise<BusinessRec[]> {
-  return cachedQuery(
-    `biz.recent.${limit}`,
-    () =>
-      withSeoColumnFallback(
-        async (cols) => {
-          const { data, error } = await supabase
-            .from('businesses')
-            .select(cols)
-            .eq('status', 'active')
-            .order('updated_at', { ascending: false })
-            .limit(limit)
-          if (error) throw error
-          return (data ?? []) as unknown as BusinessRec[]
-        },
-        BIZ_COLS,
-        BIZ_COLS_LEGACY,
-      ),
-    BIZ_TTL_MS,
+  return withSeoColumnFallback(
+    async (cols) => {
+      const { data, error } = await supabase
+        .from('businesses')
+        .select(cols)
+        .eq('status', 'active')
+        .order('updated_at', { ascending: false })
+        .limit(limit)
+      if (error) throw error
+      return (data ?? []) as unknown as BusinessRec[]
+    },
+    BIZ_COLS,
+    BIZ_COLS_LEGACY,
   )
 }
 
@@ -240,7 +208,11 @@ export interface NewBusiness {
   ownerId: string
 }
 
-/** Insert a business + its logo/main/gallery image rows. Returns the new row. */
+/**
+ * Insert a business + its logo/main/gallery image rows. Returns the new row.
+ * Caller is responsible for invalidating the ['businesses'] query cache afterward
+ * (React Query has no hook access from a plain lib function) — see BusinessRegister.tsx.
+ */
 export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
   const { data, error } = await supabase
     .from('businesses')
@@ -273,7 +245,6 @@ export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
     ...b.galleryUrls.map((u, i) => ({ business_id: biz.id, image_url: u, image_type: 'gallery', display_order: i })),
   ]
   if (imgs.length) await supabase.from('business_images').insert(imgs) // best-effort; card still works from main_image_url
-  bustContentCache('biz') // the new listing must show up in the directory + widgets right away
   return biz
 }
 
@@ -290,34 +261,23 @@ async function withGallery(biz: BusinessRec): Promise<BusinessRec> {
 
 /** One business by id, with its gallery — /company/view profile page. */
 export async function getBusiness(id: string): Promise<BusinessRec | null> {
-  return cachedQuery(
-    `biz.one.${id}`,
-    () =>
-      withSeoColumnFallback(
-        async (cols) => {
-          const { data, error } = await supabase.from('businesses').select(cols).eq('id', id).maybeSingle()
-          if (error) throw error
-          return data ? withGallery(data as unknown as BusinessRec) : null
-        },
-        BIZ_COLS,
-        BIZ_COLS_LEGACY,
-      ),
-    BIZ_TTL_MS,
+  return withSeoColumnFallback(
+    async (cols) => {
+      const { data, error } = await supabase.from('businesses').select(cols).eq('id', id).maybeSingle()
+      if (error) throw error
+      return data ? withGallery(data as unknown as BusinessRec) : null
+    },
+    BIZ_COLS,
+    BIZ_COLS_LEGACY,
   )
 }
 
 /** One business by URL slug, with its gallery — /business/<slug> profile page.
  *  (No legacy fallback: the slug column IS the migration.) */
 export async function getBusinessBySlug(slug: string): Promise<BusinessRec | null> {
-  return cachedQuery(
-    `biz.slug.${slug}`,
-    async () => {
-      const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('slug', slug).maybeSingle()
-      if (error) throw error
-      return data ? withGallery(data as unknown as BusinessRec) : null
-    },
-    BIZ_TTL_MS,
-  )
+  const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('slug', slug).maybeSingle()
+  if (error) throw error
+  return data ? withGallery(data as unknown as BusinessRec) : null
 }
 
 /**
@@ -337,47 +297,70 @@ export function newsArticlePath(article_slug: string): string {
 
 const AD_COLS = 'id, title, description, body, image_url, url, position, sort, active, start_date, end_date'
 
-/** Active advertisements for a position (header/homepage/wing/footer-info), within their date window. */
-export async function listAdvertisements(position: AdPosition): Promise<AdvertisementRec[]> {
-  return cachedQuery(`ads.${position}`, async () => {
-    const { data, error } = await supabase
-      .from('advertisements')
-      .select(AD_COLS)
-      .eq('position', position)
-      .eq('active', true)
-      .order('sort', { ascending: true })
-    if (error) throw error
-    const today = new Date().toISOString().slice(0, 10)
-    return ((data ?? []) as unknown as AdvertisementRec[]).filter(
-      (a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today),
-    )
-  })
+/**
+ * Ad slots are scoped per hostname AND per position (src/config/brand.ts):
+ * a position listed in the brand's `brandedAdPositions` reads that brand's own
+ * inventory, stored under prefixed keys ('hanin:header', …) in the same table;
+ * every other position falls through to the shared base keys ('wing-left', …)
+ * so those creatives appear identically on every domain. Rows are normalized
+ * back to the logical position so every consumer (Header, WingBanners,
+ * AdGalleryView, …) is brand-agnostic.
+ */
+const adKeyFor = (position: AdPosition): string =>
+  activeBrand.brandedAdPositions.includes(position) ? `${activeBrand.adPrefix}${position}` : position
+
+const stripAdPrefix = (a: AdvertisementRec): AdvertisementRec =>
+  activeBrand.adPrefix && String(a.position).startsWith(activeBrand.adPrefix)
+    ? { ...a, position: String(a.position).slice(activeBrand.adPrefix.length) as AdPosition }
+    : a
+
+/** True when this row belongs to the ACTIVE brand's ad inventory. */
+const isActiveBrandAd = (a: AdvertisementRec): boolean => {
+  const pos = String(a.position)
+  if (pos.includes(':')) {
+    // Another brand's private inventory unless it carries OUR prefix.
+    return !!activeBrand.adPrefix && pos.startsWith(activeBrand.adPrefix)
+  }
+  // Shared base row — ours unless this brand overrides that position.
+  return !activeBrand.brandedAdPositions.includes(pos as AdPosition)
 }
 
-/** Every active advertisement, across every placement, within its date window — the /adv/banner gallery. */
+/** Active advertisements for a position (header/homepage/wing/footer-info), within their date window. */
+export async function listAdvertisements(position: AdPosition): Promise<AdvertisementRec[]> {
+  const { data, error } = await supabase
+    .from('advertisements')
+    .select(AD_COLS)
+    .eq('position', adKeyFor(position))
+    .eq('active', true)
+    .order('sort', { ascending: true })
+  if (error) throw error
+  const today = new Date().toISOString().slice(0, 10)
+  return ((data ?? []) as unknown as AdvertisementRec[])
+    .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
+    .map(stripAdPrefix)
+}
+
+/** Every active advertisement of THIS brand, across every placement, within its date window — the /adv/banner gallery. */
 export async function listAllAdvertisements(): Promise<AdvertisementRec[]> {
-  return cachedQuery('ads.all', async () => {
-    const { data, error } = await supabase
-      .from('advertisements')
-      .select(AD_COLS)
-      .eq('active', true)
-      .order('position', { ascending: true })
-      .order('sort', { ascending: true })
-    if (error) throw error
-    const today = new Date().toISOString().slice(0, 10)
-    return ((data ?? []) as unknown as AdvertisementRec[]).filter(
-      (a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today),
-    )
-  })
+  const { data, error } = await supabase
+    .from('advertisements')
+    .select(AD_COLS)
+    .eq('active', true)
+    .order('position', { ascending: true })
+    .order('sort', { ascending: true })
+  if (error) throw error
+  const today = new Date().toISOString().slice(0, 10)
+  return ((data ?? []) as unknown as AdvertisementRec[])
+    .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
+    .filter(isActiveBrandAd)
+    .map(stripAdPrefix)
 }
 
 /** One advertisement by id — /ad/view promotional page. */
 export async function getAdvertisement(id: string): Promise<AdvertisementRec | null> {
-  return cachedQuery(`ads.one.${id}`, async () => {
-    const { data, error } = await supabase.from('advertisements').select(AD_COLS).eq('id', id).maybeSingle()
-    if (error) throw error
-    return (data as unknown as AdvertisementRec) ?? null
-  })
+  const { data, error } = await supabase.from('advertisements').select(AD_COLS).eq('id', id).maybeSingle()
+  if (error) throw error
+  return (data as unknown as AdvertisementRec) ?? null
 }
 
 /* -------------------------------- Links -------------------------------- */
@@ -385,34 +368,30 @@ export async function getAdvertisement(id: string): Promise<AdvertisementRec | n
 const LINK_COLS = 'id, slug, title, description, body, url, image_url, category, section, sort'
 
 export async function listLinks(section = 'footer-link'): Promise<LinkRec[]> {
-  return cachedQuery(`links.${section}`, async () => {
-    try {
-      const { data, error } = await supabase
-        .from('links')
-        .select(LINK_COLS)
-        .eq('section', section)
-        .eq('active', true)
-        .order('sort', { ascending: true })
-      if (error) throw error
-      if (data && data.length > 0) return data as unknown as LinkRec[]
-    } catch {
-      /* table missing / offline → fall back */
-    }
-    return fallbackLinks()
-  })
+  try {
+    const { data, error } = await supabase
+      .from('links')
+      .select(LINK_COLS)
+      .eq('section', section)
+      .eq('active', true)
+      .order('sort', { ascending: true })
+    if (error) throw error
+    if (data && data.length > 0) return data as unknown as LinkRec[]
+  } catch {
+    /* table missing / offline → fall back */
+  }
+  return fallbackLinks()
 }
 
 export async function getLink(slug: string): Promise<LinkRec | null> {
-  return cachedQuery(`links.one.${slug}`, async () => {
-    try {
-      const { data, error } = await supabase.from('links').select(LINK_COLS).eq('slug', slug).eq('active', true).maybeSingle()
-      if (error) throw error
-      if (data) return data as unknown as LinkRec
-    } catch {
-      /* fall back */
-    }
-    return fallbackLinkBySlug(slug)
-  })
+  try {
+    const { data, error } = await supabase.from('links').select(LINK_COLS).eq('slug', slug).eq('active', true).maybeSingle()
+    if (error) throw error
+    if (data) return data as unknown as LinkRec
+  } catch {
+    /* fall back */
+  }
+  return fallbackLinkBySlug(slug)
 }
 
 /* ------------------------------- Policies ------------------------------ */
@@ -420,33 +399,29 @@ export async function getLink(slug: string): Promise<LinkRec | null> {
 const POLICY_COLS = 'id, slug, title, summary, body, sort'
 
 export async function listPolicies(): Promise<PolicyRec[]> {
-  return cachedQuery('policies', async () => {
-    try {
-      const { data, error } = await supabase
-        .from('policies')
-        .select(POLICY_COLS)
-        .eq('active', true)
-        .order('sort', { ascending: true })
-      if (error) throw error
-      if (data && data.length > 0) return data as unknown as PolicyRec[]
-    } catch {
-      /* fall back */
-    }
-    return fallbackPolicies()
-  })
+  try {
+    const { data, error } = await supabase
+      .from('policies')
+      .select(POLICY_COLS)
+      .eq('active', true)
+      .order('sort', { ascending: true })
+    if (error) throw error
+    if (data && data.length > 0) return data as unknown as PolicyRec[]
+  } catch {
+    /* fall back */
+  }
+  return fallbackPolicies()
 }
 
 export async function getPolicy(slug: string): Promise<PolicyRec | null> {
-  return cachedQuery(`policies.one.${slug}`, async () => {
-    try {
-      const { data, error } = await supabase.from('policies').select(POLICY_COLS).eq('slug', slug).eq('active', true).maybeSingle()
-      if (error) throw error
-      if (data) return data as unknown as PolicyRec
-    } catch {
-      /* fall back */
-    }
-    return fallbackPolicyBySlug(slug)
-  })
+  try {
+    const { data, error } = await supabase.from('policies').select(POLICY_COLS).eq('slug', slug).eq('active', true).maybeSingle()
+    if (error) throw error
+    if (data) return data as unknown as PolicyRec
+  } catch {
+    /* fall back */
+  }
+  return fallbackPolicyBySlug(slug)
 }
 
 /* -------------------------------- News --------------------------------- */
@@ -455,46 +430,34 @@ const NEWS_COLS_LEGACY = 'id, tab, kind, title, body, thumb_url, image_url, href
 const NEWS_COLS = `${NEWS_COLS_LEGACY}, updated_at, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
 
 export async function listNews(): Promise<NewsItemRec[]> {
-  return cachedQuery('news', () =>
-    withSeoColumnFallback(
-      async (cols) => {
-        const { data, error } = await supabase
-          .from('news_items')
-          .select(cols)
-          .order('sort', { ascending: true })
-        if (error) throw error
-        return (data ?? []) as unknown as NewsItemRec[]
-      },
-      NEWS_COLS,
-      NEWS_COLS_LEGACY,
-    ),
+  return withSeoColumnFallback(
+    async (cols) => {
+      const { data, error } = await supabase.from('news_items').select(cols).order('sort', { ascending: true })
+      if (error) throw error
+      return (data ?? []) as unknown as NewsItemRec[]
+    },
+    NEWS_COLS,
+    NEWS_COLS_LEGACY,
   )
 }
 
 /** One news/information article by its article_slug — /news/article/<slug>. */
 export async function getNewsArticle(slug: string): Promise<NewsItemRec | null> {
-  return cachedQuery(`news.one.${slug}`, () =>
-    withSeoColumnFallback(
-      async (cols) => {
-        const { data, error } = await supabase.from('news_items').select(cols).eq('article_slug', slug).maybeSingle()
-        if (error) throw error
-        return (data as unknown as NewsItemRec) ?? null
-      },
-      NEWS_COLS,
-      NEWS_COLS_LEGACY,
-    ),
+  return withSeoColumnFallback(
+    async (cols) => {
+      const { data, error } = await supabase.from('news_items').select(cols).eq('article_slug', slug).maybeSingle()
+      if (error) throw error
+      return (data as unknown as NewsItemRec) ?? null
+    },
+    NEWS_COLS,
+    NEWS_COLS_LEGACY,
   )
 }
 
 /* ----------------------------- Travel info ----------------------------- */
 
 export async function listTravelInfo(): Promise<TravelInfo[]> {
-  return cachedQuery('travel', async () => {
-    const { data, error } = await supabase
-      .from('travel_info')
-      .select('id, title, blurb, icon, href')
-      .order('sort', { ascending: true })
-    if (error) throw error
-    return (data ?? []) as unknown as TravelInfo[]
-  })
+  const { data, error } = await supabase.from('travel_info').select('id, title, blurb, icon, href').order('sort', { ascending: true })
+  if (error) throw error
+  return (data ?? []) as unknown as TravelInfo[]
 }

@@ -1,25 +1,20 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listPhotos } from '../lib/content'
 import SmartImage from './SmartImage'
 import { useLocalized } from '../lib/useLocalized'
-import type { PhotoRec } from '../types'
+import { STALE } from '../lib/queryClient'
 
 export default function RecentPhotos() {
   const { t } = useTranslation()
   const L = useLocalized()
-  const [photos, setPhotos] = useState<PhotoRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listPhotos('recent')
-      .then((p) => alive && setPhotos(p))
-      .catch(() => alive && setPhotos([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: photos = [] } = useQuery({
+    queryKey: ['photos', 'recent'],
+    queryFn: () => listPhotos('recent'),
+    staleTime: STALE.homepageSection,
+    gcTime: STALE.homepageSection * 2,
+  })
 
   if (photos.length === 0) return null
 

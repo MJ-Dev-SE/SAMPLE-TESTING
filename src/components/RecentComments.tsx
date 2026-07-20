@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { listRecentComments, type RecentCommentRec } from '../lib/comments'
+import { listRecentComments } from '../lib/comments'
+import { STALE } from '../lib/queryClient'
 import RecentCommentItem from './RecentCommentItem'
 
 /**
@@ -11,17 +12,12 @@ import RecentCommentItem from './RecentCommentItem'
  */
 export default function RecentComments() {
   const { t } = useTranslation()
-  const [comments, setComments] = useState<RecentCommentRec[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listRecentComments(8)
-      .then((c) => alive && setComments(c))
-      .catch(() => alive && setComments([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: comments = [] } = useQuery({
+    queryKey: ['recent-comments', 8],
+    queryFn: () => listRecentComments(8),
+    staleTime: STALE.comments,
+    gcTime: STALE.comments * 4,
+  })
 
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">

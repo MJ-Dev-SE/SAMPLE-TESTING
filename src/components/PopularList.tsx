@@ -1,22 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { formatDate, listPopularPosts, postPath, type DbPost } from '../lib/posts'
+import { formatDate, listPopularPosts, postPath } from '../lib/posts'
+import { STALE } from '../lib/queryClient'
 
 /** Popular Posts (Last 30 days): ranked by views, from the `popular_posts` Supabase view. */
 export default function PopularList() {
   const { t } = useTranslation()
-  const [posts, setPosts] = useState<DbPost[]>([])
-
-  useEffect(() => {
-    let alive = true
-    listPopularPosts()
-      .then((p) => alive && setPosts(p))
-      .catch(() => alive && setPosts([]))
-    return () => {
-      alive = false
-    }
-  }, [])
+  const { data: posts = [] } = useQuery({
+    queryKey: ['popular-posts'],
+    queryFn: () => listPopularPosts(),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+  })
 
   return (
     <section className="border border-neutral-90 rounded-l overflow-hidden">
