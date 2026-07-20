@@ -73,8 +73,8 @@ const MANILATOUR: BrandConfig = {
   siteName: 'Manila Tour',
   siteUrl: null, // VITE_SITE_URL env keeps deciding, exactly as before
   defaultTitle: {
-    en: 'Manila Tour — Korean community & travel guide for the Philippines',
-    ko: '마닐라 여행 — 필리핀 한인 커뮤니티 & 여행 가이드',
+    en: 'Manila Tour',
+    ko: '',
   },
   defaultDescription: {
     en: 'Manila Tour is a Korean–Philippines community portal: travel information, news, Q&A, a business directory, jobs and immigration tips for life in the Philippines.',
