@@ -27,15 +27,28 @@ export interface TopPage {
 const VISIT_COLS = 'id, visitor_id, user_id, path, referrer, ip_masked, created_at'
 const VISITOR_SELECT = 'visitor:profiles(username, display_name, avatar_url)'
 
-/** Most recent page views, newest first. Backed by public.page_visits (admin-only RLS). */
-export async function listRecentVisits(limit = 50): Promise<VisitRow[]> {
-  const { data, error } = await supabase
+export interface VisitPage {
+  rows: VisitRow[]
+  total: number
+}
+
+/**
+ * Page views, newest first, paginated (default 50/page). Backed by
+ * public.page_visits (admin-only RLS). Previously hard-capped at the latest 50
+ * rows with no way to page further back — older visits simply fell out of view
+ * as new ones came in.
+ */
+export async function listVisitsPage(opts: { page?: number; pageSize?: number } = {}): Promise<VisitPage> {
+  const page = Math.max(1, opts.page ?? 1)
+  const pageSize = opts.pageSize ?? 50
+  const from = (page - 1) * pageSize
+  const { data, error, count } = await supabase
     .from('page_visits')
-    .select(`${VISIT_COLS}, ${VISITOR_SELECT}`)
+    .select(`${VISIT_COLS}, ${VISITOR_SELECT}`, { count: 'exact' })
     .order('created_at', { ascending: false })
-    .limit(limit)
+    .range(from, from + pageSize - 1)
   if (error) throw error
-  return (data ?? []) as unknown as VisitRow[]
+  return { rows: (data ?? []) as unknown as VisitRow[], total: count ?? 0 }
 }
 
 /** Aggregate KPIs, computed server-side by the admin_visit_stats() RPC. */

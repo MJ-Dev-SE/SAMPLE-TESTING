@@ -11,7 +11,9 @@ import { ADMIN_TABLES, type AdminRow, type TableDef } from './registry'
 import { useIsAdmin } from './useIsAdmin'
 import { adminI18n, setAdminLanguage } from './i18n'
 import { listRecentLogins, formatDateTime, type LoginRow } from './audit'
-import { listRecentVisits, getVisitStats, getTopPages, visitorLabel, type VisitRow, type VisitStats, type TopPage } from './visits'
+import { listVisitsPage, getVisitStats, getTopPages, visitorLabel, type VisitStats, type TopPage } from './visits'
+import { useQuery } from '@tanstack/react-query'
+import { STALE } from '../lib/queryClient'
 import RecordForm from './RecordForm'
 import AdSlotsPanel from './AdSlotsPanel'
 import Lightbox from './Lightbox'
@@ -635,30 +637,50 @@ function AuditPanel() {
  */
 function VisitsPanel() {
   const { t } = useTranslation()
-  const [rows, setRows] = useState<VisitRow[]>([])
+  const [page, setPage] = useState(1)
+  const pageSize = 50
+
   const [stats, setStats] = useState<VisitStats | null>(null)
   const [topPages, setTopPages] = useState<TopPage[]>([])
-  const [loading, setLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(true)
 
-  const load = useCallback(() => {
-    setLoading(true)
-    Promise.all([listRecentVisits(50), getVisitStats(), getTopPages(5)])
-      .then(([visits, s, pages]) => {
-        setRows(visits)
+  const loadSummary = useCallback(() => {
+    setStatsLoading(true)
+    Promise.all([getVisitStats(), getTopPages(5)])
+      .then(([s, pages]) => {
         setStats(s)
         setTopPages(pages)
       })
       .catch(() => {
-        setRows([])
         setStats(null)
         setTopPages([])
       })
-      .finally(() => setLoading(false))
+      .finally(() => setStatsLoading(false))
   }, [])
 
   useEffect(() => {
-    load()
-  }, [load])
+    loadSummary()
+  }, [loadSummary])
+
+  const {
+    data,
+    isLoading: rowsLoading,
+    refetch: refetchRows,
+  } = useQuery({
+    queryKey: ['admin-visits', page, pageSize],
+    queryFn: () => listVisitsPage({ page, pageSize }),
+    staleTime: STALE.comments, // this is a live log — keep it short
+    gcTime: STALE.comments * 2,
+  })
+  const rows = data?.rows ?? []
+  const total = data?.total ?? 0
+  const pageCount = Math.max(1, Math.ceil(total / pageSize))
+  const loading = rowsLoading || statsLoading
+
+  const load = () => {
+    loadSummary()
+    refetchRows()
+  }
 
   return (
     <section>
@@ -702,7 +724,7 @@ function VisitsPanel() {
       <div className={`mt-4 overflow-hidden ${CARD}`}>
         <div className="px-5 py-4 border-b border-[#e7ddca] flex items-center gap-2">
           <h2 className={`text-base font-semibold ${INK}`}>{t('admin.recentVisits')}</h2>
-          <span className={`text-xs ${MUTED}`}>({rows.length})</span>
+          <span className={`text-xs ${MUTED}`}>({total})</span>
         </div>
         {loading ? (
           <p className={`p-8 text-center text-sm ${MUTED}`}>
@@ -750,6 +772,36 @@ function VisitsPanel() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination — 50 rows/page; previously hard-capped at the latest 50
+            visits with no way to see anything older. */}
+        {pageCount > 1 && (
+          <div className="px-5 py-3 border-t border-[#e7ddca] flex items-center justify-between gap-3">
+            <span className={`text-xs ${MUTED}`}>
+              {t('admin.pageOf', { page, pageCount })}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || rowsLoading}
+                className={GHOST_BTN}
+              >
+                <i className="fa-solid fa-chevron-left" aria-hidden="true" />
+                {t('list.prev')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPage((p) => Math.min(pageCount, p + 1))}
+                disabled={page >= pageCount || rowsLoading}
+                className={GHOST_BTN}
+              >
+                {t('list.next')}
+                <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         )}
       </div>

@@ -129,7 +129,8 @@
     "ipAddress": "IP (마스킹)",
     "visitedAt": "방문 시각",
     "loggedIn": "로그인",
-    "anonymous": "익명"
+    "anonymous": "익명",
+    "pageOf": "{{page}} / {{pageCount}} 페이지"
   },
   "sidebar": {
     "loginPrompt": "모든 기능을 사용하려면 로그인하세요."

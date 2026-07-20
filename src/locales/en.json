@@ -129,7 +129,8 @@
     "ipAddress": "IP (masked)",
     "visitedAt": "Visited",
     "loggedIn": "Logged in",
-    "anonymous": "Anonymous"
+    "anonymous": "Anonymous",
+    "pageOf": "Page {{page}} of {{pageCount}}"
   },
   "sidebar": {
     "loginPrompt": "Please log in to use all features."
