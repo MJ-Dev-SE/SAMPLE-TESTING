@@ -1,9 +1,12 @@
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { PhotoPick } from '../lib/usePhotoPicker'
 import Tooltip from './Tooltip'
 
-/** Preview thumbnails for picked photos, each with an ✕ badge to remove it. */
-export default function PhotoPickerThumbs({
+/** Preview thumbnails for picked photos, each with an ✕ badge to remove it. Memoized —
+ *  usePhotoPicker's onRemove is a stable reference, so this skips re-render when unrelated
+ *  parent state (e.g. other form fields) changes. */
+function PhotoPickerThumbs({
   picks,
   onRemove,
   thumbClass = 'w-20 h-20',
@@ -34,3 +37,5 @@ export default function PhotoPickerThumbs({
     </div>
   )
 }
+
+export default memo(PhotoPickerThumbs)

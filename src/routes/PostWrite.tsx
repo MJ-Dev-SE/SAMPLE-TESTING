@@ -163,7 +163,7 @@ export default function PostWrite() {
         )}
       </div>
 
-      <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m">
+      <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m animate-modal-in">
         {isCommunityPost ? (
           /* Community (maroon-bar) category cascade — replaces the board picker */
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">

@@ -50,7 +50,7 @@ export default function BusinessRegister() {
 
       <h1 className="text-xl font-bold text-text-normal mb-l">{t('business.registerTitle')}</h1>
 
-      <div className="border border-neutral-90 rounded-l p-l max-w-[640px]">
+      <div className="border border-neutral-90 rounded-l p-l max-w-[640px] animate-modal-in">
         <BusinessForm
           ownerId={user.id}
           categories={categories}

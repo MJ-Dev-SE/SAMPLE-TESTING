@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 
 export interface PhotoPick {
   file: File
@@ -18,28 +18,30 @@ export function usePhotoPicker() {
   picksRef.current = picks
   useEffect(() => () => picksRef.current.forEach((p) => URL.revokeObjectURL(p.url)), [])
 
-  /** <input type="file"> onChange — appends, then clears the input for re-picks. */
-  const addFiles = (e: ChangeEvent<HTMLInputElement>) => {
+  /** <input type="file"> onChange — appends, then clears the input for re-picks.
+   *  Stable reference (useCallback) so components that memoize a child photo
+   *  section (e.g. React.memo) actually skip re-rendering it on unrelated state changes. */
+  const addFiles = useCallback((e: ChangeEvent<HTMLInputElement>) => {
     const next = Array.from(e.target.files ?? []).map((file) => ({
       file,
       url: URL.createObjectURL(file),
     }))
     if (next.length > 0) setPicks((prev) => [...prev, ...next])
     e.target.value = ''
-  }
+  }, [])
 
   /** ✕ on one thumbnail. */
-  const removeAt = (i: number) => {
+  const removeAt = useCallback((i: number) => {
     const target = picksRef.current[i]
     if (target) URL.revokeObjectURL(target.url)
     setPicks((prev) => prev.filter((_, idx) => idx !== i))
-  }
+  }, [])
 
   /** Clear everything (after a successful submit). */
-  const reset = () => {
+  const reset = useCallback(() => {
     picksRef.current.forEach((p) => URL.revokeObjectURL(p.url))
     setPicks([])
-  }
+  }, [])
 
   return { picks, addFiles, removeAt, reset }
 }

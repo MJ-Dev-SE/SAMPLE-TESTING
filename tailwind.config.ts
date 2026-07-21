@@ -59,6 +59,19 @@ const config: Config = {
         card: '0 6px 16px rgba(0,0,0,.08)',
         'card-blue': '0 8px 18px rgba(33,37,41,.08)',
       },
+      // Cheap CSS-only entrance transitions for modals/panels that mount on
+      // click (no JS animation library) — see BusinessModal.tsx.
+      keyframes: {
+        'overlay-in': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'modal-in': {
+          from: { opacity: '0', transform: 'translateY(8px) scale(0.98)' },
+          to: { opacity: '1', transform: 'translateY(0) scale(1)' },
+        },
+      },
+      animation: {
+        'overlay-in': 'overlay-in 150ms ease-out',
+        'modal-in': 'modal-in 180ms cubic-bezier(0.16, 1, 0.3, 1)',
+      },
     },
   },
   plugins: [],

@@ -59,7 +59,13 @@ const COMMUNITY_PARENTS = [
 /** Shared page routes, reused at root and under /en, /ko prefixes (relative paths). */
 function PageRoutes() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-page" aria-busy="true" />}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-page grid place-items-center animate-overlay-in" aria-busy="true">
+          <i className="fa-solid fa-spinner fa-spin text-2xl text-accent-blue" aria-hidden="true" />
+        </div>
+      }
+    >
       <Routes>
       <Route index element={<Home />} />
       <Route path="menu" element={<Menu />} />

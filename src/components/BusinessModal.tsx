@@ -27,10 +27,10 @@ export default function BusinessModal({
 
   return (
     <div
-      className="fixed inset-0 z-[60] bg-black/40 flex items-start justify-center overflow-y-auto p-4 sm:p-8"
+      className="fixed inset-0 z-[60] bg-black/40 flex items-start justify-center overflow-y-auto p-4 sm:p-8 animate-overlay-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="w-full max-w-[560px] bg-white rounded-l border border-neutral-90 shadow-lg my-auto">
+      <div className="w-full max-w-[560px] bg-white rounded-l border border-neutral-90 shadow-lg my-auto animate-modal-in">
         <div className="px-l py-3 border-b border-neutral-90 flex items-center justify-between gap-3 sticky top-0 bg-white rounded-t-l">
           <h3 className="text-base font-bold text-text-normal">
             <i className="fa-solid fa-store mr-2 text-accent-blue" aria-hidden="true" />

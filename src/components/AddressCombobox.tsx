@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent } from 'react'
+import { memo, useMemo, useState, type KeyboardEvent } from 'react'
 import type { AddressOption } from '../lib/phAddress'
 
 /**
@@ -8,9 +8,10 @@ import type { AddressOption } from '../lib/phAddress'
  * (used by the caller to cascade the next level); typing without selecting
  * reports `code: null` — manual entry, no cascade key. Modeled on the
  * combobox in SearchBar.tsx (same a11y wiring, same dropdown-under-input,
- * same onMouseDown-before-blur select pattern).
+ * same onMouseDown-before-blur select pattern). Memoized so retyping in ONE
+ * level (e.g. province) doesn't force its sibling levels to re-render too.
  */
-export default function AddressCombobox({
+function AddressCombobox({
   value,
   options,
   onChange,
@@ -108,3 +109,5 @@ export default function AddressCombobox({
     </div>
   )
 }
+
+export default memo(AddressCombobox)
