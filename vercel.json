@@ -2,15 +2,15 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/:path((?!assets/).*)",
       "has": [{ "type": "host", "value": "manilatour.com" }],
-      "destination": "https://hanin.tv/:path*",
+      "destination": "https://hanin.tv/:path",
       "permanent": false
     },
     {
-      "source": "/:path*",
+      "source": "/:path((?!assets/).*)",
       "has": [{ "type": "host", "value": "www.manilatour.com" }],
-      "destination": "https://hanin.tv/:path*",
+      "destination": "https://hanin.tv/:path",
       "permanent": false
     }
   ],
