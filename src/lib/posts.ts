@@ -37,6 +37,13 @@ export interface DbPost {
   guest_name: string | null
   views: number
   created_at: string
+  /** Composed street/unit + barangay + city + province — supabase/address_contact.sql. */
+  address?: string | null
+  address_province?: string | null
+  address_city?: string | null
+  address_barangay?: string | null
+  phone?: string | null
+  mobile_phone?: string | null
   /** Public Storage URLs/paths of attached photos ([] = text-only post). */
   images: string[]
   author?: AuthorLite | null
@@ -86,6 +93,30 @@ const COMMENT_COLS = 'id, post_id, board_id, author_id, guest_name, body, create
 // actually used by list rows, detail pages and SEO tags is named here instead.
 const POST_COLS =
   'id, board_id, category, category_id, slug, meta_title, meta_description, og_image_url, canonical_url, is_indexable, title, body, author_id, guest_name, views, created_at, images'
+/** + address/contact columns — supabase/address_contact.sql. */
+const POST_COLS_FULL = `${POST_COLS}, address, address_province, address_city, address_barangay, phone, mobile_phone`
+
+/**
+ * Whether the address/contact migration has run — flips once, on the first
+ * 42703 (undefined column), and every read/write below falls back to the
+ * plain POST_COLS / pre-migration insert shape from then on. Without this,
+ * a fresh deploy of this feature (before the user runs address_contact.sql)
+ * would 42703 on every single post read across the whole site.
+ */
+let postAddressColsMissing = false
+
+async function withPostCols<T>(run: (cols: string) => Promise<T>): Promise<T> {
+  if (!postAddressColsMissing) {
+    try {
+      return await run(POST_COLS_FULL)
+    } catch (e) {
+      if ((e as { code?: string })?.code !== '42703') throw e
+      postAddressColsMissing = true
+      console.warn('[posts] DB is missing the address/contact columns — run supabase/address_contact.sql. Falling back.')
+    }
+  }
+  return run(POST_COLS)
+}
 
 // -----------------------------------------------------------------------------
 // Board-id separation: this Manila Tour site shares the same Supabase project as
@@ -108,16 +139,18 @@ const stripPost = <T extends { board_id: string }>(row: T): T => ({
  * (used by the resort category pages, which group posts by the photo/theme slug).
  */
 export async function listPosts(boardId: string, limit?: number, category?: string): Promise<DbPost[]> {
-  let q = supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count)`)
-    .eq('board_id', toDbBoard(boardId))
-    .order('created_at', { ascending: false })
-  if (category) q = q.eq('category', category)
-  if (limit) q = q.limit(limit)
-  const { data, error } = await q
-  if (error) throw error
-  return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  return withPostCols(async (cols) => {
+    let q = supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}, comment_count:comments(count)`)
+      .eq('board_id', toDbBoard(boardId))
+      .order('created_at', { ascending: false })
+    if (category) q = q.eq('category', category)
+    if (limit) q = q.limit(limit)
+    const { data, error } = await q
+    if (error) throw error
+    return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  })
 }
 
 export interface PostPage {
@@ -133,16 +166,18 @@ export async function listPostsPage(boardId: string, opts: { page?: number; page
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = opts.pageSize ?? 20
   const from = (page - 1) * pageSize
-  let q = supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count)`, { count: 'exact' })
-    .eq('board_id', toDbBoard(boardId))
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1)
-  if (opts.category) q = q.eq('category', opts.category)
-  const { data, error, count } = await q
-  if (error) throw error
-  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  return withPostCols(async (cols) => {
+    let q = supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}, comment_count:comments(count)`, { count: 'exact' })
+      .eq('board_id', toDbBoard(boardId))
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1)
+    if (opts.category) q = q.eq('category', opts.category)
+    const { data, error, count } = await q
+    if (error) throw error
+    return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  })
 }
 
 const CATEGORY_EMBED = 'category_row:categories(id, slug, name, icon)'
@@ -159,14 +194,16 @@ export async function listPostsByCategory(
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = opts.pageSize ?? 20
   const from = (page - 1) * pageSize
-  const { data, error, count } = await supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
-    .eq('category_id', categoryId)
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1)
-  if (error) throw error
-  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  return withPostCols(async (cols) => {
+    const { data, error, count } = await supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+      .eq('category_id', categoryId)
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1)
+    if (error) throw error
+    return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  })
 }
 
 /**
@@ -182,14 +219,16 @@ export async function listPostsByParentCategory(
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = opts.pageSize ?? 20
   const from = (page - 1) * pageSize
-  const { data, error, count } = await supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
-    .in('category_id', childIds)
-    .order('created_at', { ascending: false })
-    .range(from, from + pageSize - 1)
-  if (error) throw error
-  return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  return withPostCols(async (cols) => {
+    const { data, error, count } = await supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}, comment_count:comments(count), ${CATEGORY_EMBED}`, { count: 'exact' })
+      .in('category_id', childIds)
+      .order('created_at', { ascending: false })
+      .range(from, from + pageSize - 1)
+    if (error) throw error
+    return { rows: ((data ?? []) as unknown as DbPost[]).map(stripPost), total: count ?? 0 }
+  })
 }
 
 /**
@@ -197,11 +236,13 @@ export async function listPostsByParentCategory(
  * The view already filters to this site's boards and excludes photo anchors.
  */
 export async function listPopularPosts(): Promise<DbPost[]> {
-  const { data, error } = await supabase
-    .from('popular_posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
-  if (error) throw error
-  return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  return withPostCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('popular_posts')
+      .select(`${cols}, ${AUTHOR_SELECT}`)
+    if (error) throw error
+    return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  })
 }
 
 /** Newest comments across all boards, with author + parent post — for the sidebar widget. */
@@ -222,24 +263,28 @@ export async function listRecentComments(limit = 8): Promise<DbComment[]> {
 
 /** A single post by id (for /post/view?id=…). */
 export async function getPost(id: string): Promise<DbPost | null> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw error
-  return data ? stripPost(data as unknown as DbPost) : null
+  return withPostCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}`)
+      .eq('id', id)
+      .maybeSingle()
+    if (error) throw error
+    return data ? stripPost(data as unknown as DbPost) : null
+  })
 }
 
 /** A single post by its URL slug (for /posts/<slug>). */
 export async function getPostBySlug(slug: string): Promise<DbPost | null> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(`${POST_COLS}, ${AUTHOR_SELECT}`)
-    .eq('slug', slug)
-    .maybeSingle()
-  if (error) throw error
-  return data ? stripPost(data as unknown as DbPost) : null
+  return withPostCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(`${cols}, ${AUTHOR_SELECT}`)
+      .eq('slug', slug)
+      .maybeSingle()
+    if (error) throw error
+    return data ? stripPost(data as unknown as DbPost) : null
+  })
 }
 
 /**
@@ -288,10 +333,17 @@ interface NewPost {
   authorId: string | null
   /** Attached photo paths/URLs (members only; guests stay text-only). */
   images?: string[]
+  /** Composed street/unit + barangay + city + province (required on every post). */
+  address?: string | null
+  addressProvince?: string | null
+  addressCity?: string | null
+  addressBarangay?: string | null
+  phone?: string | null
+  mobilePhone?: string | null
 }
 
 export async function createPost(p: NewPost): Promise<DbPost> {
-  const row = {
+  const baseRow = {
     board_id: toDbBoard(p.boardId),
     category: p.category ?? null,
     category_id: p.categoryId ?? null,
@@ -301,7 +353,21 @@ export async function createPost(p: NewPost): Promise<DbPost> {
     guest_name: p.authorId ? null : randomGuestName(),
     images: p.images ?? [],
   }
-  const { data, error } = await supabase.from('posts').insert(row).select().single()
+  const fullRow = {
+    ...baseRow,
+    address: p.address ?? null,
+    address_province: p.addressProvince ?? null,
+    address_city: p.addressCity ?? null,
+    address_barangay: p.addressBarangay ?? null,
+    phone: p.phone ?? null,
+    mobile_phone: p.mobilePhone ?? null,
+  }
+  let { data, error } = await supabase.from('posts').insert(postAddressColsMissing ? baseRow : fullRow).select().single()
+  if (error?.code === '42703' && !postAddressColsMissing) {
+    postAddressColsMissing = true
+    console.warn('[posts] DB is missing the address/contact columns — run supabase/address_contact.sql. Falling back.')
+    ;({ data, error } = await supabase.from('posts').insert(baseRow).select().single())
+  }
   if (error) throw error
   return stripPost(data as unknown as DbPost)
 }
@@ -360,14 +426,16 @@ export async function deleteGuestComment(id: string, token: string): Promise<boo
 
 /** A member's own posts (newest first, capped at 50) — for the activity/profile page. */
 export async function listUserPosts(userId: string): Promise<DbPost[]> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(POST_COLS)
-    .eq('author_id', userId)
-    .order('created_at', { ascending: false })
-    .limit(50)
-  if (error) throw error
-  return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  return withPostCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(cols)
+      .eq('author_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (error) throw error
+    return ((data ?? []) as unknown as DbPost[]).map(stripPost)
+  })
 }
 
 /** A member's own comments (newest first, capped at 50) — for the activity/profile page. */
@@ -390,16 +458,18 @@ export async function listUserComments(userId: string): Promise<DbComment[]> {
 
 /** The anchor post for a photo, or null if nobody has commented yet. */
 export async function getPhotoPost(photoId: string): Promise<DbPost | null> {
-  const { data, error } = await supabase
-    .from('posts')
-    .select(POST_COLS)
-    .eq('board_id', toDbBoard('photos'))
-    .eq('category', photoId)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-  if (error) throw error
-  return data ? stripPost(data as unknown as DbPost) : null
+  return withPostCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('posts')
+      .select(cols)
+      .eq('board_id', toDbBoard('photos'))
+      .eq('category', photoId)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw error
+    return data ? stripPost(data as unknown as DbPost) : null
+  })
 }
 
 /** Fetch the photo's anchor post, creating it if this is the first comment. */

@@ -46,6 +46,17 @@ describe('manilatour output-preservation invariants', () => {
     expect(base.siteUrl).toBeNull() // VITE_SITE_URL env still decides
   })
 
+  it('footer tagline/copyright are the pre-refactor manilatour literals', () => {
+    expect(base.footerCopyright).toBe('© 2026 ManilaTour.Com')
+    expect(base.footerTagline.en).toContain('Korean–Philippines guide to Manila')
+    expect(base.footerTagline.ko).toContain('마닐라 여행 가이드')
+  })
+
+  it('still detects the visitor\'s browser language on a fresh visit (unchanged)', () => {
+    expect(base.defaultLocale).toBe('en')
+    expect(base.forceDefaultLocale).toBe(false)
+  })
+
   it('jsdom (localhost) resolves to the default brand', () => {
     expect(activeBrand.id).toBe('manilatour')
   })
@@ -64,5 +75,15 @@ describe('hanin brand shape', () => {
 
   it('owns its canonical origin', () => {
     expect(hanin.siteUrl).toBe('https://hanin.tv')
+  })
+
+  it('has its own footer copyright line — never manilatour\'s', () => {
+    expect(hanin.footerCopyright).not.toBe(BRANDS[0].footerCopyright)
+    expect(hanin.footerCopyright).not.toContain('ManilaTour')
+  })
+
+  it('always opens in Korean for a fresh visit/reload, ignoring the browser language', () => {
+    expect(hanin.defaultLocale).toBe('ko')
+    expect(hanin.forceDefaultLocale).toBe(true)
   })
 })

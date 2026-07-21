@@ -226,7 +226,12 @@ export interface BusinessRec extends Partial<SeoFields> {
   location: string | null
   region: string | null
   address: string | null
+  /** Structured breakdown of `address` (Province/City/Barangay picker) — supabase/address_contact.sql. */
+  address_province: string | null
+  address_city: string | null
+  address_barangay: string | null
   phone: string | null
+  mobile_phone: string | null
   /** { en, ko } one-line intro (card). Falls back to legacy `excerpt`. */
   short_intro: Localized
   /** { en, ko } full intro (profile). Falls back to legacy `description`. */

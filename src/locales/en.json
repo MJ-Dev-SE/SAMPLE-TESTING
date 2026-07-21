@@ -349,10 +349,6 @@
     "sectionBasic": "Basic information",
     "sectionImages": "Images",
     "region": "Region",
-    "address": "Address",
-    "addressPlaceholder": "Street, building, city",
-    "phone": "Phone",
-    "phonePlaceholder": "e.g. +63 2 8000 0000",
     "logo": "Business logo",
     "mainImage": "Main image",
     "gallery": "Additional photos",
@@ -369,6 +365,25 @@
     "photos": "Photos",
     "info": "Information",
     "posted": "Posted"
+  },
+  "address": {
+    "province": "Province",
+    "provincePlaceholder": "e.g. Laguna",
+    "city": "City / Municipality",
+    "cityPlaceholder": "e.g. San Pedro",
+    "barangay": "Barangay",
+    "barangayPlaceholder": "e.g. Cuyab",
+    "line": "Street / unit / building",
+    "linePlaceholder": "Unit, floor, building, street",
+    "required": "Please complete the address (province, city, barangay)."
+  },
+  "contact": {
+    "title": "Contact",
+    "phone": "Phone",
+    "phonePlaceholder": "e.g. +63 2 8000 0000",
+    "mobilePhone": "Mobile phone",
+    "mobilePhonePlaceholder": "e.g. +63 917 000 0000",
+    "address": "Address"
   },
   "company": {
     "empty": "No businesses listed yet.",

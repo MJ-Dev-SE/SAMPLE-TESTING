@@ -4,8 +4,17 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 
 import en from '../locales/en.json'
 import ko from '../locales/ko.json'
+import { activeBrand } from '../config/brand'
 
-// Default locale = English. Second locale = Korean.
+// Default locale is per-hostname (src/config/brand.ts):
+//  - manilatour.com (forceDefaultLocale: false) — unchanged: detects the
+//    browser's language on a fresh visit, and an explicit language-switcher
+//    pick persists in localStorage and wins on every later visit/reload.
+//  - hanin.tv (forceDefaultLocale: true) — ALWAYS opens in Korean, full stop:
+//    no browser-language detection AND no persistence. The switcher still
+//    changes the displayed language for the current page view (i18n stays a
+//    normal in-memory state machine either way), but that choice is never
+//    written to storage, so the very next reload/visit resets to Korean.
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)
@@ -14,14 +23,13 @@ i18n
       en: { translation: en },
       ko: { translation: ko },
     },
-    fallbackLng: 'en',
+    fallbackLng: activeBrand.defaultLocale,
     supportedLngs: ['en', 'ko'],
     interpolation: { escapeValue: false },
     detection: {
-      // persist choice; survives navigation + reload
-      order: ['localStorage', 'navigator'],
+      order: activeBrand.forceDefaultLocale ? [] : ['localStorage', 'navigator'],
       lookupLocalStorage: 'lang',
-      caches: ['localStorage'],
+      caches: activeBrand.forceDefaultLocale ? [] : ['localStorage'],
     },
   })
 

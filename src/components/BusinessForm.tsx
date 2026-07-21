@@ -7,6 +7,8 @@ import { uploadToMedia } from '../lib/media'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import { alertError, errText, toast } from '../lib/alert'
 import Tooltip from './Tooltip'
+import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from './PostingAddressFields'
+import ContactFields, { emptyContact, type ContactValue } from './ContactFields'
 import type { BusinessRec, CategoryRec } from '../types'
 
 /**
@@ -38,8 +40,8 @@ export default function BusinessForm({
   const [shortIntro, setShortIntro] = useState('')
   const [detailedIntro, setDetailedIntro] = useState('')
   const [region, setRegion] = useState('')
-  const [address, setAddress] = useState('')
-  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState<PostingAddressValue>(emptyAddress)
+  const [contact, setContact] = useState<ContactValue>(emptyContact)
 
   const [logo, setLogo] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState('')
@@ -67,6 +69,7 @@ export default function BusinessForm({
     e.preventDefault()
     if (!name.trim()) return void alertError(t('business.emptyName'))
     if (!categoryId) return void alertError(t('business.emptyCategory'))
+    if (!isAddressComplete(address)) return void alertError(t('address.required'))
     setBusy(true)
     try {
       const folder = 'businesses'
@@ -92,8 +95,12 @@ export default function BusinessForm({
         categoryId,
         categorySlug: cat?.slug ?? null,
         region: region.trim() || null,
-        address: address.trim() || null,
-        phone: phone.trim() || null,
+        address: composeAddress(address) || null,
+        addressProvince: address.province.trim() || null,
+        addressCity: address.city.trim() || null,
+        addressBarangay: address.barangay.trim() || null,
+        phone: contact.phone.trim() || null,
+        mobilePhone: contact.mobilePhone.trim() || null,
         shortIntro: { en: shortIntro.trim(), ko: shortIntro.trim() },
         detailedIntro: { en: detailedIntro.trim(), ko: detailedIntro.trim() },
         logoUrl,
@@ -160,16 +167,8 @@ export default function BusinessForm({
         <textarea rows={4} className="p-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue resize-y" value={detailedIntro} onChange={(e) => setDetailedIntro(e.target.value)} placeholder={t('business.descriptionPlaceholder')} />
       </label>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-text-normal">{t('business.address')}</span>
-          <input className={field} value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t('business.addressPlaceholder')} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-sm font-medium text-text-normal">{t('business.phone')}</span>
-          <input className={field} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t('business.phonePlaceholder')} />
-        </label>
-      </div>
+      <PostingAddressFields value={address} onChange={setAddress} />
+      <ContactFields value={contact} onChange={setContact} />
 
       {/* Image uploads */}
       <h4 className="text-xs font-bold uppercase tracking-wide text-subtlest mt-1">{t('business.sectionImages')}</h4>

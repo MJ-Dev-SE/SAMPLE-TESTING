@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Seo from './components/seo/Seo'
+import { activeBrand } from './config/brand'
 import { trackPageVisit } from './lib/trackVisit'
 // Home stays eager: it's the most common entry and the LCP-critical page.
 import Home from './routes/Home'
@@ -173,6 +174,14 @@ function usePageViewTracking() {
 }
 
 export default function App() {
+  // Temporary per-domain kill-switch (src/config/brand.ts `disabled`) — every
+  // path on a disabled brand's domain renders the real, noindex 404 page
+  // instead of the site. Nothing else (routes, DB, DNS) is touched, and
+  // NotFound already brings its own Layout + Seo, so it's rendered as-is.
+  // activeBrand is resolved once at module load, so this condition never
+  // changes across renders of a given page load — safe ahead of the hook below.
+  if (activeBrand.disabled) return <NotFound />
+
   usePageViewTracking()
   return (
     <>

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { listAdvertisements, listLinks, listPolicies } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
+import { activeBrand } from '../config/brand'
 import { STALE } from '../lib/queryClient'
 import type { AdvertisementRec, LinkRec, PolicyRec } from '../types'
 import Logo from './Logo'
@@ -79,13 +80,13 @@ export default function Footer() {
     <footer className="border-t border-neutral-90 mt-2xl">
       <div className="mx-auto max-w-content px-xs py-xl">
         <div className="flex flex-col gap-l items-center text-center md:flex-row md:items-start md:justify-between md:text-left">
-          {/* LEFT: Manila Tour brand + description + copyright + policy nav */}
+          {/* LEFT: brand logo + description + copyright + policy nav — per-hostname (src/config/brand.ts) */}
           <div className="max-w-[360px] flex flex-col items-center md:items-start">
             <Logo className="h-[48px]" />
             <p className="text-xs text-muted mt-3">
-              {t('footer.tagline')}
+              {L(activeBrand.footerTagline)}
             </p>
-            <p className="text-xs text-muted mt-2 mb-2">{t('footer.copyright')}</p>
+            <p className="text-xs text-muted mt-2 mb-2">{activeBrand.footerCopyright}</p>
             <nav className="flex flex-wrap items-center justify-center gap-x-1 text-xs text-muted md:justify-start">
               {policyNav.map((link, i) => (
                 <span key={link.label.en} className="inline-flex items-center">

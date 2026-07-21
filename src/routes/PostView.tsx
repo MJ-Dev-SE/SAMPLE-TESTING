@@ -12,6 +12,7 @@ import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
 import ImageCarousel from '../components/ImageCarousel'
+import ContactCard from '../components/ContactCard'
 import CommentItem from '../components/CommentItem'
 import {
   authorName,
@@ -256,6 +257,12 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
           </div>
         )}
       </article>
+
+      {post && (
+        <div className="mt-l">
+          <ContactCard phone={post.phone} mobilePhone={post.mobile_phone} address={post.address} />
+        </div>
+      )}
 
       {/* Private AI assistant for this post — see components/ai */}
       <AiAssistantSection ai={ai} />

@@ -14,6 +14,8 @@ import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
+import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from '../components/PostingAddressFields'
+import ContactFields, { emptyContact, type ContactValue } from '../components/ContactFields'
 
 /**
  * Compose page (/post/write?post_id=…&category=…, or /post/write?maroon=<slug>).
@@ -40,6 +42,8 @@ export default function PostWrite() {
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const { picks, addFiles, removeAt } = usePhotoPicker()
+  const [address, setAddress] = useState<PostingAddressValue>(emptyAddress)
+  const [contact, setContact] = useState<ContactValue>(emptyContact)
   const [busy, setBusy] = useState(false)
 
   // Community category cascade (only relevant when isCommunityPost).
@@ -89,6 +93,7 @@ export default function PostWrite() {
     e.preventDefault()
     if (!title.trim()) return alertError(t('post.emptyTitle'))
     if (isCommunityPost && !childId) return alertError(t('post.communityCategoryRequired'))
+    if (!isAddressComplete(address)) return alertError(t('address.required'))
     setBusy(true)
     try {
       // Members may attach photos; upload them to Storage first.
@@ -105,6 +110,12 @@ export default function PostWrite() {
         body: body.trim(),
         authorId: user?.id ?? null,
         images,
+        address: composeAddress(address) || null,
+        addressProvince: address.province.trim() || null,
+        addressCity: address.city.trim() || null,
+        addressBarangay: address.barangay.trim() || null,
+        phone: contact.phone.trim() || null,
+        mobilePhone: contact.mobilePhone.trim() || null,
       })
       toast(t('post.created'))
       navigate(`/post/view?id=${created.id}&post_id=${isCommunityPost ? 'maroon' : boardId}`)
@@ -235,6 +246,9 @@ export default function PostWrite() {
             className="p-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue resize-y"
           />
         </label>
+
+        <PostingAddressFields value={address} onChange={setAddress} />
+        <ContactFields value={contact} onChange={setContact} />
 
         {/* Photos — members only (Storage upload needs auth); text-only stays valid */}
         <div className="flex flex-col gap-1">

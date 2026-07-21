@@ -137,7 +137,37 @@ export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'comm
 
 const BIZ_COLS_LEGACY =
   'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at'
-const BIZ_COLS = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
+const BIZ_COLS_SEO = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
+const BIZ_COLS_FULL = `${BIZ_COLS_SEO}, address_province, address_city, address_barangay, mobile_phone`
+
+/**
+ * Three-tier column list for `businesses`, tried FULL → SEO → LEGACY and
+ * remembered so later calls start at the last-working tier directly.
+ * FULL needs supabase/address_contact.sql; SEO needs supabase/seo.sql; LEGACY
+ * is the pre-SEO baseline. Independent of `withSeoColumnFallback` above (that
+ * one only ever compares SEO vs legacy) so an address-only migration gap
+ * never gets misdiagnosed as "SEO columns missing".
+ */
+type BizColTier = 'full' | 'seo' | 'legacy'
+const BIZ_COLS_TIERS: Record<BizColTier, string> = { full: BIZ_COLS_FULL, seo: BIZ_COLS_SEO, legacy: BIZ_COLS_LEGACY }
+const NEXT_BIZ_TIER: Record<BizColTier, BizColTier | null> = { full: 'seo', seo: 'legacy', legacy: null }
+let bizColTier: BizColTier = 'full'
+
+async function withBizCols<T>(run: (cols: string) => Promise<T>): Promise<T> {
+  let tier = bizColTier
+  for (;;) {
+    try {
+      const result = await run(BIZ_COLS_TIERS[tier])
+      bizColTier = tier
+      return result
+    } catch (e) {
+      const next = NEXT_BIZ_TIER[tier]
+      if ((e as { code?: string })?.code !== '42703' || !next) throw e
+      console.warn(`[content] businesses: "${tier}" columns unavailable, falling back to "${next}" — run the matching supabase/*.sql migration.`)
+      tier = next
+    }
+  }
+}
 
 export interface BusinessPage {
   rows: BusinessRec[]
@@ -154,7 +184,7 @@ export async function listBusinesses(
 ): Promise<BusinessPage> {
   const page = Math.max(1, opts.page ?? 1)
   const pageSize = opts.pageSize ?? 9
-  return withSeoColumnFallback(
+  return withBizCols(
     async (cols) => {
       const from = (page - 1) * pageSize
       let q = supabase
@@ -169,27 +199,21 @@ export async function listBusinesses(
       if (error) throw error
       return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
     },
-    BIZ_COLS,
-    BIZ_COLS_LEGACY,
   )
 }
 
 /** Compact "recently updated" widget list. */
 export async function listRecentBusinesses(limit = 6): Promise<BusinessRec[]> {
-  return withSeoColumnFallback(
-    async (cols) => {
-      const { data, error } = await supabase
-        .from('businesses')
-        .select(cols)
-        .eq('status', 'active')
-        .order('updated_at', { ascending: false })
-        .limit(limit)
-      if (error) throw error
-      return (data ?? []) as unknown as BusinessRec[]
-    },
-    BIZ_COLS,
-    BIZ_COLS_LEGACY,
-  )
+  return withBizCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('businesses')
+      .select(cols)
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data ?? []) as unknown as BusinessRec[]
+  })
 }
 
 export interface NewBusiness {
@@ -198,7 +222,11 @@ export interface NewBusiness {
   categorySlug: string | null
   region: string | null
   address: string | null
+  addressProvince: string | null
+  addressCity: string | null
+  addressBarangay: string | null
   phone: string | null
+  mobilePhone: string | null
   shortIntro: { en: string; ko: string }
   detailedIntro: { en: string; ko: string }
   logoUrl: string | null
@@ -214,30 +242,40 @@ export interface NewBusiness {
  * (React Query has no hook access from a plain lib function) — see BusinessRegister.tsx.
  */
 export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
-  const { data, error } = await supabase
-    .from('businesses')
-    .insert({
-      name: b.name,
-      category: b.categorySlug,
-      category_id: b.categoryId,
-      location: b.region,
-      region: b.region,
-      address: b.address,
-      phone: b.phone,
-      excerpt: b.shortIntro,
-      description: b.detailedIntro,
-      short_intro: b.shortIntro,
-      detailed_intro: b.detailedIntro,
-      thumb_url: b.mainImageUrl,
-      main_image_url: b.mainImageUrl,
-      logo_url: b.logoUrl,
-      status: 'active',
-      owner_id: b.ownerId,
-    })
-    .select(BIZ_COLS)
-    .single()
-  if (error) throw error
-  const biz = data as unknown as BusinessRec
+  const baseRow = {
+    name: b.name,
+    category: b.categorySlug,
+    category_id: b.categoryId,
+    location: b.region,
+    region: b.region,
+    address: b.address,
+    phone: b.phone,
+    excerpt: b.shortIntro,
+    description: b.detailedIntro,
+    short_intro: b.shortIntro,
+    detailed_intro: b.detailedIntro,
+    thumb_url: b.mainImageUrl,
+    main_image_url: b.mainImageUrl,
+    logo_url: b.logoUrl,
+    status: 'active',
+    owner_id: b.ownerId,
+  }
+  const fullRow = {
+    ...baseRow,
+    address_province: b.addressProvince,
+    address_city: b.addressCity,
+    address_barangay: b.addressBarangay,
+    mobile_phone: b.mobilePhone,
+  }
+  const biz = await withBizCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('businesses')
+      .insert(cols === BIZ_COLS_FULL ? fullRow : baseRow)
+      .select(cols)
+      .single()
+    if (error) throw error
+    return data as unknown as BusinessRec
+  })
 
   const imgs = [
     ...(b.logoUrl ? [{ business_id: biz.id, image_url: b.logoUrl, image_type: 'logo', display_order: 0 }] : []),
@@ -261,21 +299,23 @@ async function withGallery(biz: BusinessRec): Promise<BusinessRec> {
 
 /** One business by id, with its gallery — /company/view profile page. */
 export async function getBusiness(id: string): Promise<BusinessRec | null> {
-  return withSeoColumnFallback(
-    async (cols) => {
-      const { data, error } = await supabase.from('businesses').select(cols).eq('id', id).maybeSingle()
-      if (error) throw error
-      return data ? withGallery(data as unknown as BusinessRec) : null
-    },
-    BIZ_COLS,
-    BIZ_COLS_LEGACY,
-  )
+  return withBizCols(async (cols) => {
+    const { data, error } = await supabase.from('businesses').select(cols).eq('id', id).maybeSingle()
+    if (error) throw error
+    return data ? withGallery(data as unknown as BusinessRec) : null
+  })
 }
 
 /** One business by URL slug, with its gallery — /business/<slug> profile page.
- *  (No legacy fallback: the slug column IS the migration.) */
+ *  (Falls back only as far as the SEO tier: the slug column IS the migration,
+ *  same as before — never drops to the pre-slug LEGACY tier.) */
 export async function getBusinessBySlug(slug: string): Promise<BusinessRec | null> {
-  const { data, error } = await supabase.from('businesses').select(BIZ_COLS).eq('slug', slug).maybeSingle()
+  const trySelect = async (cols: string) => supabase.from('businesses').select(cols).eq('slug', slug).maybeSingle()
+  let { data, error } = await trySelect(BIZ_COLS_FULL)
+  if (error?.code === '42703') {
+    console.warn('[content] businesses: "full" columns unavailable, falling back to "seo" — run supabase/address_contact.sql.')
+    ;({ data, error } = await trySelect(BIZ_COLS_SEO))
+  }
   if (error) throw error
   return data ? withGallery(data as unknown as BusinessRec) : null
 }

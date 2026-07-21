@@ -23,7 +23,7 @@ export default function EmergencyCard() {
               {L(e.label)}
               {e.note && <span className="ml-1 text-subtlest">({L(e.note)})</span>}
             </span>
-            <a href={`tel:${e.number}`} className="font-medium text-text-normal hover:text-accent-blue">
+            <a href={e.href ?? `tel:${e.number}`} className="font-medium text-text-normal hover:text-accent-blue">
               {e.number}
             </a>
           </li>

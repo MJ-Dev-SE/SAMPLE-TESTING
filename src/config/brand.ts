@@ -11,6 +11,7 @@ import type { AdPosition, Localized } from '../types'
  * Everything brandable reads from `activeBrand`:
  *   - src/config/site.ts   → SITE_URL / SITE_NAME / DEFAULT_TITLE / DEFAULT_DESCRIPTION / DEFAULT_OG_IMAGE
  *   - components/Logo.tsx  → header+footer logo image, alt text, wordmark fallback
+ *   - components/Footer.tsx → tagline + copyright line under the footer logo
  *   - lib/content.ts       → advertisement slots (per-brand position keys, see `adPrefix`)
  *   - main.tsx             → pre-hydration favicon / tab title swap
  *
@@ -27,6 +28,14 @@ export interface BrandConfig {
   id: string
   /** Hostnames (lowercase, no "www." — it is stripped before matching). */
   hostnames: string[]
+  /**
+   * Temporary, reversible kill-switch for this brand's domain — App.tsx
+   * renders the honest noindex 404 page for EVERY path when true, instead of
+   * the real site. Nothing is deleted: the DNS/Vercel domain binding, the
+   * database, and all routes stay fully intact underneath. Flip back to
+   * false (or delete the line) to bring the domain back instantly on redeploy.
+   */
+  disabled?: boolean
   /** og:site_name + the "Page | <name>" title suffix. */
   siteName: string
   /**
@@ -54,6 +63,24 @@ export interface BrandConfig {
     wordmarkTitle: string
     wordmarkSubtitle: string
   }
+  /** One-line description under the footer logo. */
+  footerTagline: Localized
+  /** Footer copyright line (rarely differs by locale, so a single string). */
+  footerCopyright: string
+  /** Language every page load lands on (see `forceDefaultLocale` for how strictly). */
+  defaultLocale: 'en' | 'ko'
+  /**
+   * true = EVERY page load — fresh visit, reload, or revisit — always opens in
+   * `defaultLocale`. No browser Accept-Language detection AND no persistence:
+   * the language-switcher still changes what's displayed for the current page
+   * view (i18n itself doesn't care where the active language came from), but
+   * that choice is never saved, so the next reload resets straight back to
+   * `defaultLocale`. false = src/i18n/index.ts's original manilatour.com
+   * behavior — detect from the browser on a fresh visit, and an explicit
+   * switcher choice persists in that domain's own localStorage and wins on
+   * every later visit/reload.
+   */
+  forceDefaultLocale: boolean
   /**
    * Advertisement slot scoping — PER POSITION. Positions listed in
    * `brandedAdPositions` read this brand's own inventory, stored under
@@ -70,6 +97,9 @@ export interface BrandConfig {
 const MANILATOUR: BrandConfig = {
   id: 'manilatour',
   hostnames: ['manilatour.com'],
+  // TEMPORARY — manilatour.com shows "not found" for every URL while this is
+  // true. See the `disabled` field doc above. Set back to false to reopen.
+  disabled: true,
   siteName: 'Manila Tour',
   siteUrl: null, // VITE_SITE_URL env keeps deciding, exactly as before
   defaultTitle: {
@@ -90,6 +120,13 @@ const MANILATOUR: BrandConfig = {
     wordmarkTitle: 'Manila Tour',
     wordmarkSubtitle: 'Korean · Philippines Guide',
   },
+  footerTagline: {
+    en: 'Your Korean–Philippines guide to Manila: tours, trusted local businesses, community and travel information.',
+    ko: '한인을 위한 마닐라 여행 가이드: 투어, 신뢰할 수 있는 현지 업소, 커뮤니티, 여행 정보.',
+  },
+  footerCopyright: '© 2026 ManilaTour.Com',
+  defaultLocale: 'en',
+  forceDefaultLocale: false, // unchanged — still detects the browser's language on a fresh visit
   adPrefix: '',
   brandedAdPositions: [],
 }
@@ -123,6 +160,16 @@ const HANIN: BrandConfig = {
     wordmarkTitle: 'Hanin TV', // [HANIN: wordmark text fallback]
     wordmarkSubtitle: 'Korean · Philippines Community', // [HANIN: wordmark subtitle]
   },
+  footerTagline: {
+    en: 'Your Korean–Philippines guide to Manila: tours, trusted local businesses, community and travel information.', // [HANIN: footer tagline EN]
+    ko: '한인을 위한 마닐라 여행 가이드: 투어, 신뢰할 수 있는 현지 업소, 커뮤니티, 여행 정보.', // [HANIN: footer tagline KO]
+  },
+  footerCopyright: '© 2026 Hanin.TV', // [HANIN: footer copyright line]
+  defaultLocale: 'ko',
+  // EVERY page load — fresh visit, reload, or revisit — always opens in
+  // Korean, regardless of browser language or any earlier switcher pick: the
+  // switcher still works for the current view, but the choice is never saved.
+  forceDefaultLocale: true,
   adPrefix: 'hanin:',
   // Only the two header banner slots differ on hanin.tv (rows stored as
   // position='hanin:header'); wings, homepage banners and footer stay shared

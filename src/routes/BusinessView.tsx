@@ -5,6 +5,8 @@ import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
 import Breadcrumbs from '../components/seo/Breadcrumbs'
 import SmartImage from '../components/SmartImage'
+import InfoTile from '../components/InfoTile'
+import ContactCard from '../components/ContactCard'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
 import AiAssistantButton from '../components/ai/AiAssistantButton'
 import AiAssistantSection from '../components/ai/AiAssistantSection'
@@ -24,21 +26,6 @@ import { STALE } from '../lib/queryClient'
  * Layout: logo, main image, gallery, name, category, short + detailed intro,
  * region, address, phone and date posted.
  */
-
-/** One contact fact: icon chip + label over value, so long values never fight a label column. */
-function InfoTile({ icon, label, value }: { icon: string; label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-3 rounded-m bg-neutral-97 px-3 py-2.5">
-      <span className="w-8 h-8 shrink-0 grid place-items-center rounded-m bg-white border border-neutral-90 text-accent-blue">
-        <i className={`fa-solid ${icon}`} aria-hidden="true" />
-      </span>
-      <div className="min-w-0">
-        <dt className="text-[11px] uppercase tracking-[0.5px] text-subtlest">{label}</dt>
-        <dd className="text-sm font-medium text-text-normal break-words">{value}</dd>
-      </div>
-    </div>
-  )
-}
 
 export default function BusinessView() {
   const { t, i18n } = useTranslation()
@@ -164,24 +151,18 @@ export default function BusinessView() {
           </section>
         )}
 
-        {/* Contact / info — label-over-value tiles in a 2-col grid */}
+        {/* Info — label-over-value tiles in a 2-col grid */}
         <section className="border border-neutral-90 rounded-l p-l">
           <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.info')}</h2>
           <dl className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             {(biz.region || biz.location) && (
               <InfoTile icon="fa-location-dot" label={t('business.region')} value={biz.region || biz.location || ''} />
             )}
-            {biz.address && <InfoTile icon="fa-map" label={t('business.address')} value={biz.address} />}
-            {biz.phone && (
-              <InfoTile
-                icon="fa-phone"
-                label={t('business.phone')}
-                value={<a href={`tel:${biz.phone}`} className="text-link hover:underline">{biz.phone}</a>}
-              />
-            )}
             {postedLabel && <InfoTile icon="fa-calendar" label={t('business.posted')} value={postedLabel} />}
           </dl>
         </section>
+
+        <ContactCard phone={biz.phone} mobilePhone={biz.mobile_phone} address={biz.address} />
 
         {allShots.length > 0 && (
           <section className="border border-neutral-90 rounded-l p-l">

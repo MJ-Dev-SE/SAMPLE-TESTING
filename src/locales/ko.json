@@ -349,10 +349,6 @@
     "sectionBasic": "기본 정보",
     "sectionImages": "이미지",
     "region": "지역",
-    "address": "주소",
-    "addressPlaceholder": "도로명, 건물, 도시",
-    "phone": "전화번호",
-    "phonePlaceholder": "예: +63 2 8000 0000",
     "logo": "업소 로고",
     "mainImage": "메인 이미지",
     "gallery": "추가 사진",
@@ -369,6 +365,25 @@
     "photos": "사진",
     "info": "정보",
     "posted": "등록일"
+  },
+  "address": {
+    "province": "주(道)",
+    "provincePlaceholder": "예: 라구나",
+    "city": "시/자치시",
+    "cityPlaceholder": "예: 산페드로",
+    "barangay": "바랑가이",
+    "barangayPlaceholder": "예: 쿠얍",
+    "line": "번지 / 호수 / 건물",
+    "linePlaceholder": "호수, 층, 건물, 도로명",
+    "required": "주소(주/시/바랑가이)를 모두 입력해 주세요."
+  },
+  "contact": {
+    "title": "연락처",
+    "phone": "전화번호",
+    "phonePlaceholder": "예: +63 2 8000 0000",
+    "mobilePhone": "휴대폰 번호",
+    "mobilePhonePlaceholder": "예: +63 917 000 0000",
+    "address": "주소"
   },
   "company": {
     "empty": "아직 등록된 업소가 없습니다.",

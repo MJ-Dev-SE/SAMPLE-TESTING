@@ -1,4 +1,24 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "manilatour.com" }],
+      "destination": "https://hanin.tv/:path*",
+      "permanent": false
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.manilatour.com" }],
+      "destination": "https://hanin.tv/:path*",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    { "source": "/robots.txt", "has": [{ "type": "host", "value": "hanin.tv" }], "destination": "/robots.hanin.txt" },
+    { "source": "/robots.txt", "has": [{ "type": "host", "value": "www.hanin.tv" }], "destination": "/robots.hanin.txt" },
+    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "hanin.tv" }], "destination": "/sitemap.hanin.xml" },
+    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "www.hanin.tv" }], "destination": "/sitemap.hanin.xml" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
