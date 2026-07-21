@@ -324,13 +324,20 @@ function TablePanel({ def, userId }: { def: TableDef; userId: string }) {
 
   const save = async (values: AdminRow) => {
     setBusy(true)
+    // A select whose options include "" means "unset" — store NULL, not an
+    // empty string, so `is null` filters (e.g. businesses.brand = shown on
+    // every domain) actually match the row.
+    const row: AdminRow = { ...values }
+    for (const f of def.fields) {
+      if (f.type === 'select' && f.options?.includes('') && row[f.key] === '') row[f.key] = null
+    }
     try {
       if (editing === 'new') {
         const extra = def.injectOnCreate?.(userId) ?? {}
-        const { error } = await supabase.from(def.table).insert({ ...values, ...extra })
+        const { error } = await supabase.from(def.table).insert({ ...row, ...extra })
         if (error) throw error
       } else if (editing) {
-        const { error } = await supabase.from(def.table).update(values).eq('id', editing.id)
+        const { error } = await supabase.from(def.table).update(row).eq('id', editing.id)
         if (error) throw error
       }
       queryClient.invalidateQueries() // the site's cached reads must reflect this edit immediately

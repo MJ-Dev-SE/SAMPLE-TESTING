@@ -92,6 +92,8 @@ export interface BrandConfig {
    */
   adPrefix: string
   brandedAdPositions: AdPosition[]
+  /** How many wing banners each rail shows (WingBanners.tsx). */
+  wingCounts: { left: number; right: number }
 }
 
 const MANILATOUR: BrandConfig = {
@@ -129,6 +131,7 @@ const MANILATOUR: BrandConfig = {
   forceDefaultLocale: false, // unchanged — still detects the browser's language on a fresh visit
   adPrefix: '',
   brandedAdPositions: [],
+  wingCounts: { left: 4, right: 3 }, // unchanged from the original hardcoded WingBanners counts
 }
 
 /**
@@ -171,10 +174,11 @@ const HANIN: BrandConfig = {
   // switcher still works for the current view, but the choice is never saved.
   forceDefaultLocale: true,
   adPrefix: 'hanin:',
-  // Only the two header banner slots differ on hanin.tv (rows stored as
-  // position='hanin:header'); wings, homepage banners and footer stay shared
-  // with manilatour.
-  brandedAdPositions: ['header'],
+  // Header banners AND the side wings are hanin.tv-specific (rows stored as
+  // position='hanin:header' / 'hanin:wing-left' / 'hanin:wing-right');
+  // homepage banners and footer stay shared with manilatour.
+  brandedAdPositions: ['header', 'wing-left', 'wing-right'],
+  wingCounts: { left: 4, right: 4 }, // hanin.tv shows 4 banners per side
 }
 
 /** All brands — first entry is the default/fallback. */

@@ -139,19 +139,37 @@ const BIZ_COLS_LEGACY =
   'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at'
 const BIZ_COLS_SEO = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
 const BIZ_COLS_FULL = `${BIZ_COLS_SEO}, address_province, address_city, address_barangay, mobile_phone`
+const BIZ_COLS_BRAND = `${BIZ_COLS_FULL}, brand, showcase`
 
 /**
- * Three-tier column list for `businesses`, tried FULL → SEO → LEGACY and
+ * Four-tier column list for `businesses`, tried BRAND → FULL → SEO → LEGACY and
  * remembered so later calls start at the last-working tier directly.
- * FULL needs supabase/address_contact.sql; SEO needs supabase/seo.sql; LEGACY
- * is the pre-SEO baseline. Independent of `withSeoColumnFallback` above (that
- * one only ever compares SEO vs legacy) so an address-only migration gap
- * never gets misdiagnosed as "SEO columns missing".
+ * BRAND needs supabase/hanin_businesses.sql; FULL needs
+ * supabase/address_contact.sql; SEO needs supabase/seo.sql; LEGACY is the
+ * pre-SEO baseline. Independent of `withSeoColumnFallback` above (that one only
+ * ever compares SEO vs legacy) so an address-only migration gap never gets
+ * misdiagnosed as "SEO columns missing".
  */
-type BizColTier = 'full' | 'seo' | 'legacy'
-const BIZ_COLS_TIERS: Record<BizColTier, string> = { full: BIZ_COLS_FULL, seo: BIZ_COLS_SEO, legacy: BIZ_COLS_LEGACY }
-const NEXT_BIZ_TIER: Record<BizColTier, BizColTier | null> = { full: 'seo', seo: 'legacy', legacy: null }
-let bizColTier: BizColTier = 'full'
+type BizColTier = 'brand' | 'full' | 'seo' | 'legacy'
+const BIZ_COLS_TIERS: Record<BizColTier, string> = {
+  brand: BIZ_COLS_BRAND,
+  full: BIZ_COLS_FULL,
+  seo: BIZ_COLS_SEO,
+  legacy: BIZ_COLS_LEGACY,
+}
+const NEXT_BIZ_TIER: Record<BizColTier, BizColTier | null> = { brand: 'full', full: 'seo', seo: 'legacy', legacy: null }
+let bizColTier: BizColTier = 'brand'
+
+/**
+ * PER-DOMAIN LISTING SCOPE (businesses.brand, supabase/hanin_businesses.sql):
+ *   brand IS NULL          → shared, shows on every domain (all pre-existing rows)
+ *   brand = <a brand id>   → shows ONLY on that brand's domain
+ * Applied as a PostgREST .or() filter, and only while the BRAND column tier is
+ * live — before that migration runs there is no column to filter on, and the
+ * directory behaves exactly as it did before (everything shared).
+ */
+const hasBrandCol = (cols: string) => cols === BIZ_COLS_BRAND
+const brandScopeFilter = () => `brand.is.null,brand.eq.${activeBrand.id}`
 
 async function withBizCols<T>(run: (cols: string) => Promise<T>): Promise<T> {
   let tier = bizColTier
@@ -195,6 +213,7 @@ export async function listBusinesses(
         .order('updated_at', { ascending: false })
         .range(from, from + pageSize - 1)
       if (category && category !== 'all') q = q.eq('category', category)
+      if (hasBrandCol(cols)) q = q.or(brandScopeFilter())
       const { data, error, count } = await q
       if (error) throw error
       return { rows: (data ?? []) as unknown as BusinessRec[], total: count ?? 0 }
@@ -205,15 +224,63 @@ export async function listBusinesses(
 /** Compact "recently updated" widget list. */
 export async function listRecentBusinesses(limit = 6): Promise<BusinessRec[]> {
   return withBizCols(async (cols) => {
-    const { data, error } = await supabase
+    let q = supabase
       .from('businesses')
       .select(cols)
       .eq('status', 'active')
       .order('updated_at', { ascending: false })
       .limit(limit)
+    if (hasBrandCol(cols)) q = q.or(brandScopeFilter())
+    const { data, error } = await q
     if (error) throw error
     return (data ?? []) as unknown as BusinessRec[]
   })
+}
+
+/**
+ * Featured listings for the homepage showcase grid — `showcase = true`, scoped
+ * to this domain (HaninShowcase.tsx). Returns [] before the migration runs, so
+ * the caller falls back to its static default.
+ */
+export async function listShowcaseBusinesses(limit = 8): Promise<BusinessRec[]> {
+  try {
+    const { data, error } = await supabase
+      .from('businesses')
+      .select(BIZ_COLS_BRAND)
+      .eq('status', 'active')
+      .eq('showcase', true)
+      .eq('brand', activeBrand.id)
+      .order('display_order', { ascending: true })
+      .order('updated_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data ?? []) as unknown as BusinessRec[]
+  } catch (e) {
+    if ((e as { code?: string })?.code !== '42703') throw e
+    return []
+  }
+}
+
+/**
+ * Slugs of every listing this domain OWNS (brand = active brand id). Surfaces
+ * that inject a static default (the hanin showcase / directory rows in
+ * src/data/haninBusinesses.ts) skip any entry whose slug is already a real DB
+ * row, so seeding supabase/hanin_businesses.sql hands editing control to the
+ * admin console WITHOUT duplicating cards. Empty = nothing seeded yet.
+ *
+ * Returns a plain array, not a Set: results are cached through the localStorage
+ * persister (lib/queryClient.ts), which JSON-serializes — a Set would come back
+ * as `{}` after a reload.
+ */
+export async function listBrandBusinessSlugs(): Promise<string[]> {
+  try {
+    const { data, error } = await supabase.from('businesses').select('slug').eq('brand', activeBrand.id)
+    if (error) throw error
+    return (data ?? []).map((r) => (r as { slug: string | null }).slug).filter(Boolean) as string[]
+  } catch (e) {
+    if ((e as { code?: string })?.code !== '42703') throw e
+    return []
+  }
 }
 
 export interface NewBusiness {
@@ -267,10 +334,14 @@ export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
     address_barangay: b.addressBarangay,
     mobile_phone: b.mobilePhone,
   }
+  // A listing is tagged with the domain it was submitted from, so it appears in
+  // that domain's directory only. Admins can clear `brand` (→ NULL) in the
+  // console to share one listing across every domain.
+  const brandRow = { ...fullRow, brand: activeBrand.id }
   const biz = await withBizCols(async (cols) => {
     const { data, error } = await supabase
       .from('businesses')
-      .insert(cols === BIZ_COLS_FULL ? fullRow : baseRow)
+      .insert(cols === BIZ_COLS_BRAND ? brandRow : cols === BIZ_COLS_FULL ? fullRow : baseRow)
       .select(cols)
       .single()
     if (error) throw error
@@ -311,7 +382,11 @@ export async function getBusiness(id: string): Promise<BusinessRec | null> {
  *  same as before — never drops to the pre-slug LEGACY tier.) */
 export async function getBusinessBySlug(slug: string): Promise<BusinessRec | null> {
   const trySelect = async (cols: string) => supabase.from('businesses').select(cols).eq('slug', slug).maybeSingle()
-  let { data, error } = await trySelect(BIZ_COLS_FULL)
+  let { data, error } = await trySelect(BIZ_COLS_BRAND)
+  if (error?.code === '42703') {
+    console.warn('[content] businesses: "brand" columns unavailable, falling back to "full" — run supabase/hanin_businesses.sql.')
+    ;({ data, error } = await trySelect(BIZ_COLS_FULL))
+  }
   if (error?.code === '42703') {
     console.warn('[content] businesses: "full" columns unavailable, falling back to "seo" — run supabase/address_contact.sql.')
     ;({ data, error } = await trySelect(BIZ_COLS_SEO))

@@ -65,12 +65,18 @@ describe('manilatour output-preservation invariants', () => {
 describe('hanin brand shape', () => {
   const hanin = resolveBrand('hanin.tv')
 
-  it('scopes ONLY the header slots to its own inventory — wings and the rest stay shared', () => {
+  it('scopes the header AND both wings to its own inventory — homepage/footer stay shared', () => {
     expect(hanin.adPrefix).toBe('hanin:')
     expect(hanin.adPrefix).not.toBe(BRANDS[0].adPrefix)
-    expect(hanin.brandedAdPositions).toEqual(['header'])
-    expect(hanin.brandedAdPositions).not.toContain('wing-left')
-    expect(hanin.brandedAdPositions).not.toContain('wing-right')
+    expect(hanin.brandedAdPositions).toEqual(['header', 'wing-left', 'wing-right'])
+    // Not brand-scoped — these still read the shared base inventory.
+    expect(hanin.brandedAdPositions).not.toContain('homepage')
+    expect(hanin.brandedAdPositions).not.toContain('footer-info')
+  })
+
+  it('shows 4 wings per side (manilatour keeps 4 left / 3 right)', () => {
+    expect(hanin.wingCounts).toEqual({ left: 4, right: 4 })
+    expect(BRANDS[0].wingCounts).toEqual({ left: 4, right: 3 })
   })
 
   it('owns its canonical origin', () => {

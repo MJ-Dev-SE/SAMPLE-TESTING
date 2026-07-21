@@ -4,6 +4,8 @@ import { listAdvertisements } from '../lib/content'
 import { publicUrl } from '../lib/media'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
+import { activeBrand } from '../config/brand'
+import { haninWingsLeft, haninWingsRight } from '../data/haninWings'
 
 /**
  * WING (side) AD BANNERS — philgo.com style.
@@ -33,17 +35,35 @@ function Wing({ ads, side }: { ads: AdvertisementRec[]; side: 'left' | 'right' }
   )
 }
 
+/**
+ * Wing creatives for one side: this brand's own inventory
+ * (listAdvertisements scopes to 'hanin:wing-*' on hanin.tv — see
+ * config/brand.ts brandedAdPositions), capped at the brand's wing count. On
+ * hanin.tv, if no wing ads have been uploaded yet, fall back to the static
+ * defaults (src/data/haninWings.ts) so the rails aren't empty out of the box;
+ * any admin-uploaded creative for that side replaces the default entirely.
+ */
+async function loadWing(side: 'left' | 'right'): Promise<AdvertisementRec[]> {
+  const count = side === 'left' ? activeBrand.wingCounts.left : activeBrand.wingCounts.right
+  const rows = (await listAdvertisements(side === 'left' ? 'wing-left' : 'wing-right')).slice(0, count)
+  if (rows.length === 0 && activeBrand.id === 'hanin') {
+    return (side === 'left' ? haninWingsLeft : haninWingsRight).slice(0, count)
+  }
+  return rows
+}
+
 export default function WingBanners() {
-  // Fixed slot counts (managed per-slot in the admin console): LEFT 4 · RIGHT 3.
+  // Per-brand slot counts (config/brand.ts wingCounts): manilatour LEFT 4 · RIGHT 3,
+  // hanin.tv LEFT 4 · RIGHT 4. Managed per-slot in the admin console.
   const { data: left = [] } = useQuery({
-    queryKey: ['ads', 'wing-left'],
-    queryFn: async () => (await listAdvertisements('wing-left')).slice(0, 4),
+    queryKey: ['ads', 'wing-left', activeBrand.id],
+    queryFn: () => loadWing('left'),
     staleTime: STALE.homepageSection,
     gcTime: STALE.homepageSection * 2,
   })
   const { data: right = [] } = useQuery({
-    queryKey: ['ads', 'wing-right'],
-    queryFn: async () => (await listAdvertisements('wing-right')).slice(0, 3),
+    queryKey: ['ads', 'wing-right', activeBrand.id],
+    queryFn: () => loadWing('right'),
     staleTime: STALE.homepageSection,
     gcTime: STALE.homepageSection * 2,
   })

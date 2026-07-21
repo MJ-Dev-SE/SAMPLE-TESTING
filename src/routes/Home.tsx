@@ -4,9 +4,11 @@ import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
 import PhotoBanner from '../components/PhotoBanner'
 import NewsTabs from '../components/NewsTabs'
+import HaninShowcase from '../components/HaninShowcase'
 import BoardColumn from '../components/BoardColumn'
 import PopularList from '../components/PopularList'
 import BannerRow from '../components/BannerRow'
+import { activeBrand } from '../config/brand'
 import { boardTitles } from '../data/boards'
 import { listPhotos } from '../lib/content'
 import { commentCountOf, listPosts, postPath, type DbPost } from '../lib/posts'
@@ -37,11 +39,16 @@ export default function Home() {
   const { t } = useTranslation()
   const L = useLocalized()
 
+  // The resort photo banner (room types, rate card) is manilatour.com content —
+  // hanin.tv shows its business showcase there instead, so the query is skipped
+  // entirely rather than fetched and thrown away.
+  const showPhotoBanner = activeBrand.id !== 'hanin'
   const { data: banner = [] } = useQuery({
     queryKey: ['photos', 'banner'],
     queryFn: () => listPhotos('banner'),
     staleTime: STALE.homepageSection,
     gcTime: STALE.homepageSection * 2,
+    enabled: showPhotoBanner,
   })
 
   const { data: boardLists } = useQuery({
@@ -61,8 +68,13 @@ export default function Home() {
         {/* 4a. News tab block */}
         <NewsTabs />
 
-        {/* 4b. Room-rate photo banner row — click a card for the full pic + info */}
-        <PhotoBanner photos={banner} />
+        {/* hanin.tv only: business showcase grid directly below the News card.
+            manilatour.com (and every other host) renders nothing here. */}
+        {activeBrand.id === 'hanin' && <HaninShowcase />}
+
+        {/* 4b. Room-rate photo banner row — click a card for the full pic + info.
+            manilatour.com only (see showPhotoBanner above). */}
+        {showPhotoBanner && <PhotoBanner photos={banner} />}
 
         {/* Ad cards (crossfading, from the DB) */}
         <BannerRow position="homepage" />

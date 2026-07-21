@@ -245,6 +245,13 @@ export interface BusinessRec extends Partial<SeoFields> {
   display_order: number
   updated_at: string
   created_at?: string
+  /**
+   * Domain scope — null/undefined = shared by every domain; a brand id
+   * (src/config/brand.ts) = that domain's directory only. supabase/hanin_businesses.sql.
+   */
+  brand?: string | null
+  /** Featured in the homepage showcase grid of its own domain. */
+  showcase?: boolean
   /** Joined gallery (profile page only). */
   images?: BusinessImage[]
 }

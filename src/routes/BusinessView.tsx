@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -7,12 +8,15 @@ import Breadcrumbs from '../components/seo/Breadcrumbs'
 import SmartImage from '../components/SmartImage'
 import InfoTile from '../components/InfoTile'
 import ContactCard from '../components/ContactCard'
+import PhotoLightbox from '../components/PhotoLightbox'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
 import AiAssistantButton from '../components/ai/AiAssistantButton'
 import AiAssistantSection from '../components/ai/AiAssistantSection'
 import { useAiAssistant } from '../components/ai/useAiAssistant'
 import { NotFoundBody } from './NotFound'
 import { businessPath, getBusiness, getBusinessBySlug, listCategories } from '../lib/content'
+import { activeBrand } from '../config/brand'
+import { findHaninBusiness, toBusinessRec } from '../data/haninBusinesses'
 import { resolveSlugRedirect } from '../lib/slugRedirects'
 import { metaDescription } from '../lib/seo/text'
 import { localBusinessLd } from '../lib/seo/structuredData'
@@ -33,12 +37,24 @@ export default function BusinessView() {
   const { slug } = useParams()
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
+  /** Index of the photo shown full-size in the lightbox; null = closed. */
+  const [lightbox, setLightbox] = useState<number | null>(null)
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['business', slug ?? null, id],
     queryFn: async () => {
-      const load = slug ? getBusinessBySlug(slug) : getBusiness(id)
-      const [b, cats] = await Promise.all([load, listCategories()])
+      const cats = await listCategories()
+      const b = await (slug ? getBusinessBySlug(slug) : getBusiness(id))
+      // hanin.tv static businesses (src/data/haninBusinesses.ts) resolve here
+      // too, so a showcase card / wing link opens the same profile page — but
+      // only as a FALLBACK: once the slug exists as a real row
+      // (supabase/hanin_businesses.sql) the admin-editable DB record wins.
+      const staticHb = !b && activeBrand.id === 'hanin' ? findHaninBusiness(slug ?? id) : null
+      if (staticHb) {
+        const biz = toBusinessRec(staticHb, cats.find((c) => c.slug === staticHb.categorySlug)?.id ?? null)
+        const cat = cats.find((c) => c.slug === staticHb.categorySlug) ?? null
+        return { biz, cat, hero: biz.main_image_url ?? '', redirectTo: null as string | null }
+      }
       if (!b && slug) {
         const next = await resolveSlugRedirect('business', slug)
         if (next) return { biz: null, cat: null, hero: '', redirectTo: `/business/${encodeURIComponent(next)}` }
@@ -169,7 +185,15 @@ export default function BusinessView() {
             <h2 className="text-[15px] font-bold text-text-normal mb-3">{t('business.photos')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {allShots.map((src, i) => (
-                <SmartImage key={i} src={src} cover className="aspect-[4/3] rounded-m border border-neutral-90" />
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setLightbox(i)}
+                  aria-label={`${biz.name} — ${t('business.photos')} ${i + 1}`}
+                  className="group block overflow-hidden rounded-m border border-neutral-90 cursor-zoom-in"
+                >
+                  <SmartImage src={src} cover className="aspect-[4/3] transition-transform group-hover:scale-105" />
+                </button>
               ))}
             </div>
           </section>
@@ -189,6 +213,15 @@ export default function BusinessView() {
           highlightedCommentId={params.get('comment')}
         />
       </div>
+
+      {/* Clicking any photo above opens it full size, centered over the page. */}
+      <PhotoLightbox
+        images={allShots}
+        index={lightbox}
+        onIndexChange={setLightbox}
+        onClose={() => setLightbox(null)}
+        alt={biz.name}
+      />
     </Layout>
   )
 }

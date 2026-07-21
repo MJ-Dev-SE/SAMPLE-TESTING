@@ -13,6 +13,10 @@ import { listBusinesses, listCategories } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import { metaDescription } from '../lib/seo/text'
 import { STALE } from '../lib/queryClient'
+import { activeBrand } from '../config/brand'
+import { haninBusinessesForCategory, toBusinessRec } from '../data/haninBusinesses'
+import { useSeededSlugs } from '../lib/useSeededSlugs'
+import type { BusinessRec } from '../types'
 
 const PAGE_SIZE = 9 // 3 columns × 3 rows
 
@@ -54,11 +58,27 @@ export default function Company() {
     staleTime: STALE.homepageSection,
     gcTime: STALE.homepageSection * 2,
   })
-  const items = bizData?.rows ?? []
-  const total = bizData?.total ?? 0
+  const catById = new Map((categories ?? []).map((c) => [c.id, c]))
+  const catBySlug = new Map((categories ?? []).map((c) => [c.slug, c]))
+
+  // hanin.tv only: fold the static hanin businesses (src/data/haninBusinesses.ts)
+  // into the directory for the current category. They lead page 1 so they're
+  // always visible; DB listings follow. manilatour.com sees none of this.
+  // Anything already seeded as a real row (supabase/hanin_businesses.sql) is
+  // dropped here — that row is in `dbRows` already, and it's the editable one.
+  const seeded = useSeededSlugs()
+  const injected: BusinessRec[] =
+    activeBrand.id === 'hanin'
+      ? haninBusinessesForCategory(category)
+          .filter((hb) => !seeded.has(hb.slug))
+          .map((hb) => toBusinessRec(hb, catBySlug.get(hb.categorySlug)?.id ?? null))
+      : []
+
+  const dbRows = bizData?.rows ?? []
+  const items = page === 1 ? [...injected, ...dbRows] : dbRows
+  const total = (bizData?.total ?? 0) + injected.length
 
   const pageCount = Math.ceil(total / PAGE_SIZE)
-  const catById = new Map((categories ?? []).map((c) => [c.id, c]))
 
   const setPage = (p: number) => {
     const next = new URLSearchParams(params)

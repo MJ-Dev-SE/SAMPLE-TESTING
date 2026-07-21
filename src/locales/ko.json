@@ -243,6 +243,7 @@
   },
   "home": {
     "newsTabsHeading": "뉴스",
+    "haninShowcase": "추천 업소",
     "latestPosts": "최신 게시글",
     "popularPosts": "인기 게시글 (최근 30일)",
     "businessDirectory": "업소록",
@@ -260,6 +261,7 @@
     "exchange": "환율",
     "recentComments": "최근 댓글",
     "recentPhotos": "최근 사진",
+    "recentBusinessPhotos": "최근 업소",
     "emergencyContact": "비상 연락처",
     "calculator": "계산기",
     "travelInfo": "여행 정보"

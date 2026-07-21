@@ -88,10 +88,10 @@ const GROUPS: SlotGroup[] = [
   {
     position: 'wing-left',
     icon: 'fa-angles-left',
-    title: { en: 'Left wing rail', ko: '왼쪽 윙 배너' },
+    title: { en: 'Left wing rail — manilatour.com', ko: '왼쪽 윙 배너 — manilatour.com' },
     hint: {
-      en: '4 fixed banners on the LEFT side of the page (WingBanners.tsx). Only these 4 slots are shown — on EVERY domain (manilatour.com and hanin.tv share these).',
-      ko: '페이지 왼쪽의 고정 배너 4개(WingBanners.tsx). 이 4개 슬롯만 표시되며 모든 도메인(manilatour.com·hanin.tv 공용)에 노출됩니다.',
+      en: '4 fixed banners on the LEFT side of the page (WingBanners.tsx). Shows on manilatour.com only — hanin.tv has its own wing group below.',
+      ko: '페이지 왼쪽의 고정 배너 4개(WingBanners.tsx). manilatour.com에만 노출 — hanin.tv는 아래 전용 윙 그룹을 사용합니다.',
     },
     count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
@@ -100,12 +100,39 @@ const GROUPS: SlotGroup[] = [
   {
     position: 'wing-right',
     icon: 'fa-angles-right',
-    title: { en: 'Right wing rail', ko: '오른쪽 윙 배너' },
+    title: { en: 'Right wing rail — manilatour.com', ko: '오른쪽 윙 배너 — manilatour.com' },
     hint: {
-      en: '3 fixed banners on the RIGHT side of the page (WingBanners.tsx). Only these 3 slots are shown — on EVERY domain (manilatour.com and hanin.tv share these).',
-      ko: '페이지 오른쪽의 고정 배너 3개(WingBanners.tsx). 이 3개 슬롯만 표시되며 모든 도메인(manilatour.com·hanin.tv 공용)에 노출됩니다.',
+      en: '3 fixed banners on the RIGHT side of the page (WingBanners.tsx). Shows on manilatour.com only — hanin.tv has its own wing group below.',
+      ko: '페이지 오른쪽의 고정 배너 3개(WingBanners.tsx). manilatour.com에만 노출 — hanin.tv는 아래 전용 윙 그룹을 사용합니다.',
     },
     count: 3,
+    slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
+    allowExtra: false,
+  },
+  {
+    // hanin.tv's own wings (brandedAdPositions in src/config/brand.ts): rows save
+    // under 'hanin:wing-left' / 'hanin:wing-right' and render ONLY on hanin.tv.
+    // Until filled, hanin.tv shows the static defaults in src/data/haninWings.ts.
+    position: 'hanin:wing-left',
+    icon: 'fa-angles-left',
+    title: { en: 'Left wing rail — hanin.tv', ko: '왼쪽 윙 배너 — hanin.tv' },
+    hint: {
+      en: '4 fixed banners on the LEFT side, on hanin.tv only. Uploading here replaces the built-in hanin default for that slot; never shows on manilatour.com.',
+      ko: 'hanin.tv 전용 왼쪽 고정 배너 4개. 여기 올리면 해당 슬롯의 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
+    },
+    count: 4,
+    slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
+    allowExtra: false,
+  },
+  {
+    position: 'hanin:wing-right',
+    icon: 'fa-angles-right',
+    title: { en: 'Right wing rail — hanin.tv', ko: '오른쪽 윙 배너 — hanin.tv' },
+    hint: {
+      en: '4 fixed banners on the RIGHT side, on hanin.tv only. Uploading here replaces the built-in hanin default for that slot; never shows on manilatour.com.',
+      ko: 'hanin.tv 전용 오른쪽 고정 배너 4개. 여기 올리면 해당 슬롯의 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
+    },
+    count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
     allowExtra: false,
   },

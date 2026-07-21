@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import PhoneInput from './PhoneInput'
 
 export interface ContactValue {
   phone: string
@@ -28,15 +29,17 @@ export default function ContactFields({
           placeholder={t('contact.phonePlaceholder')}
         />
       </label>
-      <label className="flex flex-col gap-1">
+      {/* Mobile numbers are international — country flag + dial code picker
+          (🇵🇭 +63 by default), stored as one "+63 917 …" string. */}
+      <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-text-normal">{t('contact.mobilePhone')}</span>
-        <input
-          className={field}
+        <PhoneInput
           value={value.mobilePhone}
-          onChange={(e) => onChange({ ...value, mobilePhone: e.target.value })}
+          onChange={(mobilePhone) => onChange({ ...value, mobilePhone })}
           placeholder={t('contact.mobilePhonePlaceholder')}
+          ariaLabel={t('contact.mobilePhone')}
         />
-      </label>
+      </div>
     </div>
   )
 }

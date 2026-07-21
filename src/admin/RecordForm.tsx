@@ -40,7 +40,9 @@ function initialValues(def: TableDef, row: AdminRow | null): AdminRow {
     } else if (f.type === 'json') {
       v[f.key] = cur != null ? JSON.stringify(cur, null, 2) : ''
     } else if (f.type === 'boolean') {
-      v[f.key] = cur ?? true
+      // Most flags (active, indexable…) should start on; opt-in flags declare
+      // `defaultOff` so a new row doesn't silently enable them.
+      v[f.key] = cur ?? !f.defaultOff
     } else if (f.type === 'number') {
       v[f.key] = cur ?? 0
     } else if (f.type === 'select') {
@@ -341,7 +343,7 @@ export default function RecordForm({
           <select value={val ?? ''} onChange={(e) => set(f.key, e.target.value)} className={inputCls}>
             {(f.options ?? []).map((o) => (
               <option key={o} value={o}>
-                {o}
+                {o === '' ? '—' : o}
               </option>
             ))}
           </select>

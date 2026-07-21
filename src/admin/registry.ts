@@ -36,6 +36,8 @@ export interface FieldDef {
   folder?: string // image fields: media-bucket folder for new uploads
   /** Groups the field under the collapsible "SEO" section of the form. */
   seo?: boolean
+  /** boolean fields: start a NEW row with this flag off (default is on). */
+  defaultOff?: boolean
   /** slug fields: which form value the "generate" button derives from. */
   slugSource?: string
 }
@@ -121,18 +123,43 @@ export const ADMIN_TABLES: TableDef[] = [
     icon: 'fa-store',
     title: { en: 'Businesses', ko: '업소록' },
     usedIn: {
-      en: 'Business Directory (/company) 3×3 cards, the /company/view profile page, and the sidebar "Recently updated" widget.',
-      ko: '업소록(/company) 3×3 카드, 업소 상세(/company/view), 사이드바 "최근 등록" 위젯.',
+      en: 'Business Directory (/company) 3×3 cards, the /company/view profile page, and the sidebar "Recently updated" widget. On hanin.tv these rows also feed the homepage showcase grid, the Recent Photos widget and the wing-banner link targets.',
+      ko: '업소록(/company) 3×3 카드, 업소 상세(/company/view), 사이드바 "최근 등록" 위젯. hanin.tv에서는 홈 쇼케이스 그리드, 최근 사진 위젯, 윙 배너 연결 대상도 이 행에서 나옵니다.',
     },
-    placement: (r) => (r.category ? `/company?category=${r.category}` : '/company'),
+    placement: (r) =>
+      `${r.brand ? `${r.brand}.tv only` : 'all domains'} · ${r.category ? `/company?category=${r.category}` : '/company'}${r.showcase ? ' · showcase' : ''}`,
     imageCol: 'main_image_url',
-    listCols: ['name', 'category', 'region', 'status', 'updated_at'],
+    listCols: ['name', 'category', 'brand', 'showcase', 'status', 'updated_at'],
     fields: [
       { key: 'name', label: { en: 'Business name', ko: '업소명' }, type: 'text', required: true },
       { key: 'category_id', label: { en: 'Category', ko: '카테고리' }, type: 'category', required: true },
+      {
+        key: 'brand',
+        label: { en: 'Show on domain', ko: '표시 도메인' },
+        type: 'select',
+        options: ['', 'manilatour', 'hanin'],
+        hint: {
+          en: 'Blank = every domain. "hanin" = hanin.tv only, "manilatour" = manilatour.com only.',
+          ko: '비워두면 모든 도메인. "hanin"은 hanin.tv 전용, "manilatour"는 manilatour.com 전용.',
+        },
+      },
+      {
+        key: 'showcase',
+        label: { en: 'Feature in home showcase', ko: '홈 쇼케이스에 노출' },
+        type: 'boolean',
+        defaultOff: true,
+        hint: {
+          en: 'Big 2-up cards under the News card on this listing’s own domain homepage.',
+          ko: '해당 도메인 홈의 뉴스 카드 아래 2단 대형 카드.',
+        },
+      },
       { key: 'region', label: { en: 'Region', ko: '지역' }, type: 'text' },
       { key: 'address', label: { en: 'Address', ko: '주소' }, type: 'text' },
+      { key: 'address_province', label: { en: 'Province', ko: '주(州)' }, type: 'text' },
+      { key: 'address_city', label: { en: 'City / Municipality', ko: '시·군' }, type: 'text' },
+      { key: 'address_barangay', label: { en: 'Barangay', ko: '바랑가이' }, type: 'text' },
       { key: 'phone', label: { en: 'Phone', ko: '전화번호' }, type: 'text' },
+      { key: 'mobile_phone', label: { en: 'Mobile phone', ko: '휴대전화' }, type: 'text' },
       { key: 'short_intro', label: { en: 'One-line intro', ko: '한 줄 소개' }, type: 'localized' },
       { key: 'detailed_intro', label: { en: 'Detailed intro', ko: '상세 소개' }, type: 'localized-textarea' },
       { key: 'logo_url', label: { en: 'Logo image', ko: '로고 이미지' }, type: 'image', folder: 'businesses' },

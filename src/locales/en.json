@@ -243,6 +243,7 @@
   },
   "home": {
     "newsTabsHeading": "News",
+    "haninShowcase": "Featured businesses",
     "latestPosts": "Latest posts",
     "popularPosts": "Popular Posts (Last 30 days)",
     "businessDirectory": "Business Directory",
@@ -260,6 +261,7 @@
     "exchange": "exchange",
     "recentComments": "Recent Comments",
     "recentPhotos": "Recent photos",
+    "recentBusinessPhotos": "Recent businesses",
     "emergencyContact": "Emergency contact",
     "calculator": "calculator",
     "travelInfo": "Travel Information"
