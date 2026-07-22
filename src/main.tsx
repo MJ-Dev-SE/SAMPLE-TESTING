@@ -6,6 +6,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import './i18n'
 import './styles/global.css'
 import App from './App'
+import ErrorBoundary from './components/ErrorBoundary'
 import { AuthProvider } from './lib/auth'
 import { installAccessGuard } from './lib/guard'
 import { queryClient, queryPersister, QUERY_CACHE_BUSTER, NON_PERSISTED_QUERY_KEYS } from './lib/queryClient'
@@ -32,27 +33,33 @@ if (activeBrand.favicon) {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{
-        persister: queryPersister,
-        buster: QUERY_CACHE_BUSTER,
-        // Keep the default (persist only successful queries) but never persist
-        // the admin-editable directory families — those stay fresh on reload so
-        // an admin's delete/edit never lingers as a ghost on other clients.
-        dehydrateOptions: {
-          shouldDehydrateQuery: (query) =>
-            query.state.status === 'success' && !NON_PERSISTED_QUERY_KEYS.has(String(query.queryKey[0])),
-        },
-      }}
-    >
-      <HelmetProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <App />
-          </AuthProvider>
-        </BrowserRouter>
-      </HelmetProvider>
-    </PersistQueryClientProvider>
+    {/* Outermost — a last-resort catch for ANY uncaught render error (see
+        ErrorBoundary.tsx). Most route-chunk failures never even reach this,
+        since lazyWithRetry (App.tsx) already retries/self-heals them; this is
+        the net for whatever's left, so a bug never means a blank white page. */}
+    <ErrorBoundary>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryPersister,
+          buster: QUERY_CACHE_BUSTER,
+          // Keep the default (persist only successful queries) but never persist
+          // the admin-editable directory families — those stay fresh on reload so
+          // an admin's delete/edit never lingers as a ghost on other clients.
+          dehydrateOptions: {
+            shouldDehydrateQuery: (query) =>
+              query.state.status === 'success' && !NON_PERSISTED_QUERY_KEYS.has(String(query.queryKey[0])),
+          },
+        }}
+      >
+        <HelmetProvider>
+          <BrowserRouter>
+            <AuthProvider>
+              <App />
+            </AuthProvider>
+          </BrowserRouter>
+        </HelmetProvider>
+      </PersistQueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 )

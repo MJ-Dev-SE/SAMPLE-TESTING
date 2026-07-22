@@ -1,9 +1,10 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Seo from './components/seo/Seo'
 import { activeBrand } from './config/brand'
 import { trackPageVisit } from './lib/trackVisit'
+import { lazyWithRetry } from './lib/lazyWithRetry'
 // Home stays eager: it's the most common entry and the LCP-critical page.
 import Home from './routes/Home'
 import Placeholder from './routes/Placeholder'
@@ -11,32 +12,35 @@ import NotFound from './routes/NotFound'
 
 // Route-level code splitting (Core Web Vitals): every other page loads its own
 // chunk on demand. The Suspense fallback is a stable full-height shell so
-// switching routes never causes layout shift.
-const Menu = lazy(() => import('./routes/Menu'))
-const PostList = lazy(() => import('./routes/PostList'))
-const PostView = lazy(() => import('./routes/PostView'))
-const CategoryPage = lazy(() => import('./routes/CategoryPage'))
-const Company = lazy(() => import('./routes/Company'))
-const CompanyRedirect = lazy(() => import('./routes/Company').then((m) => ({ default: m.CompanyRedirect })))
-const Chat = lazy(() => import('./routes/Chat'))
-const Login = lazy(() => import('./routes/Login'))
-const Register = lazy(() => import('./routes/Register'))
-const Profile = lazy(() => import('./routes/Profile'))
-const PostWrite = lazy(() => import('./routes/PostWrite'))
-const PhotoView = lazy(() => import('./routes/PhotoView'))
-const BusinessRegister = lazy(() => import('./routes/BusinessRegister'))
-const BusinessView = lazy(() => import('./routes/BusinessView'))
-const AdvertisementView = lazy(() => import('./routes/AdvertisementView'))
-const LinkView = lazy(() => import('./routes/LinkView'))
-const PolicyView = lazy(() => import('./routes/PolicyView'))
-const NewsArticleView = lazy(() => import('./routes/NewsArticleView'))
-const RecentCommentsView = lazy(() => import('./routes/RecentCommentsView'))
-const WeatherView = lazy(() => import('./routes/WeatherView'))
-const CurrencyView = lazy(() => import('./routes/CurrencyView'))
-const AdGalleryView = lazy(() => import('./routes/AdGalleryView'))
-const WeatherNewsView = lazy(() => import('./routes/WeatherNewsView'))
-const WeatherNewsArticleView = lazy(() => import('./routes/WeatherNewsArticleView'))
-const AdminPage = lazy(() => import('./admin/AdminPage'))
+// switching routes never causes layout shift. lazyWithRetry (not React.lazy
+// directly) retries a failed chunk fetch and self-heals with one auto-reload
+// if needed — see its doc comment for why this is the fix for the "white
+// screen after switching tabs" bug.
+const Menu = lazyWithRetry(() => import('./routes/Menu'))
+const PostList = lazyWithRetry(() => import('./routes/PostList'))
+const PostView = lazyWithRetry(() => import('./routes/PostView'))
+const CategoryPage = lazyWithRetry(() => import('./routes/CategoryPage'))
+const Company = lazyWithRetry(() => import('./routes/Company'))
+const CompanyRedirect = lazyWithRetry(() => import('./routes/Company').then((m) => ({ default: m.CompanyRedirect })))
+const Chat = lazyWithRetry(() => import('./routes/Chat'))
+const Login = lazyWithRetry(() => import('./routes/Login'))
+const Register = lazyWithRetry(() => import('./routes/Register'))
+const Profile = lazyWithRetry(() => import('./routes/Profile'))
+const PostWrite = lazyWithRetry(() => import('./routes/PostWrite'))
+const PhotoView = lazyWithRetry(() => import('./routes/PhotoView'))
+const BusinessRegister = lazyWithRetry(() => import('./routes/BusinessRegister'))
+const BusinessView = lazyWithRetry(() => import('./routes/BusinessView'))
+const AdvertisementView = lazyWithRetry(() => import('./routes/AdvertisementView'))
+const LinkView = lazyWithRetry(() => import('./routes/LinkView'))
+const PolicyView = lazyWithRetry(() => import('./routes/PolicyView'))
+const NewsArticleView = lazyWithRetry(() => import('./routes/NewsArticleView'))
+const RecentCommentsView = lazyWithRetry(() => import('./routes/RecentCommentsView'))
+const WeatherView = lazyWithRetry(() => import('./routes/WeatherView'))
+const CurrencyView = lazyWithRetry(() => import('./routes/CurrencyView'))
+const AdGalleryView = lazyWithRetry(() => import('./routes/AdGalleryView'))
+const WeatherNewsView = lazyWithRetry(() => import('./routes/WeatherNewsView'))
+const WeatherNewsArticleView = lazyWithRetry(() => import('./routes/WeatherNewsArticleView'))
+const AdminPage = lazyWithRetry(() => import('./admin/AdminPage'))
 
 /**
  * Maroon-bar parent categories (community tree, supabase/community.sql).

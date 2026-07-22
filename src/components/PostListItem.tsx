@@ -1,20 +1,31 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import SmartImage from './SmartImage'
+import Tooltip from './Tooltip'
 import { authorName, commentCountOf, formatDate, isGuest, postPath, type DbPost } from '../lib/posts'
 import { avatar } from '../lib/placeholder'
 
 /**
  * One community-list row, PhilGo-style: title + comment/view counts on the left,
  * a photo thumbnail (with a "+N" badge when the post has more than one), then the
- * author (avatar + name) and date on the right. Shared by the board list
- * (PostList) and the community feeds (CategoryPage). Clicking opens the post.
+ * author avatar + date on the right. Shared by the board list (PostList) and the
+ * community feeds (CategoryPage). Clicking the row opens the post.
+ *
+ * The author's NAME is not printed in the row (a real member's display name can
+ * be arbitrarily long, unlike the short generated guest tags, and there's no
+ * good width to give it without either clipping or crowding the title). Instead
+ * the avatar itself is the identity: hover it (or tap/Tab-focus on touch/keyboard)
+ * to reveal who posted, via the existing icon-tooltip pattern (Tooltip.tsx) used
+ * elsewhere for icon-only buttons.
  *
  * `categoryChip` is an optional leading chip (the parent feed shows which child
  * category a post belongs to).
  */
 export default function PostListItem({ post, categoryChip }: { post: DbPost; categoryChip?: ReactNode }) {
+  const { t } = useTranslation()
   const name = authorName(post)
+  const authorLabel = isGuest(post) ? `${name} · ${t('post.guestBadge')}` : name
   const comments = commentCountOf(post)
   const thumb = post.images[0]
   const extra = post.images.length - 1
@@ -55,12 +66,23 @@ export default function PostListItem({ post, categoryChip }: { post: DbPost; cat
           </div>
         )}
 
-        {/* Author + date (right rail, hidden on narrow screens) */}
-        <div className="hidden w-28 shrink-0 flex-col items-end gap-1 text-right sm:flex">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="min-w-0 truncate text-xs font-medium text-text-normal">{name}</span>
+        {/* Author avatar + date (right rail, hidden on narrow screens). The
+            avatar is a real <button> (not part of the row's own <Link>) so
+            clicking/tapping it reveals the name via Tooltip instead of
+            navigating — stopPropagation keeps the row's own click-to-open
+            working everywhere else. */}
+        <div className="hidden w-16 shrink-0 flex-col items-end gap-1 sm:flex">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+            }}
+            className="group/author relative shrink-0"
+            aria-label={authorLabel}
+          >
             {isGuest(post) ? (
-              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-neutral-95 text-[10px] text-subtlest">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-neutral-95 text-xs text-subtlest">
                 <i className="fa-solid fa-user" aria-hidden="true" />
               </span>
             ) : (
@@ -69,10 +91,11 @@ export default function PostListItem({ post, categoryChip }: { post: DbPost; cat
                 alt=""
                 loading="lazy"
                 decoding="async"
-                className="h-6 w-6 shrink-0 rounded-full object-cover"
+                className="h-8 w-8 rounded-full object-cover"
               />
             )}
-          </span>
+            <Tooltip label={authorLabel} position="top" />
+          </button>
           <span className="text-[11px] text-subtlest tabular-nums">{formatDate(post.created_at)}</span>
         </div>
       </Link>
