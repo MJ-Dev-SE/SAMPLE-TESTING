@@ -1,8 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- The site has its own EN/KO switcher (src/i18n) — discourage the
+         browser's built-in page translator (Google Translate) from also
+         rewriting the DOM, since that conflicts with React's own updates
+         and can crash the page (see main.tsx for the defensive patch). -->
+    <meta name="google" content="notranslate" />
     <title>Manila Tour- 마닐라 여행</title>
     <link rel="icon" type="image/jpeg" href="/logo-mark.jpg" />
     <!-- Inter — used by the /admin Flux-style console -->

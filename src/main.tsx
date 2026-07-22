@@ -18,6 +18,31 @@ if (import.meta.env.PROD) {
   installAccessGuard()
 }
 
+// Google Translate (and similar in-page translators) rewrites text nodes
+// directly in the live DOM without React knowing. When React later tries to
+// remove/insert those exact nodes during its own reconciliation, the browser
+// throws "Failed to execute 'removeChild'/'insertBefore' on 'Node': ... is
+// not a child of this node" — an uncaught error that unmounts the whole tree
+// (caught by ErrorBoundary below, forcing a reload). index.html now asks
+// Google Translate not to run (`translate="no"` + notranslate meta) since the
+// site has its own EN/KO switcher, but a user can still override that
+// manually — this patch is the fallback: skip the operation instead of
+// throwing when the node was already detached by something else.
+// (Well-known React/Google-Translate conflict: facebook/react#11538.)
+if (typeof Node === 'function' && Node.prototype) {
+  const originalRemoveChild = Node.prototype.removeChild
+  Node.prototype.removeChild = function <T extends Node>(this: Node, child: T): T {
+    if (child.parentNode !== this) return child
+    return originalRemoveChild.call(this, child) as T
+  }
+
+  const originalInsertBefore = Node.prototype.insertBefore
+  Node.prototype.insertBefore = function <T extends Node>(this: Node, newNode: T, referenceNode: Node | null): T {
+    if (referenceNode && referenceNode.parentNode !== this) return newNode
+    return originalInsertBefore.call(this, newNode, referenceNode) as T
+  }
+}
+
 // Per-hostname branding (src/config/brand.ts): index.html is one static shell
 // shared by every domain, so before first paint swap the tab title/favicon for
 // brands that override them. The default brand sets neither — its index.html
