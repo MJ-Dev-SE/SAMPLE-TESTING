@@ -67,7 +67,14 @@ export default function CategoryPage({ parentSlug }: { parentSlug: string }) {
     queryFn: () =>
       target
         ? listPostsByCategory(target.id, { page, pageSize: PAGE_SIZE })
-        : listPostsByParentCategory(children.map((c) => c.id), { page, pageSize: PAGE_SIZE }),
+        : // "Overall" tab: union of every child's posts PLUS posts tagged directly
+          // to the parent itself (written from "Overall" — see PostWrite.tsx,
+          // which resolves straight to whichever category the Write button was
+          // clicked from, parent or child, with no manual sub-category picking).
+          listPostsByParentCategory([...children.map((c) => c.id), ...(parent ? [parent.id] : [])], {
+            page,
+            pageSize: PAGE_SIZE,
+          }),
     enabled: feedEnabled,
     staleTime: STALE.postList,
     gcTime: STALE.postList * 2,

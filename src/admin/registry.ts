@@ -342,8 +342,18 @@ export const ADMIN_TABLES: TableDef[] = [
       en: 'Community board lists (/post/list), post pages (/post/view), homepage Latest + Popular lists, header search. Guest posts are moderated here.',
       ko: '커뮤니티 게시판(/post/list), 글 보기(/post/view), 홈 최신/인기 목록, 헤더 검색. 게스트 글도 여기서 관리.',
     },
-    placement: (r) => `board: ${String(r.board_id ?? '')}${r.category ? ` · ${r.category}` : ''}`,
-    listCols: ['title', 'board_id', 'category', 'guest_name', 'created_at'],
+    // board_id='mt-maroon' rows are community-feed posts — the FEED that
+    // actually places them (/information/weather, /community/manila, …) is
+    // `category_id` (a categories.id foreign key), not the legacy free-text
+    // `category` column below (that one's for non-community boards, e.g. the
+    // photo-community `category` query param). Surfacing category_id here
+    // lets an admin confirm at a glance whether a community post landed in a
+    // real feed or is sitting uncategorized (never shows up on any category page).
+    placement: (r) =>
+      r.board_id === 'mt-maroon'
+        ? `community · category_id: ${r.category_id ? String(r.category_id).slice(0, 8) : '— UNCATEGORIZED (will not appear on any feed)'}`
+        : `board: ${String(r.board_id ?? '')}${r.category ? ` · ${r.category}` : ''}`,
+    listCols: ['title', 'board_id', 'category_id', 'guest_name', 'created_at'],
     fields: [
       { key: 'title', label: { en: 'Title', ko: '제목' }, type: 'text', required: true },
       { key: 'category', label: { en: 'Category', ko: '카테고리' }, type: 'text' },

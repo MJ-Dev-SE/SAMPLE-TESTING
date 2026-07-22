@@ -1,3 +1,4 @@
+import type { QueryClient } from '@tanstack/react-query'
 import { supabase } from './supabase'
 import { randomGuestName } from './guestName'
 import { getAnonSessionId } from './deviceId'
@@ -9,12 +10,14 @@ export interface AuthorLite {
   avatar_url: string | null
 }
 
-/** Minimal category info embedded on a post row (the maroon child it's tagged with). */
+/** Minimal category info embedded on a post row (the maroon category it's tagged with). */
 export interface PostCategoryLite {
   id: string
   slug: string
   name: { en: string; ko: string }
   icon: string
+  /** null when this category IS a top-level maroon parent (e.g. "Community" itself). */
+  parent_slug: string | null
 }
 
 export interface DbPost {
@@ -180,7 +183,7 @@ export async function listPostsPage(boardId: string, opts: { page?: number; page
   })
 }
 
-const CATEGORY_EMBED = 'category_row:categories(id, slug, name, icon)'
+const CATEGORY_EMBED = 'category_row:categories(id, slug, name, icon, parent_slug)'
 
 /**
  * Posts tagged with one specific maroon CHILD category (clicking a child in the
@@ -261,12 +264,17 @@ export async function listRecentComments(limit = 8): Promise<DbComment[]> {
   })
 }
 
-/** A single post by id (for /post/view?id=…). */
+/**
+ * A single post by id (for /post/view?id=…). Embeds category_row (parent_slug
+ * included) so a community/maroon post's detail page can breadcrumb back to
+ * its OWN feed (e.g. /community/mukbang) instead of the generic unfiltered
+ * board list.
+ */
 export async function getPost(id: string): Promise<DbPost | null> {
   return withPostCols(async (cols) => {
     const { data, error } = await supabase
       .from('posts')
-      .select(`${cols}, ${AUTHOR_SELECT}`)
+      .select(`${cols}, ${AUTHOR_SELECT}, ${CATEGORY_EMBED}`)
       .eq('id', id)
       .maybeSingle()
     if (error) throw error
@@ -274,12 +282,12 @@ export async function getPost(id: string): Promise<DbPost | null> {
   })
 }
 
-/** A single post by its URL slug (for /posts/<slug>). */
+/** A single post by its URL slug (for /posts/<slug>) — same category embed as getPost. */
 export async function getPostBySlug(slug: string): Promise<DbPost | null> {
   return withPostCols(async (cols) => {
     const { data, error } = await supabase
       .from('posts')
-      .select(`${cols}, ${AUTHOR_SELECT}`)
+      .select(`${cols}, ${AUTHOR_SELECT}, ${CATEGORY_EMBED}`)
       .eq('slug', slug)
       .maybeSingle()
     if (error) throw error
@@ -416,6 +424,25 @@ export async function updatePost(id: string, p: PostEdit): Promise<DbPost> {
   }
   if (error) throw error
   return stripPost(data as unknown as DbPost)
+}
+
+/**
+ * Invalidate every cached post-LISTING query so a create/edit/delete shows up
+ * immediately when the user lands back on a feed — without this, React Query
+ * keeps serving the pre-change cached list (STALE.postList, a few minutes)
+ * until it happens to expire naturally, which reads as "I posted but it's not
+ * showing up" (the post saved fine; only the list the user is LOOKING at was
+ * stale). Covers: board lists (PostList.tsx, queryKey ['posts', …]), community
+ * category feeds (CategoryPage.tsx, ['category-posts', …]), and the homepage
+ * board previews (Home.tsx, ['home-boards', …]). Each call is a PREFIX match
+ * (React Query semantics) so it catches every board/category/page variant at
+ * once. Deliberately broad — these are cheap list reads, so over-invalidating
+ * is harmless; call after createPost/updatePost/deletePost.
+ */
+export function invalidatePostLists(queryClient: QueryClient): void {
+  queryClient.invalidateQueries({ queryKey: ['posts'] })
+  queryClient.invalidateQueries({ queryKey: ['category-posts'] })
+  queryClient.invalidateQueries({ queryKey: ['home-boards'] })
 }
 
 /**

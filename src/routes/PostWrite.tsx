@@ -1,15 +1,16 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useRef, useEffect, useState, type FormEvent } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
+import { NotFoundBody } from './NotFound'
 import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
-import { createPost, getPost, updatePost, postPath } from '../lib/posts'
-import { getCategoryBySlug, listCategories } from '../lib/content'
+import { createPost, getPost, updatePost, postPath, invalidatePostLists } from '../lib/posts'
+import { getCategoryBySlug } from '../lib/content'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
@@ -21,17 +22,19 @@ import SmartImage from '../components/SmartImage'
  * Compose page (/post/write?post_id=…&category=…, or /post/write?maroon=<slug>).
  * Anyone can post to ANY board (board picker). Members may attach photos; guests are text-only.
  *
- * When opened with `?maroon=<slug>` (the maroon-bar "Write" button — from a
- * category feed page), the board picker is replaced by a parent→child community
- * category cascade instead: board is fixed to the synthetic 'maroon' board and
- * posts.category_id is what actually places the post in its feeds. The incoming
- * slug (parent or child) is auto-detected and pre-filled (4.1); submission is
- * blocked until a specific child is chosen — a post is never saved parent-only (4).
+ * When opened with `?maroon=<slug>` (the "Write" button on a community feed
+ * page — CategoryPage.tsx), the board picker is replaced entirely: there is NO
+ * sub-category picker. The slug in the URL IS the designated feed — whichever
+ * tab the user was on when they clicked Write (a specific child like "Mukbang",
+ * or the parent's own "Overall" view) — resolved once and used as-is. The form
+ * itself is just title + details + photo(s); board is fixed to the synthetic
+ * 'maroon' board and posts.category_id is the resolved category's id.
  */
 export default function PostWrite() {
   const { t } = useTranslation()
   const L = useLocalized()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [params] = useSearchParams()
   const { user, profile } = useAuth()
 
@@ -72,49 +75,20 @@ export default function PostWrite() {
     setKeptImages(editPost.images ?? [])
   }, [isEditing, editPost])
 
-  // Community category cascade (only relevant when isCommunityPost).
-  const [parentSlug, setParentSlug] = useState<string | null>(null)
-  const [childId, setChildId] = useState<string>('')
-  const autoFilled = useRef(false)
-
-  const { data: parents = [] } = useQuery({
-    queryKey: ['categories', 'community', null],
-    queryFn: () => listCategories(null, 'community'),
+  // The community feed this post belongs to — resolved ONCE, directly from the
+  // URL's maroon slug. No manual parent/child picking: whatever feed the user
+  // was viewing when they clicked "Write" is the destination, full stop.
+  const { data: maroonCategory, isLoading: maroonCategoryLoading } = useQuery({
+    queryKey: ['category', 'community', maroonSlug],
+    queryFn: () => getCategoryBySlug(maroonSlug!, 'community'),
     staleTime: STALE.categories,
     gcTime: STALE.categories * 2,
     enabled: isCommunityPost,
   })
 
-  // Auto-detect parent (+ child, if the incoming slug is itself a child) once.
-  useEffect(() => {
-    if (!isCommunityPost || !maroonSlug || autoFilled.current) return
-    autoFilled.current = true
-    getCategoryBySlug(maroonSlug, 'community')
-      .then((cat) => {
-        if (!cat) return
-        if (cat.parent_slug === null) {
-          setParentSlug(cat.slug)
-        } else {
-          setParentSlug(cat.parent_slug)
-          setChildId(cat.id)
-        }
-      })
-      .catch(() => {})
-  }, [isCommunityPost, maroonSlug])
-
-  // Reload children whenever the parent changes.
-  const { data: children = [] } = useQuery({
-    queryKey: ['categories', 'community', parentSlug],
-    queryFn: () => listCategories(parentSlug, 'community'),
-    staleTime: STALE.categories,
-    gcTime: STALE.categories * 2,
-    enabled: !!parentSlug,
-  })
-
   // Keep what the user typed if they leave the page or reload mid-compose —
   // restored when they come back. Scoped to the write context (community vs a
-  // specific board) so drafts don't bleed across unrelated boards. Board/
-  // category selectors and photo picks are re-chosen; the TEXT is what's kept.
+  // specific board) so drafts don't bleed across unrelated boards/feeds.
   const draftKey = `post-write:${maroonSlug ? `maroon:${maroonSlug}` : `board:${params.get('post_id') || 'freetalk'}`}`
   const { clearDraft } = useFormDraft({
     key: draftKey,
@@ -131,12 +105,13 @@ export default function PostWrite() {
 
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
   const boardOptions = Object.entries(boardTitles).filter(([id]) => id !== 'maroon')
-  const communityBoard = boardTitles.maroon
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     if (!title.trim()) return alertError(t('post.emptyTitle'))
-    if (isCommunityPost && !childId) return alertError(t('post.communityCategoryRequired'))
+    // Defensive only — the render guard below already refuses to show the form
+    // until the feed resolves, so this should be unreachable in practice.
+    if (isCommunityPost && !maroonCategory) return alertError(t('post.communityCategoryRequired'))
     setBusy(true)
     try {
       // Members may attach photos; upload them to Storage first.
@@ -153,6 +128,7 @@ export default function PostWrite() {
           body: body.trim(),
           images: [...keptImages, ...images], // kept existing + newly uploaded
         })
+        invalidatePostLists(queryClient)
         toast(t('post.updated'))
         navigate(postPath(updated))
         return
@@ -161,12 +137,13 @@ export default function PostWrite() {
       const created = await createPost({
         boardId: isCommunityPost ? 'maroon' : boardId,
         category,
-        categoryId: isCommunityPost ? childId : null,
+        categoryId: isCommunityPost ? maroonCategory?.id ?? null : null,
         title: title.trim(),
         body: body.trim(),
         authorId: user?.id ?? null,
         images,
       })
+      invalidatePostLists(queryClient)
       clearDraft() // submitted for real — discard the saved draft
       toast(t('post.created'))
       navigate(`/post/view?id=${created.id}&post_id=${isCommunityPost ? 'maroon' : boardId}`)
@@ -177,16 +154,20 @@ export default function PostWrite() {
     }
   }
 
-  const boardLabel = isCommunityPost ? communityBoard : (boardTitles[boardId] ?? { en: 'Board', ko: '게시판' })
-  // Reflects whatever the user has ACTUALLY selected right now (not just the
-  // slug the form was opened with) so Cancel/breadcrumb always lands correctly,
-  // even after switching parent/child away from the auto-filled starting point.
-  const effectiveMaroonSlug = children.find((c) => c.id === childId)?.slug ?? parentSlug ?? maroonSlug
-  const boardBackHref = isEditing && editPost
-    ? postPath(editPost)
-    : isCommunityPost && effectiveMaroonSlug
-      ? `/post/list?maroon=${effectiveMaroonSlug}`
-      : `/post/list?post_id=${boardId}`
+  const boardLabel =
+    isCommunityPost && maroonCategory ? maroonCategory.name : boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
+  // The crawlable feed URL this post belongs to (e.g. /community/mukbang, or
+  // /community itself for a parent-level "Overall" post) — same scheme as
+  // CategoryPage.tsx's own routes, so Cancel/breadcrumb land exactly where the
+  // post will actually show up.
+  const boardBackHref =
+    isEditing && editPost
+      ? postPath(editPost)
+      : isCommunityPost && maroonCategory
+        ? maroonCategory.parent_slug
+          ? `/${maroonCategory.parent_slug}/${maroonCategory.slug}`
+          : `/${maroonCategory.slug}`
+        : `/post/list?post_id=${boardId}`
 
   // --- Edit-mode guards (owner-only) -------------------------------------
   if (isEditing) {
@@ -196,6 +177,22 @@ export default function PostWrite() {
     // write anyway; this stops a non-owner from even opening it.
     if (!editPost) return <Navigate to="/" replace />
     if (!user || editPost.author_id !== user.id) return <Navigate to={postPath(editPost)} replace />
+  }
+
+  // --- Community-feed guard: resolve straight from the URL, no manual picking.
+  // A slug that fails to resolve means a stale/broken link, not something the
+  // user can fix by choosing differently — show the honest 404 instead of a form
+  // that would silently post nowhere.
+  if (isCommunityPost) {
+    if (maroonCategoryLoading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
+    if (!maroonCategory) {
+      return (
+        <Layout>
+          <Seo title={t('notFound.title')} noindex />
+          <NotFoundBody />
+        </Layout>
+      )
+    }
   }
 
   const heading = isEditing ? t('post.editPost') : t('post.newPost')
@@ -229,49 +226,13 @@ export default function PostWrite() {
       </div>
 
       <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m animate-modal-in">
-        {isEditing ? (
-          /* Editing keeps the post in its board/category — shown read-only. */
+        {isEditing || isCommunityPost ? (
+          /* Editing keeps the post in its board/category; a community post's
+             feed is whatever tab "Write" was clicked from — both read-only,
+             no picker. */
           <p className="text-xs text-muted">
-            {t('post.boardLabel')}: <span className="font-medium text-text-normal">{L(boardLabel)}</span>
+            {t('post.postingTo')}: <span className="font-medium text-text-normal">{L(boardLabel)}</span>
           </p>
-        ) : isCommunityPost ? (
-          /* Community (maroon-bar) category cascade — replaces the board picker */
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-text-normal">
-                {t('post.communityParent')}<span className="text-red-500 ml-0.5">*</span>
-              </span>
-              <select
-                value={parentSlug ?? ''}
-                onChange={(e) => {
-                  setParentSlug(e.target.value || null)
-                  setChildId('')
-                }}
-                className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue"
-              >
-                <option value="" disabled>{t('post.communityParentPlaceholder')}</option>
-                {parents.map((p) => (
-                  <option key={p.id} value={p.slug}>{L(p.name)}</option>
-                ))}
-              </select>
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-text-normal">
-                {t('post.communityChild')}<span className="text-red-500 ml-0.5">*</span>
-              </span>
-              <select
-                value={childId}
-                onChange={(e) => setChildId(e.target.value)}
-                disabled={!parentSlug}
-                className="h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue disabled:opacity-60"
-              >
-                <option value="" disabled>{t('post.communityChildPlaceholder')}</option>
-                {children.map((c) => (
-                  <option key={c.id} value={c.id}>{L(c.name)}</option>
-                ))}
-              </select>
-            </label>
-          </div>
         ) : (
           /* Board / category picker — post under any board, not just Community */
           <label className="flex flex-col gap-1">

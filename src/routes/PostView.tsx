@@ -21,6 +21,7 @@ import {
   formatDate,
   getPost,
   getPostBySlug,
+  invalidatePostLists,
   isGuest,
   listComments,
   postPath,
@@ -121,6 +122,18 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
 
   const boardId = post?.board_id ?? queryBoard ?? 'freetalk'
   const board = boardTitles[boardId] ?? { en: 'Board', ko: '게시판' }
+  // Community (maroon-bar) posts: the breadcrumb/back link must go to the post's
+  // OWN category feed (e.g. /community/mukbang), not the generic unfiltered
+  // "Community Categories" board list (/post/list?post_id=maroon) — that page
+  // shows every category's posts jumbled together, which reads as "wrong feed".
+  const isCommunityBoard = boardId === 'maroon'
+  const boardLabel = isCommunityBoard && post?.category_row ? post.category_row.name : board
+  const boardHref =
+    isCommunityBoard && post?.category_row
+      ? post.category_row.parent_slug
+        ? `/${post.category_row.parent_slug}/${post.category_row.slug}`
+        : `/${post.category_row.slug}`
+      : `/post/list?post_id=${boardId}`
 
   const submitComment = async (e: FormEvent) => {
     e.preventDefault()
@@ -165,8 +178,9 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
     setBusy(true)
     try {
       await deletePost(post.id)
+      invalidatePostLists(queryClient)
       toast(t('post.deleted'))
-      navigate(`/post/list?post_id=${boardId}`, { replace: true })
+      navigate(boardHref, { replace: true })
     } catch (err) {
       alertError(t('auth.errorTitle'), errText(err))
     } finally {
@@ -215,7 +229,7 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
       <Breadcrumbs
         items={[
           { label: t('menuPage.breadcrumbHome'), href: '/' },
-          { label: L(board), href: `/post/list?post_id=${boardId}` },
+          { label: L(boardLabel), href: boardHref },
           ...(post ? [{ label: post.title }] : []),
         ]}
       />

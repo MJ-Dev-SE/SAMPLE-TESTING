@@ -216,6 +216,7 @@
     "guestBadge": "guest",
     "loginToInteract": "Log in to post as yourself, or continue as a guest.",
     "boardLabel": "Board",
+    "postingTo": "Posting to",
     "addPhotos": "Add photos",
     "photosHint": "Log in to attach photos. Guests can post text only.",
     "photosMemberHint": "JPG or PNG. You can attach more than one.",
@@ -230,11 +231,7 @@
     "deleteCommentConfirmTitle": "Delete this comment?",
     "deleteCommentConfirmText": "This cannot be undone.",
     "commentDeleted": "Comment deleted.",
-    "communityParent": "Category",
-    "communityParentPlaceholder": "Choose a category…",
-    "communityChild": "Sub-category",
-    "communityChildPlaceholder": "Choose a sub-category…",
-    "communityCategoryRequired": "Please choose a specific sub-category before posting."
+    "communityCategoryRequired": "Couldn't determine which feed this post belongs to. Please go back and click Write again."
   },
   "profile": {
     "title": "My profile",
