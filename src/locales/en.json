@@ -193,6 +193,10 @@
   "post": {
     "write": "Write",
     "newPost": "New post",
+    "editPost": "Edit post",
+    "edit": "Edit",
+    "updated": "Post updated!",
+    "saveChanges": "Save changes",
     "titleLabel": "Title",
     "titlePlaceholder": "Enter a title",
     "bodyLabel": "Content",
@@ -218,6 +222,7 @@
     "removePhoto": "Remove",
     "prevPhoto": "Previous photo",
     "nextPhoto": "Next photo",
+    "viewPhoto": "View photo",
     "delete": "Delete",
     "deleteConfirmTitle": "Delete this post?",
     "deleteConfirmText": "This cannot be undone. Its comments will be deleted too.",
@@ -332,6 +337,9 @@
   },
   "business": {
     "registerTitle": "Register your business",
+    "editTitle": "Edit your listing",
+    "edit": "Edit",
+    "updated": "Listing updated!",
     "memberOnly": "Please log in to register a business listing.",
     "name": "Business name",
     "namePlaceholder": "e.g. Smile Tour",

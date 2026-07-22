@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
@@ -8,15 +8,14 @@ import { boardTitles } from '../data/boards'
 import { useAuth } from '../lib/auth'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
-import { createPost } from '../lib/posts'
+import { createPost, getPost, updatePost, postPath } from '../lib/posts'
 import { getCategoryBySlug, listCategories } from '../lib/content'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import { useFormDraft } from '../lib/useFormDraft'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
-import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from '../components/PostingAddressFields'
-import ContactFields, { emptyContact, type ContactValue } from '../components/ContactFields'
+import SmartImage from '../components/SmartImage'
 
 /**
  * Compose page (/post/write?post_id=…&category=…, or /post/write?maroon=<slug>).
@@ -36,16 +35,42 @@ export default function PostWrite() {
   const [params] = useSearchParams()
   const { user, profile } = useAuth()
 
+  // Edit mode: /post/write?edit=<id> reuses this whole form to update an
+  // existing post in place. Only the owner may edit (RLS enforces it too), and
+  // the board/category stay fixed — editing fixes content, it doesn't move a
+  // post between boards.
+  const editId = params.get('edit')
+  const isEditing = !!editId
+
   const maroonSlug = params.get('maroon')
-  const isCommunityPost = !!maroonSlug
+  const isCommunityPost = !isEditing && !!maroonSlug
   const category = params.get('category')
   const [boardId, setBoardId] = useState(params.get('post_id') || 'freetalk')
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
   const { picks, addFiles, removeAt } = usePhotoPicker()
-  const [address, setAddress] = useState<PostingAddressValue>(emptyAddress)
-  const [contact, setContact] = useState<ContactValue>(emptyContact)
+  /** Already-uploaded photos on the post being edited, kept unless removed here. */
+  const [keptImages, setKeptImages] = useState<string[]>([])
   const [busy, setBusy] = useState(false)
+
+  const { data: editPost = null, isLoading: editLoading } = useQuery({
+    queryKey: ['post', editId],
+    queryFn: () => getPost(editId!),
+    staleTime: STALE.postList,
+    gcTime: STALE.postList * 2,
+    enabled: isEditing,
+  })
+
+  // Prefill once from the post being edited (board/category shown read-only).
+  const prefilled = useRef(false)
+  useEffect(() => {
+    if (!isEditing || !editPost || prefilled.current) return
+    prefilled.current = true
+    setBoardId(editPost.board_id)
+    setTitle(editPost.title)
+    setBody(editPost.body)
+    setKeptImages(editPost.images ?? [])
+  }, [isEditing, editPost])
 
   // Community category cascade (only relevant when isCommunityPost).
   const [parentSlug, setParentSlug] = useState<string | null>(null)
@@ -93,15 +118,14 @@ export default function PostWrite() {
   const draftKey = `post-write:${maroonSlug ? `maroon:${maroonSlug}` : `board:${params.get('post_id') || 'freetalk'}`}`
   const { clearDraft } = useFormDraft({
     key: draftKey,
-    snapshot: { title, body, address, contact },
-    isEmpty: (s) =>
-      !s.title.trim() && !s.body.trim() && !isAddressComplete(s.address) && !s.address.line.trim() &&
-      !s.contact.phone.trim() && !s.contact.mobilePhone.trim(),
+    snapshot: { title, body },
+    // No draft autosave while editing — an edit isn't a "new post" draft, and
+    // its prefilled values must not leak into the next fresh compose.
+    enabled: !isEditing,
+    isEmpty: (s) => !s.title.trim() && !s.body.trim(),
     restore: (s) => {
       setTitle(s.title ?? '')
       setBody(s.body ?? '')
-      if (s.address) setAddress(s.address)
-      if (s.contact) setContact(s.contact)
     },
   })
 
@@ -113,7 +137,6 @@ export default function PostWrite() {
     e.preventDefault()
     if (!title.trim()) return alertError(t('post.emptyTitle'))
     if (isCommunityPost && !childId) return alertError(t('post.communityCategoryRequired'))
-    if (!isAddressComplete(address)) return alertError(t('address.required'))
     setBusy(true)
     try {
       // Members may attach photos; upload them to Storage first.
@@ -122,6 +145,19 @@ export default function PostWrite() {
         const paths = await Promise.all(picks.map((p) => uploadToMedia(`posts/${user.id}`, p.file)))
         images = paths.map(publicUrl)
       }
+
+      // ---- Edit path: update the existing post in place (board/category fixed) ----
+      if (isEditing && editPost) {
+        const updated = await updatePost(editPost.id, {
+          title: title.trim(),
+          body: body.trim(),
+          images: [...keptImages, ...images], // kept existing + newly uploaded
+        })
+        toast(t('post.updated'))
+        navigate(postPath(updated))
+        return
+      }
+
       const created = await createPost({
         boardId: isCommunityPost ? 'maroon' : boardId,
         category,
@@ -130,12 +166,6 @@ export default function PostWrite() {
         body: body.trim(),
         authorId: user?.id ?? null,
         images,
-        address: composeAddress(address) || null,
-        addressProvince: address.province.trim() || null,
-        addressCity: address.city.trim() || null,
-        addressBarangay: address.barangay.trim() || null,
-        phone: contact.phone.trim() || null,
-        mobilePhone: contact.mobilePhone.trim() || null,
       })
       clearDraft() // submitted for real — discard the saved draft
       toast(t('post.created'))
@@ -152,22 +182,36 @@ export default function PostWrite() {
   // slug the form was opened with) so Cancel/breadcrumb always lands correctly,
   // even after switching parent/child away from the auto-filled starting point.
   const effectiveMaroonSlug = children.find((c) => c.id === childId)?.slug ?? parentSlug ?? maroonSlug
-  const boardBackHref = isCommunityPost && effectiveMaroonSlug
-    ? `/post/list?maroon=${effectiveMaroonSlug}`
-    : `/post/list?post_id=${boardId}`
+  const boardBackHref = isEditing && editPost
+    ? postPath(editPost)
+    : isCommunityPost && effectiveMaroonSlug
+      ? `/post/list?maroon=${effectiveMaroonSlug}`
+      : `/post/list?post_id=${boardId}`
+
+  // --- Edit-mode guards (owner-only) -------------------------------------
+  if (isEditing) {
+    // Still loading the post to edit.
+    if (editLoading) return <Layout><p className="text-sm text-subtlest p-l">…</p></Layout>
+    // Gone, or not the owner → never show the edit form. RLS would block the
+    // write anyway; this stops a non-owner from even opening it.
+    if (!editPost) return <Navigate to="/" replace />
+    if (!user || editPost.author_id !== user.id) return <Navigate to={postPath(editPost)} replace />
+  }
+
+  const heading = isEditing ? t('post.editPost') : t('post.newPost')
 
   return (
     <Layout>
-      <Seo title={t('post.write')} noindex />
+      <Seo title={heading} noindex />
       <nav className="text-[12.48px] mb-2" aria-label="Breadcrumb">
         <Link to="/" className="text-link font-medium">{t('menuPage.breadcrumbHome')}</Link>
         <span className="mx-1 text-subtlest">›</span>
         <Link to={boardBackHref} className="text-link">{L(boardLabel)}</Link>
         <span className="mx-1 text-subtlest">›</span>
-        <span className="text-muted">{t('post.newPost')}</span>
+        <span className="text-muted">{heading}</span>
       </nav>
 
-      <h1 className="text-xl font-bold text-text-normal mb-l">{t('post.newPost')}</h1>
+      <h1 className="text-xl font-bold text-text-normal mb-l">{heading}</h1>
 
       {/* Who is posting */}
       <div className="mb-m text-sm">
@@ -185,7 +229,12 @@ export default function PostWrite() {
       </div>
 
       <form onSubmit={submit} className="border border-neutral-90 rounded-l p-l flex flex-col gap-m animate-modal-in">
-        {isCommunityPost ? (
+        {isEditing ? (
+          /* Editing keeps the post in its board/category — shown read-only. */
+          <p className="text-xs text-muted">
+            {t('post.boardLabel')}: <span className="font-medium text-text-normal">{L(boardLabel)}</span>
+          </p>
+        ) : isCommunityPost ? (
           /* Community (maroon-bar) category cascade — replaces the board picker */
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">
             <label className="flex flex-col gap-1">
@@ -268,12 +317,27 @@ export default function PostWrite() {
           />
         </label>
 
-        <PostingAddressFields value={address} onChange={setAddress} />
-        <ContactFields value={contact} onChange={setContact} />
-
         {/* Photos — members only (Storage upload needs auth); text-only stays valid */}
         <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-text-normal">{t('post.addPhotos')}</span>
+          {/* When editing: current photos, each removable; anything left here is kept. */}
+          {isEditing && keptImages.length > 0 && (
+            <div className="mt-1 grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {keptImages.map((src) => (
+                <div key={src} className="relative group">
+                  <SmartImage src={src} cover className="aspect-square rounded-m border border-neutral-90" />
+                  <button
+                    type="button"
+                    onClick={() => setKeptImages((prev) => prev.filter((s) => s !== src))}
+                    aria-label={t('post.removePhoto')}
+                    className="absolute -top-1.5 -right-1.5 h-6 w-6 grid place-items-center rounded-full bg-black/70 text-white text-xs hover:bg-red-500"
+                  >
+                    <i className="fa-solid fa-xmark" aria-hidden="true" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           {user ? (
             <>
               <input
@@ -301,7 +365,7 @@ export default function PostWrite() {
             disabled={busy}
             className="h-10 px-5 bg-accent-blue text-white text-sm font-semibold rounded-m hover:bg-[#005bc4] disabled:opacity-60"
           >
-            {busy ? t('auth.working') : t('post.submit')}
+            {busy ? t('auth.working') : isEditing ? t('post.saveChanges') : t('post.submit')}
           </button>
           <Link
             to={boardBackHref}

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import Layout from '../components/Layout'
 import Seo from '../components/seo/Seo'
@@ -9,6 +9,8 @@ import SmartImage from '../components/SmartImage'
 import InfoTile from '../components/InfoTile'
 import ContactCard from '../components/ContactCard'
 import PhotoLightbox from '../components/PhotoLightbox'
+import BusinessModal from '../components/BusinessModal'
+import { useAuth } from '../lib/auth'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
 import AiAssistantButton from '../components/ai/AiAssistantButton'
 import AiAssistantSection from '../components/ai/AiAssistantSection'
@@ -37,8 +39,20 @@ export default function BusinessView() {
   const { slug } = useParams()
   const [params] = useSearchParams()
   const id = params.get('id') ?? ''
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
   /** Index of the photo shown full-size in the lightbox; null = closed. */
   const [lightbox, setLightbox] = useState<number | null>(null)
+  /** Owner-only edit modal. */
+  const [editOpen, setEditOpen] = useState(false)
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => listCategories(),
+    staleTime: STALE.categories,
+    gcTime: STALE.categories * 2,
+  })
 
   const { data, isLoading: loading } = useQuery({
     queryKey: ['business', slug ?? null, id],
@@ -100,6 +114,9 @@ export default function BusinessView() {
   const description = metaDescription(biz.meta_description, shortIntro, detailed, biz.name)
   const catHref = cat ? `/business-directory/${cat.slug}` : '/business-directory'
   const inactive = biz.status !== 'active'
+  // Edit is OWNER-ONLY: only the member who owns this listing (owner_id) may edit
+  // it. Static hanin defaults have no owner and are managed in admin, not here.
+  const canEdit = !!user && !!biz.owner_id && biz.owner_id === user.id
 
   return (
     <Layout>
@@ -150,7 +167,19 @@ export default function BusinessView() {
                   </Link>
                 )}
               </div>
-              <AiAssistantButton open={ai.open} onClick={ai.toggle} />
+              <div className="shrink-0 flex items-center gap-2">
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold text-link border border-link/40 rounded-m hover:bg-link hover:text-white"
+                  >
+                    <i className="fa-solid fa-pen" aria-hidden="true" />
+                    {t('business.edit')}
+                  </button>
+                )}
+                <AiAssistantButton open={ai.open} onClick={ai.toggle} />
+              </div>
             </div>
             {shortIntro && <p className="text-sm text-muted">{shortIntro}</p>}
           </div>
@@ -222,6 +251,21 @@ export default function BusinessView() {
         onClose={() => setLightbox(null)}
         alt={biz.name}
       />
+
+      {/* Owner-only edit — reuses the registration modal in edit mode. */}
+      {editOpen && canEdit && (
+        <BusinessModal
+          categories={categories}
+          editing={biz}
+          onCreated={(updated) => {
+            setEditOpen(false)
+            queryClient.invalidateQueries({ queryKey: ['business'] })
+            // Slug may have changed with the name → keep the URL canonical.
+            if (updated.slug && updated.slug !== biz.slug) navigate(businessPath(updated))
+          }}
+          onClose={() => setEditOpen(false)}
+        />
+      )}
     </Layout>
   )
 }

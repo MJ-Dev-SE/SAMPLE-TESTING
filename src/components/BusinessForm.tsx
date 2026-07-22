@@ -2,12 +2,12 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useLocalized } from '../lib/useLocalized'
-import { createBusiness } from '../lib/content'
-import { uploadToMedia } from '../lib/media'
+import { createBusiness, updateBusiness } from '../lib/content'
+import { uploadToMedia, publicUrl } from '../lib/media'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
 import { useFormDraft } from '../lib/useFormDraft'
 import { alertError, errText, toast } from '../lib/alert'
-import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from './PostingAddressFields'
+import PostingAddressFields, { composeAddress, decomposeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from './PostingAddressFields'
 import ContactFields, { emptyContact, type ContactValue } from './ContactFields'
 import BusinessMediaFields from './BusinessMediaFields'
 import type { BusinessRec, CategoryRec } from '../types'
@@ -22,6 +22,7 @@ export default function BusinessForm({
   ownerId,
   categories,
   lockedCategory,
+  editing,
   onCreated,
   onCancel,
 }: {
@@ -29,20 +30,25 @@ export default function BusinessForm({
   categories: CategoryRec[]
   /** When set, the category field is locked to this child category (item 7). */
   lockedCategory?: CategoryRec | null
+  /** When set, the form EDITS this existing listing instead of creating one. */
+  editing?: BusinessRec | null
   onCreated: (biz: BusinessRec) => void
   onCancel: () => void
 }) {
   const { t } = useTranslation()
   const L = useLocalized()
   const queryClient = useQueryClient()
+  const isEditing = !!editing
 
-  const [name, setName] = useState('')
-  const [categoryId, setCategoryId] = useState(lockedCategory?.id ?? categories[0]?.id ?? '')
-  const [shortIntro, setShortIntro] = useState('')
-  const [detailedIntro, setDetailedIntro] = useState('')
-  const [region, setRegion] = useState('')
-  const [address, setAddress] = useState<PostingAddressValue>(emptyAddress)
-  const [contact, setContact] = useState<ContactValue>(emptyContact)
+  const [name, setName] = useState(editing?.name ?? '')
+  const [categoryId, setCategoryId] = useState(editing?.category_id ?? lockedCategory?.id ?? categories[0]?.id ?? '')
+  const [shortIntro, setShortIntro] = useState(editing ? L(editing.short_intro) || L(editing.excerpt) : '')
+  const [detailedIntro, setDetailedIntro] = useState(editing ? L(editing.detailed_intro) || L(editing.description) : '')
+  const [region, setRegion] = useState(editing?.region ?? '')
+  const [address, setAddress] = useState<PostingAddressValue>(editing ? decomposeAddress(editing) : emptyAddress)
+  const [contact, setContact] = useState<ContactValue>(
+    editing ? { phone: editing.phone ?? '', mobilePhone: editing.mobile_phone ?? '' } : emptyContact,
+  )
 
   const [logo, setLogo] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState('')
@@ -57,6 +63,9 @@ export default function BusinessForm({
   // reload — restored on the next open. Files aren't included (see useFormDraft).
   const { clearDraft } = useFormDraft({
     key: 'business-listing',
+    // No draft autosave while editing an existing listing — its prefilled values
+    // must not leak into the next fresh "add listing".
+    enabled: !isEditing,
     snapshot: { name, categoryId, shortIntro, detailedIntro, region, address, contact },
     isEmpty: (s) =>
       !s.name.trim() && !s.shortIntro.trim() && !s.detailedIntro.trim() && !s.region.trim() &&
@@ -111,7 +120,7 @@ export default function BusinessForm({
       }
       setProgress(t('business.saving'))
       const cat = categories.find((c) => c.id === categoryId) ?? null
-      const biz = await createBusiness({
+      const common = {
         name: name.trim(),
         categoryId,
         categorySlug: cat?.slug ?? null,
@@ -124,6 +133,24 @@ export default function BusinessForm({
         mobilePhone: contact.mobilePhone.trim() || null,
         shortIntro: { en: shortIntro.trim(), ko: shortIntro.trim() },
         detailedIntro: { en: detailedIntro.trim(), ko: detailedIntro.trim() },
+      }
+
+      // ---- Edit path: update the owner's existing listing in place ----------
+      if (isEditing && editing) {
+        const biz = await updateBusiness(editing.id, {
+          ...common,
+          logoUrl, // null = keep current image
+          mainImageUrl: mainUrl,
+        })
+        queryClient.invalidateQueries({ queryKey: ['businesses'] })
+        queryClient.invalidateQueries({ queryKey: ['business'] })
+        toast(t('business.updated'))
+        onCreated(biz)
+        return
+      }
+
+      const biz = await createBusiness({
+        ...common,
         logoUrl,
         mainImageUrl: mainUrl,
         galleryUrls,
@@ -192,12 +219,14 @@ export default function BusinessForm({
 
       <BusinessMediaFields
         logo={logo}
-        logoPreview={logoPreview}
+        // When editing, show the current logo/main image until a new file is picked.
+        logoPreview={logoPreview || (editing?.logo_url ? publicUrl(editing.logo_url) : '')}
         main={main}
-        mainPreview={mainPreview}
+        mainPreview={mainPreview || (editing?.main_image_url ? publicUrl(editing.main_image_url) : '')}
         onLogoChange={setLogo}
         onMainChange={setMain}
         gallery={gallery}
+        hideGallery={isEditing}
       />
 
       {/* Actions + progress */}
@@ -206,7 +235,7 @@ export default function BusinessForm({
           {busy ? (
             <span><i className="fa-solid fa-spinner fa-spin mr-2" aria-hidden="true" />{progress || t('auth.working')}</span>
           ) : (
-            t('business.submit')
+            isEditing ? t('post.saveChanges') : t('business.submit')
           )}
         </button>
         <button type="button" onClick={onCancel} disabled={busy} className="h-10 px-5 border border-neutral-90 text-text-normal text-sm rounded-m hover:bg-neutral-97 disabled:opacity-60">

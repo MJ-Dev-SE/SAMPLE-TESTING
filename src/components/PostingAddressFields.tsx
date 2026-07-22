@@ -23,6 +23,28 @@ export function isAddressComplete(v: PostingAddressValue): boolean {
 }
 
 /**
+ * Rebuild the picker value when EDITING an existing post/business. The structured
+ * parts come straight from their own columns; the free-text `line` is recovered
+ * by stripping the known "barangay, city, province" tail off the composed
+ * `address` string (composeAddress puts `line` first), so the street/unit the
+ * user typed reappears in its field. Missing parts just come back empty.
+ */
+export function decomposeAddress(src: {
+  address?: string | null
+  address_province?: string | null
+  address_city?: string | null
+  address_barangay?: string | null
+}): PostingAddressValue {
+  const province = (src.address_province ?? '').trim()
+  const city = (src.address_city ?? '').trim()
+  const barangay = (src.address_barangay ?? '').trim()
+  let line = (src.address ?? '').trim()
+  const tail = [barangay, city, province].map((s) => s.trim()).filter(Boolean).join(', ')
+  if (tail && line.endsWith(tail)) line = line.slice(0, line.length - tail.length).replace(/,\s*$/, '').trim()
+  return { province, city, barangay, line }
+}
+
+/**
  * Province → City/Municipality → Barangay cascade + a free-text street/unit
  * line. Each level is a type-ahead (AddressCombobox): picking a suggestion
  * loads the next level's options; typing manually is always accepted and

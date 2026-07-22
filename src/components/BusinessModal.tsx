@@ -14,16 +14,20 @@ import type { BusinessRec, CategoryRec } from '../types'
 export default function BusinessModal({
   categories,
   lockedCategory,
+  editing,
   onCreated,
   onClose,
 }: {
   categories: CategoryRec[]
   lockedCategory?: CategoryRec | null
+  /** When set, the modal EDITS this listing instead of creating a new one. */
+  editing?: BusinessRec | null
   onCreated: (biz: BusinessRec) => void
   onClose: () => void
 }) {
   const { t } = useTranslation()
   const { user } = useAuth()
+  const isEditing = !!editing
 
   return (
     <div
@@ -34,7 +38,7 @@ export default function BusinessModal({
         <div className="px-l py-3 border-b border-neutral-90 flex items-center justify-between gap-3 sticky top-0 bg-white rounded-t-l">
           <h3 className="text-base font-bold text-text-normal">
             <i className="fa-solid fa-store mr-2 text-accent-blue" aria-hidden="true" />
-            {t('business.registerTitle')}
+            {isEditing ? t('business.editTitle') : t('business.registerTitle')}
           </h3>
           <button
             type="button"
@@ -52,6 +56,7 @@ export default function BusinessModal({
               ownerId={user.id}
               categories={categories}
               lockedCategory={lockedCategory}
+              editing={editing}
               onCreated={onCreated}
               onCancel={onClose}
             />

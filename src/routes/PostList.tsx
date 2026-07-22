@@ -11,7 +11,8 @@ import { boardTitles } from '../data/boards'
 import { getCategoryBySlug } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
-import { authorName, commentCountOf, formatDate, isGuest, listPostsPage, postPath } from '../lib/posts'
+import { listPostsPage } from '../lib/posts'
+import PostListItem from '../components/PostListItem'
 
 /**
  * LIST / BOARD PAGE (/post/list?post_id=…&category=…) — real posts from Supabase.
@@ -130,35 +131,7 @@ function BoardList() {
       ) : (
         <ul className="border border-neutral-90 rounded-l overflow-hidden">
           {posts.map((p) => (
-            <li key={p.id} className="border-t border-neutral-90 first:border-t-0">
-              <Link
-                to={postPath(p)}
-                className="flex items-center gap-s px-m py-2.5 text-sm hover:bg-neutral-97"
-              >
-                <span className="flex-1 min-w-0 text-body truncate">
-                  {p.title}
-                  {commentCountOf(p) > 0 && (
-                    <span className="ml-2 text-xs font-semibold text-accent-pink">[{commentCountOf(p)}]</span>
-                  )}
-                  {p.images.length > 0 && <i className="fa-solid fa-image ml-2 text-subtlest text-xs" />}
-                </span>
-                <span className="shrink-0 text-xs text-subtlest hidden sm:flex items-center gap-l tabular-nums">
-                  <span className="inline-flex items-center gap-1">
-                    {authorName(p)}
-                    {isGuest(p) && (
-                      <span className="text-[10px] uppercase bg-neutral-95 text-subtlest rounded px-1">
-                        {t('post.guestBadge')}
-                      </span>
-                    )}
-                  </span>
-                  <span>{formatDate(p.created_at)}</span>
-                  <span>
-                    <i className="fa-solid fa-eye mr-1" />
-                    {p.views}
-                  </span>
-                </span>
-              </Link>
-            </li>
+            <PostListItem key={p.id} post={p} />
           ))}
         </ul>
       )}

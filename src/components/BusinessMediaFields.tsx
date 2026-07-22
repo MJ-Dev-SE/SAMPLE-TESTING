@@ -18,6 +18,7 @@ function BusinessMediaFields({
   onLogoChange,
   onMainChange,
   gallery,
+  hideGallery = false,
 }: {
   logo: File | null
   logoPreview: string
@@ -26,6 +27,8 @@ function BusinessMediaFields({
   onLogoChange: (file: File | null) => void
   onMainChange: (file: File | null) => void
   gallery: { picks: PhotoPick[]; addFiles: (e: React.ChangeEvent<HTMLInputElement>) => void; removeAt: (i: number) => void }
+  /** Edit mode hides the gallery picker (gallery editing isn't part of edit yet). */
+  hideGallery?: boolean
 }) {
   const { t } = useTranslation()
   const uploadBox = 'flex items-center gap-3 border border-dashed border-neutral-90 rounded-m p-2.5'
@@ -68,6 +71,7 @@ function BusinessMediaFields({
       </div>
 
       {/* Additional photos (gallery) */}
+      {!hideGallery && (
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-text-normal">{t('business.gallery')}</span>
         <span className="text-xs text-subtlest">{t('business.galleryHint')}</span>
@@ -97,6 +101,7 @@ function BusinessMediaFields({
           </label>
         </div>
       </div>
+      )}
     </>
   )
 }

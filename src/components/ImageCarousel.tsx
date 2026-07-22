@@ -6,8 +6,18 @@ import Tooltip from './Tooltip'
 /**
  * One-at-a-time photo viewer for a post's images. A single image renders with no
  * chrome; two or more get ‹ / › arrows (wrap-around) and a "n / total" badge.
+ * `onImageClick` (optional) fires with the current index — used to open a
+ * full-screen lightbox on the post view.
  */
-export default function ImageCarousel({ images, className = '' }: { images: string[]; className?: string }) {
+export default function ImageCarousel({
+  images,
+  className = '',
+  onImageClick,
+}: {
+  images: string[]
+  className?: string
+  onImageClick?: (index: number) => void
+}) {
   const { t } = useTranslation()
   const [index, setIndex] = useState(0)
   if (images.length === 0) return null
@@ -21,7 +31,18 @@ export default function ImageCarousel({ images, className = '' }: { images: stri
   return (
     <div className={`relative ${className}`}>
       {/* key remounts SmartImage per photo so its load-shimmer replays on navigation */}
-      <SmartImage key={index} src={images[index]} className="w-full rounded-m border border-neutral-90" />
+      {onImageClick ? (
+        <button
+          type="button"
+          onClick={() => onImageClick(index)}
+          aria-label={t('post.viewPhoto')}
+          className="block w-full cursor-zoom-in"
+        >
+          <SmartImage key={index} src={images[index]} className="w-full rounded-m border border-neutral-90" />
+        </button>
+      ) : (
+        <SmartImage key={index} src={images[index]} className="w-full rounded-m border border-neutral-90" />
+      )}
 
       {images.length > 1 && (
         <>

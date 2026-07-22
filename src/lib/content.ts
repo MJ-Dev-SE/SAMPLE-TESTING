@@ -136,7 +136,7 @@ export async function getCategoryBySlug(slug: string, kind: CategoryKind = 'comm
 /* ------------------------------ Businesses ----------------------------- */
 
 const BIZ_COLS_LEGACY =
-  'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at'
+  'id, name, category, category_id, location, region, address, phone, excerpt, description, short_intro, detailed_intro, thumb_url, logo_url, main_image_url, status, display_order, updated_at, created_at, owner_id'
 const BIZ_COLS_SEO = `id, slug, ${BIZ_COLS_LEGACY.replace('id, ', '')}, meta_title, meta_description, og_image_url, canonical_url, is_indexable`
 const BIZ_COLS_FULL = `${BIZ_COLS_SEO}, address_province, address_city, address_barangay, mobile_phone`
 const BIZ_COLS_BRAND = `${BIZ_COLS_FULL}, brand, showcase`
@@ -354,6 +354,82 @@ export async function createBusiness(b: NewBusiness): Promise<BusinessRec> {
     ...b.galleryUrls.map((u, i) => ({ business_id: biz.id, image_url: u, image_type: 'gallery', display_order: i })),
   ]
   if (imgs.length) await supabase.from('business_images').insert(imgs) // best-effort; card still works from main_image_url
+  return biz
+}
+
+/** Editable fields of a business listing (owner edit — see updateBusiness). */
+export interface BusinessEdit {
+  name: string
+  categoryId: string | null
+  categorySlug: string | null
+  region: string | null
+  address: string | null
+  addressProvince: string | null
+  addressCity: string | null
+  addressBarangay: string | null
+  phone: string | null
+  mobilePhone: string | null
+  shortIntro: { en: string; ko: string }
+  detailedIntro: { en: string; ko: string }
+  /** New logo/main image paths — pass null to LEAVE the current image unchanged. */
+  logoUrl: string | null
+  mainImageUrl: string | null
+}
+
+/**
+ * Update a business listing's details. RLS ("members update own business",
+ * owner_id = auth.uid()) means a non-owner's UPDATE matches 0 rows and
+ * `.single()` throws — ownership is enforced server-side too. Logo/main image
+ * are only overwritten when a new path is supplied (null = keep existing);
+ * gallery rows are left untouched here. Brand/showcase/owner stay as they are.
+ */
+export async function updateBusiness(id: string, b: BusinessEdit): Promise<BusinessRec> {
+  const baseRow: Record<string, unknown> = {
+    name: b.name,
+    category: b.categorySlug,
+    category_id: b.categoryId,
+    location: b.region,
+    region: b.region,
+    address: b.address,
+    phone: b.phone,
+    excerpt: b.shortIntro,
+    description: b.detailedIntro,
+    short_intro: b.shortIntro,
+    detailed_intro: b.detailedIntro,
+  }
+  if (b.logoUrl) baseRow.logo_url = b.logoUrl
+  if (b.mainImageUrl) {
+    baseRow.main_image_url = b.mainImageUrl
+    baseRow.thumb_url = b.mainImageUrl
+  }
+  const fullRow = {
+    ...baseRow,
+    address_province: b.addressProvince,
+    address_city: b.addressCity,
+    address_barangay: b.addressBarangay,
+    mobile_phone: b.mobilePhone,
+  }
+  const biz = await withBizCols(async (cols) => {
+    const usesFull = cols === BIZ_COLS_BRAND || cols === BIZ_COLS_FULL
+    const { data, error } = await supabase
+      .from('businesses')
+      .update(usesFull ? fullRow : baseRow)
+      .eq('id', id)
+      .select(cols)
+      .single()
+    if (error) throw error
+    return data as unknown as BusinessRec
+  })
+
+  // Replace logo/main rows in business_images so the gallery view stays in sync.
+  if (b.logoUrl) {
+    await supabase.from('business_images').delete().eq('business_id', id).eq('image_type', 'logo')
+    await supabase.from('business_images').insert({ business_id: id, image_url: b.logoUrl, image_type: 'logo', display_order: 0 })
+  }
+  if (b.mainImageUrl) {
+    await supabase.from('business_images').delete().eq('business_id', id).eq('image_type', 'main')
+    await supabase.from('business_images').insert({ business_id: id, image_url: b.mainImageUrl, image_type: 'main', display_order: 0 })
+  }
   return biz
 }
 

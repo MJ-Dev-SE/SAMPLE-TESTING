@@ -372,6 +372,52 @@ export async function createPost(p: NewPost): Promise<DbPost> {
   return stripPost(data as unknown as DbPost)
 }
 
+/** Editable content of a post (board/category stay fixed — see updatePost). */
+interface PostEdit {
+  title: string
+  body: string
+  images?: string[]
+  address?: string | null
+  addressProvince?: string | null
+  addressCity?: string | null
+  addressBarangay?: string | null
+  phone?: string | null
+  mobilePhone?: string | null
+}
+
+/**
+ * Update a post's CONTENT (title/body/photos/address/contact). board_id,
+ * category and authorship are intentionally left untouched — editing fixes a
+ * posting in place, it doesn't move it between boards. RLS ("members update
+ * own posts", author_id = auth.uid()) means a non-owner's UPDATE matches 0
+ * rows and `.single()` then throws — so ownership is enforced server-side, not
+ * just in the UI.
+ */
+export async function updatePost(id: string, p: PostEdit): Promise<DbPost> {
+  const baseRow = {
+    title: p.title,
+    body: p.body,
+    images: p.images ?? [],
+  }
+  const fullRow = {
+    ...baseRow,
+    address: p.address ?? null,
+    address_province: p.addressProvince ?? null,
+    address_city: p.addressCity ?? null,
+    address_barangay: p.addressBarangay ?? null,
+    phone: p.phone ?? null,
+    mobile_phone: p.mobilePhone ?? null,
+  }
+  let { data, error } = await supabase.from('posts').update(postAddressColsMissing ? baseRow : fullRow).eq('id', id).select().single()
+  if (error?.code === '42703' && !postAddressColsMissing) {
+    postAddressColsMissing = true
+    console.warn('[posts] DB is missing the address/contact columns — run supabase/address_contact.sql. Falling back.')
+    ;({ data, error } = await supabase.from('posts').update(baseRow).eq('id', id).select().single())
+  }
+  if (error) throw error
+  return stripPost(data as unknown as DbPost)
+}
+
 /**
  * Delete a post. RLS ("members delete own posts") only lets the authoring member
  * through — for anyone else this deletes 0 rows. Comments cascade in the DB.

@@ -10,15 +10,8 @@ import { getCategoryBySlug, listCategories } from '../lib/content'
 import { useLocalized } from '../lib/useLocalized'
 import { metaDescription } from '../lib/seo/text'
 import { STALE } from '../lib/queryClient'
-import {
-  authorName,
-  commentCountOf,
-  formatDate,
-  isGuest,
-  listPostsByCategory,
-  listPostsByParentCategory,
-  postPath,
-} from '../lib/posts'
+import { listPostsByCategory, listPostsByParentCategory } from '../lib/posts'
+import PostListItem from '../components/PostListItem'
 
 const PAGE_SIZE = 20
 
@@ -194,41 +187,18 @@ export default function CategoryPage({ parentSlug }: { parentSlug: string }) {
         <>
           <ul className="border border-neutral-90 rounded-l overflow-hidden">
             {posts.map((p) => (
-              <li key={p.id} className="border-t border-neutral-90 first:border-t-0">
-                <Link to={postPath(p)} className="flex items-center gap-s px-m py-2.5 text-sm hover:bg-neutral-97">
-                  <span className="flex-1 min-w-0 flex items-center gap-2 text-body">
-                    {/* Which specific child category this post belongs to */}
-                    {isParent && p.category_row && (
-                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-chip-blue px-1.5 py-0.5 text-[10px] font-semibold text-accent-blue">
-                        {p.category_row.icon && <i className={`fa-solid ${p.category_row.icon}`} aria-hidden="true" />}
-                        {L(p.category_row.name)}
-                      </span>
-                    )}
-                    <span className="min-w-0 truncate">
-                      {p.title}
-                      {commentCountOf(p) > 0 && (
-                        <span className="ml-2 text-xs font-semibold text-accent-pink">[{commentCountOf(p)}]</span>
-                      )}
-                      {p.images.length > 0 && <i className="fa-solid fa-image ml-2 text-subtlest text-xs" />}
+              <PostListItem
+                key={p.id}
+                post={p}
+                categoryChip={
+                  isParent && p.category_row ? (
+                    <span className="mt-0.5 shrink-0 inline-flex items-center gap-1 rounded-full bg-chip-blue px-1.5 py-0.5 text-[10px] font-semibold text-accent-blue">
+                      {p.category_row.icon && <i className={`fa-solid ${p.category_row.icon}`} aria-hidden="true" />}
+                      {L(p.category_row.name)}
                     </span>
-                  </span>
-                  <span className="shrink-0 text-xs text-subtlest hidden sm:flex items-center gap-l tabular-nums">
-                    <span className="inline-flex items-center gap-1">
-                      {authorName(p)}
-                      {isGuest(p) && (
-                        <span className="text-[10px] uppercase bg-neutral-95 text-subtlest rounded px-1">
-                          {t('post.guestBadge')}
-                        </span>
-                      )}
-                    </span>
-                    <span>{formatDate(p.created_at)}</span>
-                    <span>
-                      <i className="fa-solid fa-eye mr-1" />
-                      {p.views}
-                    </span>
-                  </span>
-                </Link>
-              </li>
+                  ) : undefined
+                }
+              />
             ))}
           </ul>
           <Pagination page={page} pageCount={pageCount} onChange={setPage} />

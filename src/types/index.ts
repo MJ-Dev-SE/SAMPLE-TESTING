@@ -245,6 +245,8 @@ export interface BusinessRec extends Partial<SeoFields> {
   display_order: number
   updated_at: string
   created_at?: string
+  /** Owning member (owner_id = auth.uid()); drives the owner-only edit gate. */
+  owner_id?: string | null
   /**
    * Domain scope — null/undefined = shared by every domain; a brand id
    * (src/config/brand.ts) = that domain's directory only. supabase/hanin_businesses.sql.

@@ -12,7 +12,7 @@ import { useIsAdmin } from '../admin/useIsAdmin'
 import { useLocalized } from '../lib/useLocalized'
 import { STALE } from '../lib/queryClient'
 import ImageCarousel from '../components/ImageCarousel'
-import ContactCard from '../components/ContactCard'
+import PhotoLightbox from '../components/PhotoLightbox'
 import CommentItem from '../components/CommentItem'
 import {
   authorName,
@@ -65,6 +65,8 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
   const [redirectTo, setRedirectTo] = useState<string | null>(null)
   const [body, setBody] = useState('')
   const [busy, setBusy] = useState(false)
+  /** Index of the photo shown full-size in the lightbox; null = closed. */
+  const [lightbox, setLightbox] = useState<number | null>(null)
   const recordedViewFor = useRef<string | null>(null)
 
   const { data: post = null, isLoading } = useQuery({
@@ -147,6 +149,9 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
   // The authoring member (RLS "members delete own posts") OR an admin (RLS "admins
   // manage posts" — covers guest/anyone's posts) may delete this post.
   const canDelete = (!!user && !!post && post.author_id === user.id) || (!!post && isAdmin === true)
+  // Edit is OWNER-ONLY (not admin): only the author fixes their own wording.
+  // Guest posts (author_id null) are never editable — there's no owner to match.
+  const canEdit = !!user && !!post && !!post.author_id && post.author_id === user.id
 
   const removePost = async () => {
     if (!post) return
@@ -221,6 +226,16 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
             <h1 className="text-lg font-bold text-text-normal min-w-0">{post?.title ?? '…'}</h1>
             <div className="shrink-0 flex items-center gap-2">
               {post && <AiAssistantButton open={ai.open} onClick={ai.toggle} />}
+              {canEdit && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/post/write?edit=${post!.id}`)}
+                  className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold text-link border border-link/40 rounded-m hover:bg-link hover:text-white"
+                >
+                  <i className="fa-solid fa-pen" aria-hidden="true" />
+                  {t('post.edit')}
+                </button>
+              )}
               {canDelete && (
                 <button
                   type="button"
@@ -253,16 +268,19 @@ function RealPostView({ slug, id, queryBoard }: { slug: string | null; id: strin
         </div>
         {images.length > 0 && (
           <div className="px-l pb-l">
-            <ImageCarousel images={images} />
+            <ImageCarousel images={images} onImageClick={setLightbox} />
           </div>
         )}
       </article>
 
-      {post && (
-        <div className="mt-l">
-          <ContactCard phone={post.phone} mobilePhone={post.mobile_phone} address={post.address} />
-        </div>
-      )}
+      {/* Click any post photo → full-size, centered, with ‹ › to walk the rest. */}
+      <PhotoLightbox
+        images={images}
+        index={lightbox}
+        onIndexChange={setLightbox}
+        onClose={() => setLightbox(null)}
+        alt={post?.title ?? ''}
+      />
 
       {/* Private AI assistant for this post — see components/ai */}
       <AiAssistantSection ai={ai} />

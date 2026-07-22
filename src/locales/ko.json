@@ -193,6 +193,10 @@
   "post": {
     "write": "글쓰기",
     "newPost": "새 글",
+    "editPost": "글 수정",
+    "edit": "수정",
+    "updated": "글이 수정되었습니다!",
+    "saveChanges": "변경사항 저장",
     "titleLabel": "제목",
     "titlePlaceholder": "제목을 입력하세요",
     "bodyLabel": "내용",
@@ -218,6 +222,7 @@
     "removePhoto": "삭제",
     "prevPhoto": "이전 사진",
     "nextPhoto": "다음 사진",
+    "viewPhoto": "사진 보기",
     "delete": "삭제",
     "deleteConfirmTitle": "이 글을 삭제할까요?",
     "deleteConfirmText": "되돌릴 수 없으며 댓글도 함께 삭제됩니다.",
@@ -332,6 +337,9 @@
   },
   "business": {
     "registerTitle": "업소 등록",
+    "editTitle": "업소 정보 수정",
+    "edit": "수정",
+    "updated": "업소 정보가 수정되었습니다!",
     "memberOnly": "업소를 등록하려면 로그인하세요.",
     "name": "업소명",
     "namePlaceholder": "예: 스마일투어",
