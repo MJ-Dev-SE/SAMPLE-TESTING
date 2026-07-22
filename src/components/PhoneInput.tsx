@@ -37,12 +37,23 @@ function PhoneInput({
 
   return (
     <div className="flex items-stretch rounded-m border border-neutral-90 focus-within:border-accent-blue overflow-hidden">
-      <div className="relative shrink-0">
+      {/* Country picker — FIXED WIDTH so the number input always keeps room. The
+          native <select> is transparent and laid over a compact flag/code +
+          dial display; a too-wide <select> (sized to its longest option text)
+          would otherwise squeeze the number input down to nothing. The dropdown
+          still shows full country names when opened. On Windows the flag glyph
+          renders as the 2-letter code (e.g. "PH") — still clear, no dependency. */}
+      <div className="relative shrink-0 w-[96px] bg-neutral-97 border-r border-neutral-90">
+        <div className="flex items-center gap-1 h-10 pl-2.5 pr-6 text-sm text-text-normal whitespace-nowrap overflow-hidden">
+          <span className="text-xs text-subtlest" aria-hidden="true">{flagEmoji(country.iso)}</span>
+          <span className="font-medium">{country.dial}</span>
+        </div>
+        <i className="fa-solid fa-chevron-down pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-subtlest" aria-hidden="true" />
         <select
           value={country.iso}
           onChange={(e) => pickCountry(e.target.value)}
           aria-label="Country code"
-          className="h-10 pl-2.5 pr-7 bg-neutral-97 text-sm text-text-normal appearance-none outline-none cursor-pointer border-r border-neutral-90"
+          className="absolute inset-0 h-full w-full opacity-0 cursor-pointer"
         >
           {DIAL_COUNTRIES.map((c) => (
             <option key={c.iso} value={c.iso}>
@@ -50,18 +61,12 @@ function PhoneInput({
             </option>
           ))}
         </select>
-        {/* Compact display over the select: flag + dial only, so the field stays narrow. */}
-        <span className="pointer-events-none absolute inset-0 flex items-center gap-1 pl-2.5 pr-7 bg-neutral-97 text-sm text-text-normal">
-          <span aria-hidden="true">{flagEmoji(country.iso)}</span>
-          <span>{country.dial}</span>
-          <i className="fa-solid fa-chevron-down absolute right-2.5 text-[10px] text-subtlest" aria-hidden="true" />
-        </span>
       </div>
       <input
         type="tel"
         inputMode="tel"
         aria-label={ariaLabel}
-        className="h-10 flex-1 min-w-0 px-3 text-sm outline-none"
+        className="h-10 flex-1 min-w-0 px-3 text-sm outline-none bg-white"
         value={national}
         onChange={(e) => onChange(joinDial(country, e.target.value))}
         placeholder={placeholder}

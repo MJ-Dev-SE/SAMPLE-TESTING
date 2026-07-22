@@ -13,6 +13,7 @@ import { getCategoryBySlug, listCategories } from '../lib/content'
 import { uploadToMedia, publicUrl } from '../lib/media'
 import { alertError, errText, toast } from '../lib/alert'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
+import { useFormDraft } from '../lib/useFormDraft'
 import PhotoPickerThumbs from '../components/PhotoPickerThumbs'
 import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from '../components/PostingAddressFields'
 import ContactFields, { emptyContact, type ContactValue } from '../components/ContactFields'
@@ -85,6 +86,25 @@ export default function PostWrite() {
     enabled: !!parentSlug,
   })
 
+  // Keep what the user typed if they leave the page or reload mid-compose —
+  // restored when they come back. Scoped to the write context (community vs a
+  // specific board) so drafts don't bleed across unrelated boards. Board/
+  // category selectors and photo picks are re-chosen; the TEXT is what's kept.
+  const draftKey = `post-write:${maroonSlug ? `maroon:${maroonSlug}` : `board:${params.get('post_id') || 'freetalk'}`}`
+  const { clearDraft } = useFormDraft({
+    key: draftKey,
+    snapshot: { title, body, address, contact },
+    isEmpty: (s) =>
+      !s.title.trim() && !s.body.trim() && !isAddressComplete(s.address) && !s.address.line.trim() &&
+      !s.contact.phone.trim() && !s.contact.mobilePhone.trim(),
+    restore: (s) => {
+      setTitle(s.title ?? '')
+      setBody(s.body ?? '')
+      if (s.address) setAddress(s.address)
+      if (s.contact) setContact(s.contact)
+    },
+  })
+
   const displayName = profile?.display_name || profile?.username || user?.email?.split('@')[0]
   const boardOptions = Object.entries(boardTitles).filter(([id]) => id !== 'maroon')
   const communityBoard = boardTitles.maroon
@@ -117,6 +137,7 @@ export default function PostWrite() {
         phone: contact.phone.trim() || null,
         mobilePhone: contact.mobilePhone.trim() || null,
       })
+      clearDraft() // submitted for real — discard the saved draft
       toast(t('post.created'))
       navigate(`/post/view?id=${created.id}&post_id=${isCommunityPost ? 'maroon' : boardId}`)
     } catch (err) {

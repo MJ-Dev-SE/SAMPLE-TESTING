@@ -5,6 +5,7 @@ import { useLocalized } from '../lib/useLocalized'
 import { createBusiness } from '../lib/content'
 import { uploadToMedia } from '../lib/media'
 import { usePhotoPicker } from '../lib/usePhotoPicker'
+import { useFormDraft } from '../lib/useFormDraft'
 import { alertError, errText, toast } from '../lib/alert'
 import PostingAddressFields, { composeAddress, emptyAddress, isAddressComplete, type PostingAddressValue } from './PostingAddressFields'
 import ContactFields, { emptyContact, type ContactValue } from './ContactFields'
@@ -51,6 +52,26 @@ export default function BusinessForm({
 
   const [busy, setBusy] = useState(false)
   const [progress, setProgress] = useState('')
+
+  // Keep what the user typed if they click outside the modal, close it, or
+  // reload — restored on the next open. Files aren't included (see useFormDraft).
+  const { clearDraft } = useFormDraft({
+    key: 'business-listing',
+    snapshot: { name, categoryId, shortIntro, detailedIntro, region, address, contact },
+    isEmpty: (s) =>
+      !s.name.trim() && !s.shortIntro.trim() && !s.detailedIntro.trim() && !s.region.trim() &&
+      !isAddressComplete(s.address) && !s.address.line.trim() && !s.contact.phone.trim() && !s.contact.mobilePhone.trim(),
+    restore: (s) => {
+      setName(s.name ?? '')
+      // A locked category always wins over a restored one (item 7).
+      if (!lockedCategory && s.categoryId) setCategoryId(s.categoryId)
+      setShortIntro(s.shortIntro ?? '')
+      setDetailedIntro(s.detailedIntro ?? '')
+      setRegion(s.region ?? '')
+      if (s.address) setAddress(s.address)
+      if (s.contact) setContact(s.contact)
+    },
+  })
 
   useEffect(() => {
     if (!logo) return setLogoPreview('')
@@ -110,6 +131,7 @@ export default function BusinessForm({
       })
       // The new listing must show up in the directory + widgets right away.
       queryClient.invalidateQueries({ queryKey: ['businesses'] })
+      clearDraft() // submitted for real — discard the saved draft
       toast(t('business.created'))
       onCreated(biz)
     } catch (err) {

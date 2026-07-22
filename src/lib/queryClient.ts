@@ -40,5 +40,28 @@ export const queryPersister = createSyncStoragePersister({
  * per-brand ad-slot scoping in lib/content.ts: caches persisted before that
  * change hold wrong ad lists and must not be restored). Includes the brand id
  * so a cache never crosses brands even if two are ever served from one origin.
+ *
+ * v3: business-directory queries are no longer written to localStorage
+ * (NON_PERSISTED_QUERY_KEYS below); bumping the version drops every client's old
+ * persisted copy on next load, so admin deletes/edits stop lingering as ghosts.
  */
-export const QUERY_CACHE_BUSTER = `v2-${activeBrand.id}`
+export const QUERY_CACHE_BUSTER = `v3-${activeBrand.id}`
+
+/**
+ * Query families that must NOT survive in localStorage across reloads.
+ *
+ * These are admin-editable listings: when an admin adds/edits/deletes one, other
+ * browsers (esp. the live deployed site) should see it on their next RELOAD, not
+ * up to `staleTime` later. Excluding them from the persister means a reload
+ * always refetches them live from the DB, while they still cache normally within
+ * a single session. Everything else (photos, news, categories, ads) keeps its
+ * fast persisted cache — those change rarely and don't have this "why is the
+ * deleted thing still here" problem. Matched against queryKey[0].
+ */
+export const NON_PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set([
+  'businesses', // directory listing pages
+  'business', // single profile (/business/<slug>)
+  'showcase-businesses', // homepage showcase grid
+  'recent-businesses', // sidebar "Recent businesses" widget
+  'brand-business-slugs', // static-default gating set
+])

@@ -261,7 +261,7 @@
     "exchange": "exchange",
     "recentComments": "Recent Comments",
     "recentPhotos": "Recent photos",
-    "recentBusinessPhotos": "Recent businesses",
+    "recentBusinessPhotos": "Recent business photos",
     "emergencyContact": "Emergency contact",
     "calculator": "calculator",
     "travelInfo": "Travel Information"
@@ -377,14 +377,14 @@
     "barangayPlaceholder": "e.g. Cuyab",
     "line": "Street / unit / building",
     "linePlaceholder": "Unit, floor, building, street",
-    "required": "Please complete the address (province, city, barangay)."
+    "required": "Please complete the address (province and city)."
   },
   "contact": {
     "title": "Contact",
-    "phone": "Phone",
+    "phone": "Telephone",
     "phonePlaceholder": "e.g. +63 2 8000 0000",
-    "mobilePhone": "Mobile phone",
-    "mobilePhonePlaceholder": "e.g. +63 917 000 0000",
+    "mobilePhone": "Mobile number",
+    "mobilePhonePlaceholder": "917 123 4567",
     "address": "Address"
   },
   "company": {

@@ -32,9 +32,10 @@ export default function Header() {
       {/* Banner row with centered logo + search (banners kept small so the center is prominent) */}
       <div className="mx-auto max-w-content px-xs py-m">
         <div className="flex items-center justify-between gap-l">
-          {/* Banner Ad 1 (left) — crossfading */}
+          {/* Banner Ad 1 (left) — crossfading. `contain` so the whole creative
+              shows (header ads arrive in any aspect ratio), never a cropped strip. */}
           {side1.length > 0 ? (
-            <AdCarousel ads={side1} className={`hidden md:block shrink-0 ${adSize}`} />
+            <AdCarousel ads={side1} fit="contain" className={`hidden md:block shrink-0 ${adSize}`} />
           ) : (
             <span className="hidden md:block shrink-0 w-[300px]" />
           )}
@@ -47,7 +48,7 @@ export default function Header() {
 
           {/* Banner Ad 2 (right) — crossfading */}
           {side2.length > 0 ? (
-            <AdCarousel ads={side2} intervalMs={6000} className={`hidden md:block shrink-0 ${adSize}`} />
+            <AdCarousel ads={side2} intervalMs={6000} fit="contain" className={`hidden md:block shrink-0 ${adSize}`} />
           ) : (
             <span className="hidden md:block shrink-0 w-[300px]" />
           )}
@@ -57,8 +58,8 @@ export default function Header() {
             as a compact row underneath instead of hiding the creatives outright. */}
         {ads.length > 0 && (
           <div className="flex md:hidden gap-s mt-3">
-            {side1.length > 0 && <AdCarousel ads={side1} className="flex-1 min-w-0 h-[64px]" />}
-            {side2.length > 0 && <AdCarousel ads={side2} intervalMs={6000} className="flex-1 min-w-0 h-[64px]" />}
+            {side1.length > 0 && <AdCarousel ads={side1} fit="contain" className="flex-1 min-w-0 h-[64px]" />}
+            {side2.length > 0 && <AdCarousel ads={side2} intervalMs={6000} fit="contain" className="flex-1 min-w-0 h-[64px]" />}
           </div>
         )}
       </div>

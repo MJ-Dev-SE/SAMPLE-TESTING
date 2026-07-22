@@ -30,10 +30,19 @@ export default function AdCarousel({
   ads,
   intervalMs = 5000,
   className = '',
+  fit = 'cover',
 }: {
   ads: AdvertisementRec[]
   intervalMs?: number
   className?: string
+  /**
+   * How each creative fills its slot. 'cover' (default) fills and crops to the
+   * box — right for creatives authored to the slot's shape (homepage cards).
+   * 'contain' scales the WHOLE creative to fit with no cropping — right for the
+   * header banners, where creatives arrive in any aspect ratio and must be fully
+   * visible (a tall/wide resort banner would otherwise show only a cropped strip).
+   */
+  fit?: 'cover' | 'contain'
 }) {
   const L = useLocalized()
   const [i, setI] = useState(0)
@@ -57,7 +66,11 @@ export default function AdCarousel({
   return (
     // Size (aspect ratio or fixed w/h) comes from `className` so the same carousel
     // works for the big homepage cards and the small header banners.
-    <div className={`relative overflow-hidden rounded-m border border-neutral-90 ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded-m border border-neutral-90 ${
+        fit === 'contain' ? 'bg-neutral-97' : ''
+      } ${className}`}
+    >
       {ads.map(
         (ad, idx) =>
           loaded.has(idx) && (
@@ -73,7 +86,7 @@ export default function AdCarousel({
                 alt={L(ad.title)}
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover"
+                className={`w-full h-full ${fit === 'contain' ? 'object-contain' : 'object-cover'}`}
               />
             </AdLink>
           ),

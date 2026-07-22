@@ -18,7 +18,8 @@ export function composeAddress(v: PostingAddressValue): string {
 }
 
 export function isAddressComplete(v: PostingAddressValue): boolean {
-  return !!(v.province.trim() && v.city.trim() && v.barangay.trim())
+  // Barangay + street line are optional; province and city are the required minimum.
+  return !!(v.province.trim() && v.city.trim())
 }
 
 /**
@@ -90,7 +91,7 @@ export default function PostingAddressFields({
         />
       </label>
       <label className={field}>
-        <span className={label}>{t('address.barangay')}{required}</span>
+        <span className={label}>{t('address.barangay')}</span>
         <AddressCombobox
           value={value.barangay}
           options={barangays}

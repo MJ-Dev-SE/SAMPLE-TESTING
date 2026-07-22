@@ -8,7 +8,7 @@ import './styles/global.css'
 import App from './App'
 import { AuthProvider } from './lib/auth'
 import { installAccessGuard } from './lib/guard'
-import { queryClient, queryPersister, QUERY_CACHE_BUSTER } from './lib/queryClient'
+import { queryClient, queryPersister, QUERY_CACHE_BUSTER, NON_PERSISTED_QUERY_KEYS } from './lib/queryClient'
 import { activeBrand } from './config/brand'
 
 // TEMPORARY inspect/console access deterrent — production builds only, so the
@@ -34,7 +34,17 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: queryPersister, buster: QUERY_CACHE_BUSTER }}
+      persistOptions={{
+        persister: queryPersister,
+        buster: QUERY_CACHE_BUSTER,
+        // Keep the default (persist only successful queries) but never persist
+        // the admin-editable directory families — those stay fresh on reload so
+        // an admin's delete/edit never lingers as a ghost on other clients.
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            query.state.status === 'success' && !NON_PERSISTED_QUERY_KEYS.has(String(query.queryKey[0])),
+        },
+      }}
     >
       <HelmetProvider>
         <BrowserRouter>

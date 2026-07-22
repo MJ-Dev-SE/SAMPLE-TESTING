@@ -377,14 +377,14 @@
     "barangayPlaceholder": "예: 쿠얍",
     "line": "번지 / 호수 / 건물",
     "linePlaceholder": "호수, 층, 건물, 도로명",
-    "required": "주소(주/시/바랑가이)를 모두 입력해 주세요."
+    "required": "주소(주/시)를 입력해 주세요."
   },
   "contact": {
     "title": "연락처",
-    "phone": "전화번호",
+    "phone": "유선전화",
     "phonePlaceholder": "예: +63 2 8000 0000",
     "mobilePhone": "휴대폰 번호",
-    "mobilePhonePlaceholder": "예: +63 917 000 0000",
+    "mobilePhonePlaceholder": "917 123 4567",
     "address": "주소"
   },
   "company": {

@@ -8,7 +8,13 @@ export interface ContactValue {
 
 export const emptyContact: ContactValue = { phone: '', mobilePhone: '' }
 
-/** Phone + Mobile phone inputs — both optional. Same shape used by every posting form. */
+/**
+ * Two SEPARATE, both-OPTIONAL contact inputs used by every posting form:
+ *   • Telephone — a plain landline field (area code + number, e.g. +63 2 …).
+ *   • Mobile number — international, with a country flag + dial-code picker
+ *     (🇵🇭 +63 by default), stored as one "+63 917 …" string.
+ * A listing may supply either, both, or neither — nothing here is required.
+ */
 export default function ContactFields({
   value,
   onChange,
@@ -20,17 +26,19 @@ export default function ContactFields({
   const field = 'h-10 px-3 border border-neutral-90 rounded-m text-sm outline-none focus:border-accent-blue'
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-m">
+      {/* Telephone (landline) — plain input, optional */}
       <label className="flex flex-col gap-1">
         <span className="text-sm font-medium text-text-normal">{t('contact.phone')}</span>
         <input
           className={field}
+          type="tel"
+          inputMode="tel"
           value={value.phone}
           onChange={(e) => onChange({ ...value, phone: e.target.value })}
           placeholder={t('contact.phonePlaceholder')}
         />
       </label>
-      {/* Mobile numbers are international — country flag + dial code picker
-          (🇵🇭 +63 by default), stored as one "+63 917 …" string. */}
+      {/* Mobile number — international flag + dial-code picker, optional */}
       <div className="flex flex-col gap-1">
         <span className="text-sm font-medium text-text-normal">{t('contact.mobilePhone')}</span>
         <PhoneInput
