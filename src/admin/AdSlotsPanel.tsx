@@ -20,10 +20,13 @@ import { BADGE, CARD, GHOST_BTN, HERO, INK, Kpi, MUTED, PRIMARY_BTN } from './ui
  * appears exactly where the slot says.
  *
  * header/homepage render via AdCarousel (crossfade), so their base slots can
- * take unlimited "+ Add extra" creatives that lengthen the rotation — wing
- * rails render as a fixed list (WingBanners.tsx) and must stay at their exact
- * count, so they don't get that button. The footer ADVERTISEMENT column stays
- * a flexible list (it's a text list, not a fixed banner).
+ * take unlimited "+ Add extra" creatives that lengthen the rotation. The
+ * hanin.tv wing rails work the same way — extras distribute round-robin
+ * across the 4 fixed slots, and any slot that ends up with 2+ creatives
+ * crossfades (WingBanners.tsx). manilatour.com's wing rails stay a plain
+ * fixed list (one creative per slot, no rotation) — no "+ Add extra" there.
+ * The footer ADVERTISEMENT column stays a flexible list (it's a text list,
+ * not a fixed banner).
  */
 
 interface SlotGroup {
@@ -117,24 +120,24 @@ const GROUPS: SlotGroup[] = [
     icon: 'fa-angles-left',
     title: { en: 'Left wing rail — hanin.tv', ko: '왼쪽 윙 배너 — hanin.tv' },
     hint: {
-      en: '4 fixed banners on the LEFT side, on hanin.tv only. Uploading here replaces the built-in hanin default for that slot; never shows on manilatour.com.',
-      ko: 'hanin.tv 전용 왼쪽 고정 배너 4개. 여기 올리면 해당 슬롯의 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
+      en: '4 banners on the LEFT side, on hanin.tv only. "+ Add extra" assigns more creatives to these 4 slots round-robin (extra 1 joins Slot 1, extra 2 joins Slot 2, …) — a slot with more than one creative crossfades between them, same rotation as the header banner. Uploading here replaces the built-in hanin default; never shows on manilatour.com.',
+      ko: 'hanin.tv 전용 왼쪽 배너 4개. "+ 추가 소재"를 누르면 4개 슬롯에 순서대로 배정됩니다(추가 1→슬롯 1, 추가 2→슬롯 2…). 소재가 2개 이상인 슬롯은 헤더 배너처럼 서로 교차 노출됩니다. 여기 올리면 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
     },
     count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
-    allowExtra: false,
+    allowExtra: true,
   },
   {
     position: 'hanin:wing-right',
     icon: 'fa-angles-right',
     title: { en: 'Right wing rail — hanin.tv', ko: '오른쪽 윙 배너 — hanin.tv' },
     hint: {
-      en: '4 fixed banners on the RIGHT side, on hanin.tv only. Uploading here replaces the built-in hanin default for that slot; never shows on manilatour.com.',
-      ko: 'hanin.tv 전용 오른쪽 고정 배너 4개. 여기 올리면 해당 슬롯의 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
+      en: '4 banners on the RIGHT side, on hanin.tv only. "+ Add extra" assigns more creatives to these 4 slots round-robin (extra 1 joins Slot 1, extra 2 joins Slot 2, …) — a slot with more than one creative crossfades between them, same rotation as the header banner. Uploading here replaces the built-in hanin default; never shows on manilatour.com.',
+      ko: 'hanin.tv 전용 오른쪽 배너 4개. "+ 추가 소재"를 누르면 4개 슬롯에 순서대로 배정됩니다(추가 1→슬롯 1, 추가 2→슬롯 2…). 소재가 2개 이상인 슬롯은 헤더 배너처럼 서로 교차 노출됩니다. 여기 올리면 기본 이미지를 대체하며 manilatour.com에는 나오지 않습니다.',
     },
     count: 4,
     slotName: (i) => ({ en: `Slot ${i + 1}`, ko: `슬롯 ${i + 1}` }),
-    allowExtra: false,
+    allowExtra: true,
   },
 ]
 
