@@ -12,13 +12,31 @@
       "has": [{ "type": "host", "value": "www.manilatour.com" }],
       "destination": "https://hanin.tv/:path",
       "permanent": false
+    },
+    {
+      "source": "/robots.txt",
+      "has": [{ "type": "host", "value": "hanin.tv" }],
+      "destination": "/robots.hanin.txt",
+      "permanent": true
+    },
+    {
+      "source": "/robots.txt",
+      "has": [{ "type": "host", "value": "www.hanin.tv" }],
+      "destination": "/robots.hanin.txt",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [{ "type": "host", "value": "hanin.tv" }],
+      "destination": "/sitemap.hanin.xml",
+      "permanent": true
+    },
+    {
+      "source": "/sitemap.xml",
+      "has": [{ "type": "host", "value": "www.hanin.tv" }],
+      "destination": "/sitemap.hanin.xml",
+      "permanent": true
     }
   ],
-  "rewrites": [
-    { "source": "/robots.txt", "has": [{ "type": "host", "value": "hanin.tv" }], "destination": "/robots.hanin.txt" },
-    { "source": "/robots.txt", "has": [{ "type": "host", "value": "www.hanin.tv" }], "destination": "/robots.hanin.txt" },
-    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "hanin.tv" }], "destination": "/sitemap.hanin.xml" },
-    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "www.hanin.tv" }], "destination": "/sitemap.hanin.xml" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

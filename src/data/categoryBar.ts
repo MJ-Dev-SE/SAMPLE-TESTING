@@ -13,24 +13,30 @@ import type { NavLink } from '../types'
 //    required parent→child picker, and CategoryPage's own "chip" sub-nav; they
 //    just aren't listed here anymore. /jobs and /immigration keep working the
 //    same way — only removed from this bar, not from the app (routes/App.tsx).
-//  - Business Directory / Famous Restaurants / Rent Car / Academy / Real
-//    Estate all resolve through the existing /business-directory[/<slug>]
-//    route (kind='business' categories) — Famous Restaurants = the "food"
-//    category, Rent Car = "rentcar", Academy = "education", Real Estate =
-//    "realestate" (all already seeded with real listings, see manilaSeed.json).
+//  - Business Directory alone resolves through /business-directory[/<slug>]
+//    (kind='business' categories, real listings — Famous Restaurants/Rent
+//    Car/Academy/Real Estate's OWN business-directory children — food,
+//    rentcar, education, realestate — still live there unchanged, reachable
+//    from inside /business-directory itself).
+//  - Famous Restaurants / Rent Car / Academy / Real Estate here are their own
+//    independent top-level community categories (kind='community', see
+//    supabase/maroon_business_categories.sql + App.tsx COMMUNITY_PARENTS) —
+//    same display names as their Business Directory namesakes, but a
+//    completely separate simple "Write" feed (title/details/photo), same as
+//    News/Golf/etc. The two are intentionally NOT linked anymore.
 export const categoryGroups: NavLink[] = [
   { label: { en: 'Business Directory', ko: '업소록' }, href: '/business-directory' },
   { label: { en: 'Travel', ko: '여행' }, href: '/travel' },
   { label: { en: 'Golf', ko: '골프' }, href: '/golf' },
-  { label: { en: 'Famous Restaurants', ko: '맛집' }, href: '/business-directory/food' },
+  { label: { en: 'Famous Restaurants', ko: '맛집' }, href: '/famous-restaurants' },
   { label: { en: "Members' Marketplace", ko: '회원장터' }, href: '/marketplace' },
   { label: { en: 'Information', ko: '정보' }, href: '/information' },
   { label: { en: 'News', ko: '뉴스' }, href: '/news' },
   { label: { en: 'Community', ko: '커뮤니티' }, href: '/community' },
-  { label: { en: 'Rent Car', ko: '렌트카' }, href: '/business-directory/rentcar' },
-  { label: { en: 'Academy', ko: '학원' }, href: '/business-directory/education' },
+  { label: { en: 'Rent Car', ko: '렌트카' }, href: '/rent-car' },
+  { label: { en: 'Academy', ko: '학원' }, href: '/academy' },
   { label: { en: 'Q&A', ko: '질문답변' }, href: '/qna' },
-  { label: { en: 'Real Estate', ko: '부동산' }, href: '/business-directory/realestate' },
+  { label: { en: 'Real Estate', ko: '부동산' }, href: '/real-estate' },
 ]
 
 // DATA SLOT: thin top utility bar (left + right link clusters)

@@ -44,8 +44,12 @@ export const queryPersister = createSyncStoragePersister({
  * v3: business-directory queries are no longer written to localStorage
  * (NON_PERSISTED_QUERY_KEYS below); bumping the version drops every client's old
  * persisted copy on next load, so admin deletes/edits stop lingering as ghosts.
+ * v4: same fix extended to category queries — a category added via a SQL
+ * migration (e.g. supabase/maroon_business_categories.sql) could otherwise
+ * leave a "not found" 404 cached for up to STALE.categories on any browser
+ * that visited the URL before the migration ran.
  */
-export const QUERY_CACHE_BUSTER = `v3-${activeBrand.id}`
+export const QUERY_CACHE_BUSTER = `v4-${activeBrand.id}`
 
 /**
  * Query families that must NOT survive in localStorage across reloads.
@@ -54,9 +58,15 @@ export const QUERY_CACHE_BUSTER = `v3-${activeBrand.id}`
  * browsers (esp. the live deployed site) should see it on their next RELOAD, not
  * up to `staleTime` later. Excluding them from the persister means a reload
  * always refetches them live from the DB, while they still cache normally within
- * a single session. Everything else (photos, news, categories, ads) keeps its
- * fast persisted cache — those change rarely and don't have this "why is the
+ * a single session. Everything else (photos, news, ads) keeps its fast
+ * persisted cache — those change rarely and don't have this "why is the
  * deleted thing still here" problem. Matched against queryKey[0].
+ *
+ * Categories are included too: a category added via a SQL migration (e.g.
+ * supabase/maroon_business_categories.sql) is exactly this same class of bug
+ * in reverse — a browser that hit the URL before the migration ran would
+ * otherwise keep a persisted "not found" result and 404 for hours after the
+ * category starts existing.
  */
 export const NON_PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set([
   'businesses', // directory listing pages
@@ -64,4 +74,6 @@ export const NON_PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set([
   'showcase-businesses', // homepage showcase grid
   'recent-businesses', // sidebar "Recent businesses" widget
   'brand-business-slugs', // static-default gating set
+  'categories', // business-directory category list (Company.tsx)
+  'category-tree', // community category parent+children (CategoryPage.tsx)
 ])

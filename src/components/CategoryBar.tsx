@@ -11,7 +11,7 @@ import { stripLocalePrefix } from '../lib/seo/url'
  * Horizontally scrollable — columns that overflow can be reached by
  * scrolling right; when they all fit, the row centers instead of hugging left.
  *
- * Each links to its stable landing page (/information, /business-directory/food,
+ * Each links to its stable landing page (/information, /famous-restaurants,
  * …); the one matching the current URL path gets a visible active state. Every
  * category's own sub-navigation (children, if it has any) lives on that
  * landing page itself, not in this bar.

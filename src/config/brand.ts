@@ -145,9 +145,14 @@ const HANIN: BrandConfig = {
   hostnames: ['hanin.tv', 'hanin.localhost'],
   siteName: 'Hanin TV', // [HANIN: display name]
   siteUrl: 'https://hanin.tv',
+  // Was left blank ("[HANIN: default title EN/KO]") — an empty defaultTitle
+  // means Home.tsx (which supplies no title of its own) renders a literal
+  // empty <title> and empty <h1> on the hanin.tv homepage, the single most
+  // SEO-critical page on the domain. Filled in with real copy; wording is
+  // freely editable, nothing structural depends on the exact text.
   defaultTitle: {
-    en: '', // [HANIN: default title EN]
-    ko: '', // [HANIN: default title KO]
+    en: 'Hanin TV — Korean Community & Travel Guide for the Philippines',
+    ko: '하닌 TV — 필리핀 한인 커뮤니티 & 여행 가이드',
   },
   defaultDescription: {
     en: 'Hanin TV is a Korean–Philippines community portal: travel information, news, Q&A, a business directory and tips for life in the Philippines.', // [HANIN: description EN]
