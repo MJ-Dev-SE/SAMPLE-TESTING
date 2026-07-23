@@ -30,11 +30,16 @@ export default function Footer() {
   const { data: groups = [] } = useQuery({
     queryKey: ['footer-groups'],
     queryFn: async () => {
-      const [ads, links, policies] = await Promise.all([
+      const [adsRaw, links, policies] = await Promise.all([
         listAdvertisements('footer-info').catch((): AdvertisementRec[] => []),
         listLinks('footer-link').catch((): LinkRec[] => []),
         listPolicies().catch((): PolicyRec[] => []),
       ])
+      // hanin.tv doesn't show the Massage Advertisement Information footer
+      // link (manilatour.com keeps it) — the ad row itself is still shared/
+      // shown on manilatour.com, just filtered out of hanin's list here.
+      const ads =
+        activeBrand.id === 'hanin' ? adsRaw.filter((a) => a.title.en !== 'Massage Advertisement Information') : adsRaw
       const all: FooterGroup[] = [
         {
           kind: 'ad',

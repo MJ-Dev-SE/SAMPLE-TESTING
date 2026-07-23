@@ -48,8 +48,11 @@ export const queryPersister = createSyncStoragePersister({
  * migration (e.g. supabase/maroon_business_categories.sql) could otherwise
  * leave a "not found" 404 cached for up to STALE.categories on any browser
  * that visited the URL before the migration ran.
+ * v5: same fix extended to the footer's ad/link/policy list — a browser that
+ * loaded the footer before an admin-editable row change (e.g. hiding one ad)
+ * would otherwise keep showing the old list until the persisted copy expired.
  */
-export const QUERY_CACHE_BUSTER = `v4-${activeBrand.id}`
+export const QUERY_CACHE_BUSTER = `v5-${activeBrand.id}`
 
 /**
  * Query families that must NOT survive in localStorage across reloads.
@@ -76,4 +79,5 @@ export const NON_PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set([
   'brand-business-slugs', // static-default gating set
   'categories', // business-directory category list (Company.tsx)
   'category-tree', // community category parent+children (CategoryPage.tsx)
+  'footer-groups', // footer ADVERTISEMENT/LINK/POLICY columns (Footer.tsx)
 ])
