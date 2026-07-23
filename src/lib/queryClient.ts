@@ -17,7 +17,14 @@ export const STALE = {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: false,
+      // Was false. Turning this on is what lets a SECOND open tab update itself:
+      // edit something in the /admin tab, switch back to the site tab, and its
+      // stale queries refetch on focus — no manual reload. (Each browser tab has
+      // its own QueryClient, so an admin edit's invalidateQueries() only reaches
+      // the tab it happened in; this covers the others.) Content that must feel
+      // live regardless of staleTime is handled by LIVE_QUERY_KEYS below.
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       staleTime: STALE.homepageSection,
       gcTime: STALE.homepageSection * 2,
     },
@@ -81,3 +88,41 @@ export const NON_PERSISTED_QUERY_KEYS: ReadonlySet<string> = new Set([
   'category-tree', // community category parent+children (CategoryPage.tsx)
   'footer-groups', // footer ADVERTISEMENT/LINK/POLICY columns (Footer.tsx)
 ])
+
+/**
+ * Admin-editable CONTENT families that should feel LIVE — a new/edited/deleted
+ * row shows up without a manual page reload, both on the site and in a second
+ * open tab. For each of these query-key prefixes we register:
+ *   - refetchOnMount 'always'       → navigating to a page that reads them (e.g.
+ *     opening Home) always refetches in the background, so a row added in admin
+ *     — or straight in SQL — appears on the next visit. Cached data stays on
+ *     screen during the refetch, so there's no empty flash.
+ *   - refetchOnWindowFocus 'always' → switching back to a tab refetches them, so
+ *     the site tab updates itself after you edit in the admin tab.
+ * '_always_' (not plain true) is required because most of these call sites set a
+ * long staleTime (categories = 6h): plain true would honor it and skip the
+ * refetch. Ephemeral/expensive families (weather 'travel-info', admin 'admin-
+ * visits', external APIs) are deliberately NOT listed — they keep their normal
+ * cached behavior so we don't refetch them on every tab focus.
+ *
+ * setQueryDefaults matches by key PREFIX, so ['businesses', cat, page] etc. are
+ * all covered. Call-site `staleTime` still wins for caching; only the two
+ * refetch triggers above come from here (no call site overrides those).
+ */
+const LIVE_QUERY_KEYS: string[] = [
+  // businesses / directory
+  'businesses', 'business', 'showcase-businesses', 'recent-businesses', 'brand-business-slugs',
+  // categories
+  'categories', 'category', 'category-tree', 'category-posts',
+  // posts / boards
+  'posts', 'post', 'home-boards', 'popular-posts',
+  // media / news / footer / ads
+  'photos', 'news', 'news-article', 'ads', 'ad', 'footer-groups',
+  // comments
+  'comments', 'recent-comments',
+  // static content pages
+  'link', 'policy',
+]
+for (const key of LIVE_QUERY_KEYS) {
+  queryClient.setQueryDefaults([key], { refetchOnMount: 'always', refetchOnWindowFocus: 'always' })
+}
