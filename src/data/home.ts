@@ -17,7 +17,7 @@ export const bizCategories: NavLink[] = [
   { label: { en: 'mart', ko: '마트' }, href: '/business-directory/mart' },
   { label: { en: 'bank', ko: '은행' }, href: '/business-directory/bank' },
   { label: { en: 'electronic products', ko: '전자제품' }, href: '/business-directory/electronics' },
-  { label: { en: 'travel agency', ko: '여행사' }, href: '/business-directory/travel' },
+  { label: { en: 'travel agency', ko: '여행사' }, href: '/business-directory/travel-agency' },
   { label: { en: 'hotel', ko: '호텔' }, href: '/business-directory/hotel' },
   { label: { en: 'rental car', ko: '렌트카' }, href: '/business-directory/rentcar' },
   { label: { en: 'Beauty', ko: '뷰티' }, href: '/business-directory/beauty' },

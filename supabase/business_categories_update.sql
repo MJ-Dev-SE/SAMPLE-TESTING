@@ -9,9 +9,13 @@
 --    on active=true, so a deactivated category disappears from BOTH the
 --    directory chip row AND the "Register your business" category picker. To
 --    bring either back later, set active=true again.
--- 2) Adds three new children — Money Changer, Logistics, Religion — immediately
---    selectable in Add-listing and browsable at /business-directory/<slug>.
---    'etc' (Others) is bumped to the end so it stays last in the list.
+-- 2) Adds four new children — Travel Agency, Money Changer, Logistics, Religion
+--    — immediately selectable in Add-listing and browsable at
+--    /business-directory/<slug>. 'etc' (Others) is bumped to the end so it
+--    stays last in the list.
+--    NOTE: the business child uses slug 'travel-agency' (not 'travel') because
+--    'travel' already belongs to the community/maroon "Travel" category
+--    (kind='community') — a separate thing from a Business Directory listing.
 --
 -- All rows are kind='business', parent_slug='business-directory'.
 -- =============================================================================
@@ -25,6 +29,7 @@ update public.categories
 
 -- 2) Add the three new children (idempotent — re-running just refreshes them).
 insert into public.categories (slug, parent_slug, kind, name, icon, sort, active) values
+  ('travel-agency', 'business-directory', 'business', '{"en":"Travel Agency","ko":"여행사"}',  'fa-plane',               8, true),
   ('money-changer', 'business-directory', 'business', '{"en":"Money Changer","ko":"환전소"}', 'fa-money-bill-transfer', 16, true),
   ('logistics',     'business-directory', 'business', '{"en":"Logistics","ko":"물류"}',       'fa-truck-fast',         17, true),
   ('religion',      'business-directory', 'business', '{"en":"Religion","ko":"종교"}',         'fa-place-of-worship',   18, true)
