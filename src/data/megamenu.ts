@@ -45,10 +45,8 @@ export const megaMenuGroups: MegaMenuGroup[] = [
   {
     groupTitle: { en: 'Business Directory', ko: '업소록' },
     items: [
-      { label: { en: 'government offices', ko: '관공서' }, href: '/business-directory/government' },
       { label: { en: 'education', ko: '교육' }, href: '/business-directory/education' },
       { label: { en: 'eating house', ko: '음식점' }, href: '/business-directory/food' },
-      { label: { en: 'traffic', ko: '교통' }, href: '/business-directory/traffic' },
       { label: { en: 'hospital', ko: '병원' }, href: '/business-directory/hospital' },
       { label: { en: 'mart', ko: '마트' }, href: '/business-directory/mart' },
       { label: { en: 'bank', ko: '은행' }, href: '/business-directory/bank' },
@@ -60,6 +58,9 @@ export const megaMenuGroups: MegaMenuGroup[] = [
       { label: { en: 'real estate', ko: '부동산' }, href: '/business-directory/realestate' },
       { label: { en: 'KTV', ko: 'KTV' }, href: '/business-directory/ktv' },
       { label: { en: 'spa', ko: '스파' }, href: '/business-directory/spa' },
+      { label: { en: 'money changer', ko: '환전소' }, href: '/business-directory/money-changer' },
+      { label: { en: 'logistics', ko: '물류' }, href: '/business-directory/logistics' },
+      { label: { en: 'religion', ko: '종교' }, href: '/business-directory/religion' },
     ],
   },
   {
