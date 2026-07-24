@@ -486,7 +486,30 @@ export function newsArticlePath(article_slug: string): string {
 
 /* --------------------------- Advertisements ---------------------------- */
 
-const AD_COLS = 'id, title, description, body, image_url, url, position, sort, active, start_date, end_date'
+const AD_COLS_LEGACY = 'id, title, description, body, image_url, url, position, sort, active, start_date, end_date'
+const AD_COLS = `${AD_COLS_LEGACY}, address, phone, mobile_phone, email`
+
+/**
+ * Same "migration may not have run yet" guard as withSeoColumnFallback above,
+ * for the advertiser contact columns (supabase/ad_contact.sql). Until that runs
+ * Postgres answers 42703 (undefined column); rather than blanking every ad slot
+ * on the site, retry once with the pre-migration list and remember it. Ads then
+ * render exactly as before, just with no contact details.
+ */
+let adContactColumnsMissing = false
+
+async function withAdCols<T>(run: (cols: string) => Promise<T>): Promise<T> {
+  if (!adContactColumnsMissing) {
+    try {
+      return await run(AD_COLS)
+    } catch (e) {
+      if ((e as { code?: string })?.code !== '42703') throw e
+      adContactColumnsMissing = true
+      console.warn('[ads] DB is missing the advertiser contact columns — run supabase/ad_contact.sql.')
+    }
+  }
+  return run(AD_COLS_LEGACY)
+}
 
 /**
  * Ad slots are scoped per hostname AND per position (src/config/brand.ts):
@@ -518,40 +541,46 @@ const isActiveBrandAd = (a: AdvertisementRec): boolean => {
 
 /** Active advertisements for a position (header/homepage/wing/footer-info), within their date window. */
 export async function listAdvertisements(position: AdPosition): Promise<AdvertisementRec[]> {
-  const { data, error } = await supabase
-    .from('advertisements')
-    .select(AD_COLS)
-    .eq('position', adKeyFor(position))
-    .eq('active', true)
-    .order('sort', { ascending: true })
-  if (error) throw error
-  const today = new Date().toISOString().slice(0, 10)
-  return ((data ?? []) as unknown as AdvertisementRec[])
-    .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
-    .map(stripAdPrefix)
+  return withAdCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select(cols)
+      .eq('position', adKeyFor(position))
+      .eq('active', true)
+      .order('sort', { ascending: true })
+    if (error) throw error
+    const today = new Date().toISOString().slice(0, 10)
+    return ((data ?? []) as unknown as AdvertisementRec[])
+      .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
+      .map(stripAdPrefix)
+  })
 }
 
 /** Every active advertisement of THIS brand, across every placement, within its date window — the /adv/banner gallery. */
 export async function listAllAdvertisements(): Promise<AdvertisementRec[]> {
-  const { data, error } = await supabase
-    .from('advertisements')
-    .select(AD_COLS)
-    .eq('active', true)
-    .order('position', { ascending: true })
-    .order('sort', { ascending: true })
-  if (error) throw error
-  const today = new Date().toISOString().slice(0, 10)
-  return ((data ?? []) as unknown as AdvertisementRec[])
-    .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
-    .filter(isActiveBrandAd)
-    .map(stripAdPrefix)
+  return withAdCols(async (cols) => {
+    const { data, error } = await supabase
+      .from('advertisements')
+      .select(cols)
+      .eq('active', true)
+      .order('position', { ascending: true })
+      .order('sort', { ascending: true })
+    if (error) throw error
+    const today = new Date().toISOString().slice(0, 10)
+    return ((data ?? []) as unknown as AdvertisementRec[])
+      .filter((a) => (!a.start_date || a.start_date <= today) && (!a.end_date || a.end_date >= today))
+      .filter(isActiveBrandAd)
+      .map(stripAdPrefix)
+  })
 }
 
 /** One advertisement by id — /ad/view promotional page. */
 export async function getAdvertisement(id: string): Promise<AdvertisementRec | null> {
-  const { data, error } = await supabase.from('advertisements').select(AD_COLS).eq('id', id).maybeSingle()
-  if (error) throw error
-  return (data as unknown as AdvertisementRec) ?? null
+  return withAdCols(async (cols) => {
+    const { data, error } = await supabase.from('advertisements').select(cols).eq('id', id).maybeSingle()
+    if (error) throw error
+    return (data as unknown as AdvertisementRec) ?? null
+  })
 }
 
 /* -------------------------------- Links -------------------------------- */

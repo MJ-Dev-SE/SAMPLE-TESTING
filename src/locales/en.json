@@ -390,6 +390,7 @@
     "phonePlaceholder": "e.g. +63 2 8000 0000",
     "mobilePhone": "Mobile number",
     "mobilePhonePlaceholder": "917 123 4567",
+    "email": "Email",
     "address": "Address"
   },
   "company": {

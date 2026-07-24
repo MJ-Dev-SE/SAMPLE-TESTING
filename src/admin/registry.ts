@@ -209,6 +209,13 @@ export const ADMIN_TABLES: TableDef[] = [
       { key: 'body', label: { en: 'Full detail text', ko: '상세 본문' }, type: 'localized-textarea', hint: { en: '"## " headings, "- " bullets. Shown on the /ad/view page.', ko: '"## " 소제목, "- " 글머리표. /ad/view 페이지에 표시.' } },
       { key: 'image_url', label: { en: 'Ad image', ko: '광고 이미지' }, type: 'image', folder: 'ads' },
       { key: 'url', label: { en: 'Destination URL', ko: '연결 URL' }, type: 'text' },
+      // Advertiser contact details — shown on the /ad/view page in place of a
+      // comment thread (supabase/ad_contact.sql). All optional: leave blank and
+      // the contact card simply doesn't render.
+      { key: 'address', label: { en: 'Address', ko: '주소' }, type: 'text', hint: { en: 'Shown on the /ad/view page instead of comments.', ko: '/ad/view 페이지에 댓글 대신 표시됩니다.' } },
+      { key: 'phone', label: { en: 'Telephone', ko: '유선전화' }, type: 'text' },
+      { key: 'mobile_phone', label: { en: 'Mobile number', ko: '휴대폰 번호' }, type: 'text' },
+      { key: 'email', label: { en: 'Email', ko: '이메일' }, type: 'text' },
       { key: 'position', label: { en: 'Position', ko: '위치' }, type: 'select', options: ['header', 'homepage', 'wing-left', 'wing-right', 'footer-info'], required: true },
       { key: 'sort', label: { en: 'Display order', ko: '표시 순서' }, type: 'number' },
       { key: 'active', label: { en: 'Active', ko: '활성' }, type: 'boolean' },

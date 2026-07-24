@@ -274,6 +274,15 @@ export interface AdvertisementRec {
   active: boolean
   start_date: string | null
   end_date: string | null
+  /**
+   * Advertiser contact details, shown on /ad/view in place of a comment thread
+   * (supabase/ad_contact.sql). Optional: they're absent entirely until that
+   * migration runs — see the legacy column fallback in lib/content.ts.
+   */
+  address?: string | null
+  phone?: string | null
+  mobile_phone?: string | null
+  email?: string | null
 }
 
 /** public.links row — partner websites, tourism resources, references. */

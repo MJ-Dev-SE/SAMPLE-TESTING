@@ -6,6 +6,8 @@ import Seo from '../components/seo/Seo'
 import SmartImage from '../components/SmartImage'
 import ArticleBody from '../components/ArticleBody'
 import CommentsReviewsSection from '../components/comments/CommentsReviewsSection'
+import ContactCard from '../components/ContactCard'
+import { activeBrand } from '../config/brand'
 import AiAssistantButton from '../components/ai/AiAssistantButton'
 import AiAssistantSection from '../components/ai/AiAssistantSection'
 import { useAiAssistant } from '../components/ai/useAiAssistant'
@@ -93,12 +95,28 @@ export default function AdvertisementView() {
 
       <AiAssistantSection ai={ai} />
 
-      <CommentsReviewsSection
-        contentType="advertisement"
-        contentId={id}
-        allowRating
-        highlightedCommentId={params.get('comment')}
-      />
+      {/* An advertisement is the sponsor's own page, not community content: on
+          hanin.tv it carries the advertiser's contact details instead of a
+          Comments / Reviews thread (the details live on the ad row itself —
+          supabase/ad_contact.sql, edited in the admin "Advertisements" tab).
+          Posts and business listings are unaffected — they keep their threads. */}
+      {activeBrand.id === 'hanin' ? (
+        <div className="mt-l">
+          <ContactCard
+            phone={rec.phone}
+            mobilePhone={rec.mobile_phone}
+            email={rec.email}
+            address={rec.address}
+          />
+        </div>
+      ) : (
+        <CommentsReviewsSection
+          contentType="advertisement"
+          contentId={id}
+          allowRating
+          highlightedCommentId={params.get('comment')}
+        />
+      )}
     </Layout>
   )
 }
