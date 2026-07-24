@@ -16,8 +16,9 @@ import type { BusinessRec, Localized } from '../types'
  *
  * `categorySlug` maps to a Business Directory child category (src/data/manilaSeed.json
  * categories: food, mart, hospital, travel, spa, etc). Address/phone were
- * transcribed from the client's Google-Maps info panels in assetsad/ where the
- * pairing is confident; otherwise left blank for the admin to complete.
+ * transcribed from the client's Google-Maps info panels in
+ * docs/reference/ad-assets/ where the pairing is confident; otherwise left
+ * blank for the admin to complete.
  */
 export interface HaninBusiness {
   id: string

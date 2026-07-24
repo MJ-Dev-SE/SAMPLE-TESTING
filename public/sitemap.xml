@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://manilatour.com/</loc>
-    <lastmod>2026-07-23</lastmod>
+    <lastmod>2026-07-24</lastmod>
   </url>
   <url>
     <loc>https://manilatour.com/menu</loc>
@@ -35,28 +35,10 @@
     <loc>https://manilatour.com/business-directory/business-directory</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/information</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/business-directory/government</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/golf/golf-courses</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/immigration/passport-visa</loc>
-  </url>
-  <url>
     <loc>https://manilatour.com/jobs/new-member-greetings</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/travel/tours-itineraries</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/marketplace/cell-phone</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/community/manila</loc>
+    <loc>https://manilatour.com/information</loc>
   </url>
   <url>
     <loc>https://manilatour.com/qna/free-discussion</loc>
@@ -68,13 +50,40 @@
     <loc>https://manilatour.com/news/notices</loc>
   </url>
   <url>
+    <loc>https://manilatour.com/travel/tours-itineraries</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/golf/golf-courses</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/marketplace/cell-phone</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/community/manila</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/immigration/passport-visa</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/marketplace/peso-exchange</loc>
+  </url>
+  <url>
     <loc>https://manilatour.com/golf/golf-packages</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/business-directory/education</loc>
+    <loc>https://manilatour.com/immigration/boarding-house</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/jobs/people-search</loc>
   </url>
   <url>
     <loc>https://manilatour.com/news</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/travel/food-trips</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/education</loc>
   </url>
   <url>
     <loc>https://manilatour.com/information/experiences</loc>
@@ -89,34 +98,19 @@
     <loc>https://manilatour.com/community/angeles</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/marketplace/peso-exchange</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/travel/food-trips</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/jobs/people-search</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/immigration/boarding-house</loc>
+    <loc>https://manilatour.com/business-directory/food</loc>
   </url>
   <url>
     <loc>https://manilatour.com/qna</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/business-directory/food</loc>
-  </url>
-  <url>
     <loc>https://manilatour.com/community</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/business-directory/traffic</loc>
+    <loc>https://manilatour.com/marketplace</loc>
   </url>
   <url>
     <loc>https://manilatour.com/business-directory/hospital</loc>
-  </url>
-  <url>
-    <loc>https://manilatour.com/marketplace</loc>
   </url>
   <url>
     <loc>https://manilatour.com/business-directory/mart</loc>
@@ -140,6 +134,9 @@
     <loc>https://manilatour.com/travel</loc>
   </url>
   <url>
+    <loc>https://manilatour.com/business-directory/travel-agency</loc>
+  </url>
+  <url>
     <loc>https://manilatour.com/business-directory/hotel</loc>
   </url>
   <url>
@@ -158,11 +155,36 @@
     <loc>https://manilatour.com/business-directory/spa</loc>
   </url>
   <url>
+    <loc>https://manilatour.com/business-directory/money-changer</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/logistics</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business-directory/religion</loc>
+  </url>
+  <url>
     <loc>https://manilatour.com/business-directory/etc</loc>
   </url>
   <url>
-    <loc>https://manilatour.com/posts/%EB%8C%80%EC%82%AC%EA%B4%80-%EA%B3%B5%EC%A7%80%EC%82%AC%ED%95%AD</loc>
-    <lastmod>2026-07-22</lastmod>
+    <loc>https://manilatour.com/famous-restaurants</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/rent-car</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/academy</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/real-estate</loc>
+  </url>
+  <url>
+    <loc>https://manilatour.com/posts/%EB%8C%80%EC%82%AC%EA%B4%80%EA%B3%B5%EC%A7%80-%ED%95%84%EB%A6%AC%ED%95%80-%EC%96%B4%ED%95%99%EC%9B%90-%EB%B0%8F-%EC%98%81%EC%96%B4-%EC%BA%A0%ED%94%84-%EC%9C%A0%EC%9D%98-%EC%82%AC%ED%95%AD</loc>
+    <lastmod>2026-07-23</lastmod>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business/88-%EB%A6%AC%EC%A1%B0%ED%8A%B8-%EB%8D%B0%EC%9D%B4%ED%88%AC%EC%96%B4</loc>
+    <lastmod>2026-07-23</lastmod>
   </url>
   <url>
     <loc>https://manilatour.com/business/mtsc</loc>
@@ -171,14 +193,6 @@
   <url>
     <loc>https://manilatour.com/business/%EC%9D%B8%EC%83%9D%EA%B3%B0%ED%83%95</loc>
     <lastmod>2026-07-22</lastmod>
-  </url>
-  <url>
-    <loc>https://manilatour.com/business/hanin-mega-mart</loc>
-    <lastmod>2026-07-21</lastmod>
-  </url>
-  <url>
-    <loc>https://manilatour.com/business/hanin-ssong-mart</loc>
-    <lastmod>2026-07-21</lastmod>
   </url>
   <url>
     <loc>https://manilatour.com/business/hanin-korex</loc>
@@ -197,11 +211,11 @@
     <lastmod>2026-07-21</lastmod>
   </url>
   <url>
-    <loc>https://manilatour.com/business/hanin-daraejung</loc>
+    <loc>https://manilatour.com/business/hanin-mega-mart</loc>
     <lastmod>2026-07-21</lastmod>
   </url>
   <url>
-    <loc>https://manilatour.com/business/hanin-chuiyoung-salon</loc>
+    <loc>https://manilatour.com/business/hanin-ssong-mart</loc>
     <lastmod>2026-07-21</lastmod>
   </url>
   <url>
@@ -217,6 +231,10 @@
     <lastmod>2026-07-21</lastmod>
   </url>
   <url>
+    <loc>https://manilatour.com/business/hanin-daraejung</loc>
+    <lastmod>2026-07-21</lastmod>
+  </url>
+  <url>
     <loc>https://manilatour.com/business/hanin-cheongho</loc>
     <lastmod>2026-07-21</lastmod>
   </url>
@@ -226,6 +244,10 @@
   </url>
   <url>
     <loc>https://manilatour.com/business/hanin-yedang</loc>
+    <lastmod>2026-07-21</lastmod>
+  </url>
+  <url>
+    <loc>https://manilatour.com/business/hanin-chuiyoung-salon</loc>
     <lastmod>2026-07-21</lastmod>
   </url>
   <url>
