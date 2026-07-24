@@ -1,10 +1,12 @@
-// Runtime SEO render test — dev server must be running on :5175 (npm run dev).
+// Runtime SEO render test — dev server must be running on :5176 (npm run dev).
 // node tests/seo-render.mjs   (uses waitUntil load: the Supabase realtime
 // socket keeps the network busy, so networkidle never settles). Verifies each route
 // renders, has the expected head tags, and logs console errors.
 import { chromium } from 'playwright'
 
-const BASE = process.env.BASE_URL || 'http://localhost:5175'
+// Defaults to the hanin brand — bare localhost hits the temporarily-disabled
+// Manila Tour (renders NotFound). Revert to localhost:5176 when it is re-enabled.
+const BASE = process.env.BASE_URL || 'http://hanin.localhost:5176'
 const CHECKS = [
   { route: '/', expectIndex: true, h1: true },
   { route: '/menu', expectIndex: true },

@@ -8,9 +8,14 @@ healthy, and exactly where any problem is.
 
 ## Setup (do this once, before the agents)
 1. Confirm the dev server is up so the UI agents can drive it:
-   `curl -s -o /dev/null -w "%{http_code}" http://localhost:5175`
+   `curl -s -o /dev/null -w "%{http_code}" http://localhost:5176`
    If it is not `200`, start it in the **background**: `npm run dev`, then poll the port until it
    answers `200` before continuing.
+2. Tell the UI agents to drive **`http://hanin.localhost:5176`**, not bare `localhost`. Manila Tour is
+   not removed — it is only temporarily switched off (`MANILATOUR.disabled = true` in
+   `src/config/brand.ts`), and bare `localhost` matches no brand, so it falls back to that disabled
+   brand and renders NotFound in the main content area for every route. Same server, same port, same
+   routes — only the brand identity differs. Once `disabled` is back to `false`, drop this step.
 
 ## Run the three agents IN THIS ORDER (sequentially, not parallel)
 Use the Agent tool. Wait for each to finish and capture its Taglish report block before starting the next.

@@ -12,11 +12,16 @@ wired, animations/transitions don't throw, scrolling works, and the language tog
 with **zero runtime console errors**.
 
 ## How to run
-1. Make sure the Vite dev server is running on **http://localhost:5175**. The /clepo command usually
-   starts it for you. If `curl -s -o /dev/null -w "%{http_code}" http://localhost:5175` is not `200`,
+1. Make sure the Vite dev server is running on **http://localhost:5176**. The /clepo command usually
+   starts it for you. If `curl -s -o /dev/null -w "%{http_code}" http://localhost:5176` is not `200`,
    start it yourself: `npm run dev` in the **background**, then poll the port until it answers.
+   ⚠️ **Drive `http://hanin.localhost:5176`, not bare `localhost`.** Manila Tour is not removed — it
+   is only temporarily switched off (`MANILATOUR.disabled = true`, `src/config/brand.ts`), and bare
+   `localhost` matches no brand so it falls back to that disabled one and renders NotFound in the
+   main content area for every path. The `hanin` brand is enabled and exercises the same routes.
+   When `disabled` goes back to `false`, plain `localhost` works again and this note can be dropped.
 2. Run the baseline Playwright smoke test and capture its JSON:
-   `BASE_URL=http://localhost:5175 node tests/smoke.mjs`
+   `BASE_URL=http://hanin.localhost:5176 node tests/smoke.mjs`
    It visits every route, checks `#root` actually rendered content, scrolls each page, exercises the
    language switch, and collects console errors + page exceptions per route.
 3. **Extend coverage for whatever changed this session.** Run `git diff --name-only` first; if a

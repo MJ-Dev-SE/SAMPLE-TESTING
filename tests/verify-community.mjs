@@ -5,7 +5,9 @@
 // degradation when the categories/chat tables don't exist.
 import { chromium } from 'playwright'
 
-const BASE = process.env.BASE_URL || 'http://localhost:5176'
+// Defaults to the hanin brand — bare localhost hits the temporarily-disabled
+// Manila Tour (renders NotFound). Revert to localhost:5176 when it is re-enabled.
+const BASE = process.env.BASE_URL || 'http://hanin.localhost:5176'
 const out = []
 const browser = await chromium.launch()
 

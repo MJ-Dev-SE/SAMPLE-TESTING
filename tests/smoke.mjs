@@ -3,14 +3,24 @@
 // route, exercises core interactions (language switch, scroll), and collects
 // real console errors / page exceptions. Prints a JSON summary to stdout.
 //
-//   BASE_URL=http://localhost:5175 node tests/smoke.mjs
+//   BASE_URL=http://localhost:5176 node tests/smoke.mjs
 //
 // The dev server must already be running. Exit code is 0 even when issues are
 // found — the caller reads the JSON, it does not rely on the exit code.
+//
+// Navigation uses waitUntil 'domcontentloaded', NOT 'networkidle' — same reason
+// already documented in tests/seo-render.mjs and scripts/prerender.mjs: the
+// homepage pulls 25-30 ad/business images from Supabase Storage (and the
+// realtime socket stays open), so the network never goes idle and page.goto
+// times out, reporting EVERY route as broken when nothing is wrong. Readiness
+// is asserted directly instead — we wait for React to mount real content into
+// #root, which is what "the page works" actually means.
 
 import { chromium } from 'playwright'
 
-const BASE = process.env.BASE_URL || 'http://localhost:5175'
+// Defaults to the hanin brand — bare localhost hits the temporarily-disabled
+// Manila Tour (renders NotFound). Revert to localhost:5176 when it is re-enabled.
+const BASE = process.env.BASE_URL || 'http://hanin.localhost:5176'
 
 // Routes worth visiting. Mirrors src/App.tsx PageRoutes (+ locale prefixes).
 const ROUTES = [
@@ -40,9 +50,21 @@ for (const route of ROUTES) {
   let rendered = false
   let status = null
   try {
-    const resp = await page.goto(BASE + route, { waitUntil: 'networkidle', timeout: 20000 })
+    const resp = await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 20000 })
     status = resp ? resp.status() : null
-    // "rendered" = React mounted real content into #root.
+    // "rendered" = React mounted real content into #root. Wait for that mount
+    // explicitly (bounded), then measure it. On timeout we fall through with
+    // rendered = false, so a genuinely blank page is still reported as broken.
+    await page
+      .waitForFunction(
+        () => {
+          const root = document.getElementById('root')
+          return !!root && root.children.length > 0 && root.innerText.trim().length > 0
+        },
+        null,
+        { timeout: 15000 },
+      )
+      .catch(() => {})
     rendered = await page.evaluate(() => {
       const root = document.getElementById('root')
       return !!root && root.children.length > 0 && root.innerText.trim().length > 0
@@ -68,13 +90,16 @@ for (const route of ROUTES) {
   const errors = []
   page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`))
   try {
-    await page.goto(BASE + '/', { waitUntil: 'networkidle', timeout: 20000 })
+    await page.goto(BASE + '/', { waitUntil: 'domcontentloaded', timeout: 20000 })
     // Start from a known state: clear the persisted lang and reload (→ default en).
     await page.evaluate(() => localStorage.removeItem('lang'))
-    await page.reload({ waitUntil: 'networkidle' })
-    const before = await page.evaluate(() => document.documentElement.lang)
+    await page.reload({ waitUntil: 'domcontentloaded' })
     // The LanguageSwitcher is a role=group; click the button that is NOT active.
+    // Wait for it to mount before reading <html lang>, since domcontentloaded
+    // fires before React has rendered the header.
     const group = page.locator('[role="group"][aria-label="Language"]').first()
+    await group.waitFor({ state: 'visible', timeout: 15000 }).catch(() => {})
+    const before = await page.evaluate(() => document.documentElement.lang)
     const inactive = group.locator('button[aria-pressed="false"]').first()
     let clicked = false
     if (await inactive.count()) {

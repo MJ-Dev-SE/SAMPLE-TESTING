@@ -1,13 +1,15 @@
 // Focused end-to-end verification of the site_content / business / admin features
 // (headless Chromium). Dev server must be running on BASE.
 //
-//   BASE_URL=http://localhost:5175 node tests/verify-features.mjs
+//   BASE_URL=http://localhost:5176 node tests/verify-features.mjs
 //
 // Each check runs in a FRESH browser context: the language choice persists in
 // localStorage, so a /ko/ visit would otherwise flip every later page to Korean.
 import { chromium } from 'playwright'
 
-const BASE = process.env.BASE_URL || 'http://localhost:5175'
+// Defaults to the hanin brand — bare localhost hits the temporarily-disabled
+// Manila Tour (renders NotFound). Revert to localhost:5176 when it is re-enabled.
+const BASE = process.env.BASE_URL || 'http://hanin.localhost:5176'
 const out = []
 const browser = await chromium.launch()
 
